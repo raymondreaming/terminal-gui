@@ -5,10 +5,10 @@
 	"private": true,
 	"scripts": {
 		"prepare": "husky",
-		"dev": "bun index.ts",
+		"dev": "bunx concurrently \"vite --port 4000\" \"bun index.ts\"",
+		"build": "vite build",
+		"preview": "vite preview",
 		"start": "bun index.ts",
-		"build:css": "bunx tailwindcss -i src/index.css -o dist/styles.css --minify",
-		"build": "bun run build:css",
 		"format": "bunx biome format --write ./src",
 		"format:prettier": "prettier . --write",
 		"check": "bunx biome check --write ./src"
@@ -18,13 +18,16 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.7",
-		"@tailwindcss/cli": "^4.2.1",
+		"@tailwindcss/vite": "^4.2.2",
 		"@types/bun": "latest",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.1",
+		"babel-plugin-react-compiler": "^1.0.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
-		"prettier": "^3.8.1"
+		"prettier": "^3.8.1",
+		"vite": "^8.0.3"
 	},
 	"peerDependencies": {
 		"typescript": "^5.9.3"

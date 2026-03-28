@@ -27,9 +27,6 @@
 			href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
 			rel="stylesheet"
 		/>
-		<style>
-			@import url("/styles.css");
-		</style>
 		<script>
 			// Apply saved app theme before first paint to prevent flash
 			(function () {
@@ -272,16 +269,6 @@
 				sans-serif;
 		"
 	>
-		<script>
-			// Fix Bun HMR bug: check readyState before WebSocket.send()
-			// https://github.com/oven-sh/bun/issues - InvalidStateError on server restart
-			(function () {
-				var orig = WebSocket.prototype.send;
-				WebSocket.prototype.send = function (data) {
-					if (this.readyState === 1) orig.call(this, data);
-				};
-			})();
-		</script>
 		<div id="root">
 			<div
 				style="
@@ -322,6 +309,6 @@
 				</svg>
 			</div>
 		</div>
-		<script type="module" src="./src/main.tsx"></script>
+		<script type="module" src="/src/main.tsx"></script>
 	</body>
 </html>
