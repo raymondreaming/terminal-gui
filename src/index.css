@@ -1,0 +1,148 @@
+@import "tailwindcss";
+@source "../";
+
+@theme {
+	/* Custom breakpoints */
+	--breakpoint-xs: 480px;
+
+	--color-surgent-bg: #000000;
+	--color-surgent-surface: #1c1c1e;
+	--color-surgent-surface-2: #2c2c2e;
+	--color-surgent-surface-3: #3a3a3c;
+	--color-surgent-border: rgba(255, 255, 255, 0.08);
+	--color-surgent-border-bold: rgba(255, 255, 255, 0.15);
+
+	--color-surgent-accent: #e5e5e7;
+	--color-surgent-accent-hover: #ffffff;
+	--color-surgent-success: #30d158;
+	--color-surgent-warning: #ff9f0a;
+	--color-surgent-error: #ff453a;
+	--color-surgent-info: #64d2ff;
+
+	--color-surgent-text: #f5f5f7;
+	--color-surgent-text-2: rgba(255, 255, 255, 0.72);
+	--color-surgent-text-3: rgba(255, 255, 255, 0.45);
+
+	/* Git status — muted, desaturated tones */
+	--color-git-added: #5a9e80;
+	--color-git-modified: #8e8e6e;
+	--color-git-deleted: #9e6b6b;
+	--color-git-renamed: #7a8fb5;
+	--color-git-unmerged: #b0896a;
+
+	/* Syntax highlighting — GitHub Dark style */
+	--color-syntax-keyword: #ff7b72;
+	--color-syntax-string: #a5d6ff;
+	--color-syntax-comment: #8b949e;
+	--color-syntax-number: #79c0ff;
+	--color-syntax-punctuation: #c9d1d9;
+	--color-syntax-tag: #7ee787;
+	--color-syntax-attr: #d2a8ff;
+
+	--font-sans:
+		"Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+	--font-mono: "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+
+	--animate-fade-in: fade-in 0.2s ease-out;
+	--animate-slide-up: slide-up 0.25s ease-out;
+	--animate-scale-in: scale-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+html,
+body,
+#root {
+	height: 100%;
+	margin: 0;
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+
+button,
+a,
+input,
+textarea,
+select,
+[role="button"] {
+	transition: all 0.15s ease;
+}
+
+*:focus,
+*:focus-visible,
+*:focus-within {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+* {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	overscroll-behavior: none;
+}
+
+* {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-button {
+	display: none;
+	background: transparent;
+}
+
+.diff-hatch {
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent,
+		transparent 4px,
+		rgba(255, 255, 255, 0.03) 4px,
+		rgba(255, 255, 255, 0.03) 5px
+	);
+}
+
+.inset-separator {
+	position: relative;
+}
+.inset-separator:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	bottom: 0;
+	left: 1rem;
+	right: 0;
+	height: 1px;
+	background: var(--color-surgent-border);
+}

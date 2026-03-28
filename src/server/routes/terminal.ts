@@ -1,0 +1,696 @@
+import type { ServerWebSocket } from "bun";
+import { resolve, dirname } from "path";
+import { homedir } from "os";
+import { readdir, stat } from "fs/promises";
+import type { AgentKind } from "../../lib/agents.ts";
+import { resolveInteractiveAgentCommand } from "../agents/terminal-command.ts";
+import { ChatService } from "../services/claude-chat.ts";
+import {
+	tryRoute,
+	badRequest,
+	readJson,
+	writeJson,
+} from "../lib/route-helpers.ts";
+import { PROJECT_ROOT } from "../lib/path-utils.ts";
+const isWin = process.platform === "win32";
+
+class OutputBuffer {
+	private chunks: string[] = [];
+	private totalLength = 0;
+	private readonly maxLength: number;
+
+	constructor(maxBytes = 64 * 1024) {
+		this.maxLength = maxBytes;
+	}
+
+	push(data: string) {
+		this.chunks.push(data);
+		this.totalLength += data.length;
+		while (this.totalLength > this.maxLength && this.chunks.length > 1) {
+			const removed = this.chunks.shift()!;
+			this.totalLength -= removed.length;
+		}
+	}
+
+	drain(): string {
+		return this.chunks.join("");
+	}
+}
+
+interface TerminalSession {
+	terminal: InstanceType<typeof Bun.Terminal>;
+	proc: ReturnType<typeof Bun.spawn>;
+	agentKind: AgentKind;
+	paneId: string;
+	ws: ServerWebSocket<any> | null;
+	outputBuffer: OutputBuffer;
+	decoder: TextDecoder;
+}
+
+const g = globalThis as any;
+if (!g.__surgent_terminalSessions)
+	g.__surgent_terminalSessions = new Map<string, TerminalSession>();
+const sessions: Map<string, TerminalSession> = g.__surgent_terminalSessions;
+
+function killProcessTree(pid: number): void {
+	if (isWin) {
+		try {
+			Bun.spawnSync(["taskkill", "/PID", String(pid), "/T", "/F"], {
+				stdio: ["ignore", "ignore", "ignore"],
+			});
+		} catch {}
+		return;
+	}
+
+	try {
+		const result = Bun.spawnSync(["pgrep", "-P", String(pid)]);
+		if (result.stdout) {
+			for (const childPid of result.stdout
+				.toString()
+				.trim()
+				.split("\n")
+				.filter(Boolean)) {
+				killProcessTree(Number(childPid));
+			}
+		}
+	} catch {}
+
+	try {
+		process.kill(pid, "SIGTERM");
+	} catch {}
+}
+
+function sendToClient(session: TerminalSession, msg: object) {
+	if (session.ws?.readyState === 1) {
+		session.ws.send(JSON.stringify(msg));
+	}
+}
+
+export const TerminalService = {
+	async createPane(
+		paneId: string,
+		agentKind: AgentKind,
+		ws: ServerWebSocket<any>,
+		cols = 80,
+		rows = 24,
+		cwd?: string
+	): Promise<{ ok: boolean; error?: string }> {
+		if (sessions.has(paneId))
+			return { ok: false, error: "Pane already exists" };
+
+		const resolved = await resolveInteractiveAgentCommand(
+			agentKind,
+			PROJECT_ROOT
+		);
+		if ("error" in resolved) return { ok: false, error: resolved.error };
+
+		try {
+			const outputBuffer = new OutputBuffer();
+			const decoder = new TextDecoder("utf-8");
+
+			const terminal = new Bun.Terminal({
+				cols,
+				rows,
+				data(_term, data) {
+					const session = sessions.get(paneId);
+					if (session) {
+						const text = session.decoder.decode(data, { stream: true });
+						session.outputBuffer.push(text);
+						sendToClient(session, {
+							type: "terminal:output",
+							paneId,
+							data: text,
+						});
+					}
+				},
+			});
+
+			const proc = Bun.spawn(resolved.cmd, {
+				terminal,
+				env: { ...process.env, TERM: "xterm-256color" },
+				cwd: cwd || process.cwd(),
+			});
+
+			const session: TerminalSession = {
+				terminal,
+				proc,
+				agentKind,
+				paneId,
+				ws,
+				outputBuffer,
+				decoder,
+			};
+			sessions.set(paneId, session);
+
+			proc.exited.then((code) => {
+				const s = sessions.get(paneId);
+				if (s) {
+					sendToClient(s, { type: "terminal:exit", paneId, exitCode: code });
+					terminal.close();
+					sessions.delete(paneId);
+				}
+			});
+
+			return { ok: true };
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : "Failed to spawn process",
+			};
+		}
+	},
+
+	write(paneId: string, data: string): { ok: boolean; error?: string } {
+		const session = sessions.get(paneId);
+		if (!session) return { ok: false, error: "Pane not found" };
+		try {
+			session.terminal.write(data);
+			return { ok: true };
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : "Failed to write",
+			};
+		}
+	},
+
+	resize(paneId: string, cols: number, rows: number): { ok: boolean } {
+		const session = sessions.get(paneId);
+		if (!session) return { ok: false };
+		try {
+			session.terminal.resize(cols, rows);
+		} catch {}
+		return { ok: true };
+	},
+
+	destroyPane(paneId: string): { ok: boolean } {
+		const session = sessions.get(paneId);
+		if (!session) return { ok: true };
+		try {
+			if (session.proc.pid) killProcessTree(session.proc.pid);
+			session.terminal.close();
+		} catch {}
+		sessions.delete(paneId);
+		return { ok: true };
+	},
+
+	cleanupWs(ws: ServerWebSocket<any>) {
+		for (const session of sessions.values())
+			if (session.ws === ws) session.ws = null;
+	},
+
+	reassignWs(
+		paneId: string,
+		ws: ServerWebSocket<any>
+	): { ok: boolean; buffer?: string } {
+		const session = sessions.get(paneId);
+		if (!session) return { ok: false };
+		session.ws = ws;
+		return { ok: true, buffer: session.outputBuffer.drain() || undefined };
+	},
+
+	listSessions() {
+		return Array.from(sessions.values()).map((s) => ({
+			paneId: s.paneId,
+			agentKind: s.agentKind,
+		}));
+	},
+
+	destroyAll() {
+		for (const [paneId, session] of sessions) {
+			try {
+				if (session.proc.pid) killProcessTree(session.proc.pid);
+			} catch {}
+			try {
+				session.terminal.close();
+			} catch {}
+			sessions.delete(paneId);
+		}
+	},
+};
+
+function isRealFolder(name: string): boolean {
+	const excluded = [".app", ".bundle", ".plugin", ".kext", ".framework"];
+	return !excluded.some((ext) => name.toLowerCase().endsWith(ext));
+}
+
+async function listDirectories(
+	basePath: string
+): Promise<Array<{ name: string; path: string }>> {
+	const results: Array<{ name: string; path: string }> = [];
+	try {
+		const entries = await readdir(basePath, { withFileTypes: true });
+		for (const entry of entries) {
+			if (
+				entry.isDirectory() &&
+				!entry.name.startsWith(".") &&
+				isRealFolder(entry.name)
+			) {
+				results.push({ name: entry.name, path: resolve(basePath, entry.name) });
+			}
+		}
+	} catch {}
+	return results.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function searchDirectories(
+	query: string
+): Promise<Array<{ name: string; path: string }>> {
+	type DirEntry = { name: string; path: string };
+	const exactMatches: DirEntry[] = [];
+	const prefixMatches: DirEntry[] = [];
+	const containsMatches: DirEntry[] = [];
+
+	const home = homedir();
+	const searchPaths = [
+		home,
+		resolve(home, "Desktop"),
+		resolve(home, "Documents"),
+		resolve(home, "Projects"),
+		resolve(home, "Developer"),
+		resolve(home, "Code"),
+		resolve(home, "Work"),
+		resolve(home, "Sites"),
+		resolve(PROJECT_ROOT, "apps"),
+	];
+
+	const lowerQuery = query.toLowerCase();
+
+	const categorizeMatch = (dir: { name: string; path: string }) => {
+		const lowerName = dir.name.toLowerCase();
+		if (lowerName === lowerQuery) exactMatches.push(dir);
+		else if (lowerName.startsWith(lowerQuery)) prefixMatches.push(dir);
+		else if (lowerName.includes(lowerQuery)) containsMatches.push(dir);
+	};
+
+	for (const searchPath of searchPaths) {
+		try {
+			const dirs = await listDirectories(searchPath);
+			for (const dir of dirs) {
+				categorizeMatch(dir);
+				try {
+					const subDirs = await listDirectories(dir.path);
+					for (const subDir of subDirs) {
+						if (subDir.name === dir.name) continue;
+						categorizeMatch(subDir);
+					}
+				} catch {}
+			}
+		} catch {}
+	}
+
+	const seen = new Set<string>();
+	return [...exactMatches, ...prefixMatches, ...containsMatches]
+		.filter((r) => {
+			if (seen.has(r.path)) return false;
+			seen.add(r.path);
+			return true;
+		})
+		.slice(0, 20);
+}
+
+async function findQuickPicks(): Promise<
+	Array<{ name: string; path: string; isGitRepo: boolean }>
+> {
+	const home = homedir();
+	const commonPaths = [
+		"Desktop",
+		"Documents",
+		"Projects",
+		"Developer",
+		"Code",
+		"Work",
+		"Sites",
+		"repos",
+		"src",
+		"dev",
+	].map((label) => resolve(home, label));
+
+	const results: Array<{
+		name: string;
+		path: string;
+		isGitRepo: boolean;
+		mtime: number;
+	}> = [];
+
+	async function checkGitRepo(dirPath: string, name: string): Promise<boolean> {
+		try {
+			const gitStat = await stat(resolve(dirPath, ".git"));
+			if (gitStat.isDirectory()) {
+				const dirStat = await stat(dirPath);
+				results.push({
+					name,
+					path: dirPath,
+					isGitRepo: true,
+					mtime: dirStat.mtimeMs,
+				});
+				return true;
+			}
+		} catch {}
+		return false;
+	}
+
+	for (const basePath of commonPaths) {
+		try {
+			const stats = await stat(basePath);
+			if (!stats.isDirectory()) continue;
+
+			const dirs = await readdir(basePath, { withFileTypes: true });
+			for (const entry of dirs) {
+				if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+
+				const fullPath = resolve(basePath, entry.name);
+				if (!(await checkGitRepo(fullPath, entry.name))) {
+					try {
+						const subDirs = await readdir(fullPath, { withFileTypes: true });
+						for (const subEntry of subDirs) {
+							if (!subEntry.isDirectory() || subEntry.name.startsWith("."))
+								continue;
+							await checkGitRepo(
+								resolve(fullPath, subEntry.name),
+								subEntry.name
+							);
+						}
+					} catch {}
+				}
+			}
+		} catch {}
+	}
+
+	results.sort((a, b) => b.mtime - a.mtime);
+	const seen = new Set<string>();
+	return results
+		.filter((r) => {
+			if (seen.has(r.path)) return false;
+			seen.add(r.path);
+			return true;
+		})
+		.slice(0, 8)
+		.map(({ name, path, isGitRepo }) => ({ name, path, isGitRepo }));
+}
+
+interface RunningPort {
+	port: number;
+	pid: number;
+	command: string;
+	name: string;
+}
+
+const DEV_PORT_RANGES = [{ start: 3000, end: 4000 }];
+const DEV_COMMANDS = new Set([
+	"node",
+	"bun",
+	"deno",
+	"ruby",
+	"rails",
+	"go",
+	"cargo",
+	"java",
+	"gradle",
+	"php",
+	"artisan",
+	"nginx",
+	"caddy",
+]);
+const EXCLUDED_COMMANDS = new Set([
+	"rapportd",
+	"airportd",
+	"configd",
+	"mDNSResponder",
+	"ControlCe",
+	"ControlCenter",
+]);
+
+function isDevPort(port: number): boolean {
+	return DEV_PORT_RANGES.some(
+		(range) => port >= range.start && port <= range.end
+	);
+}
+
+async function getRunningPorts(): Promise<RunningPort[]> {
+	try {
+		if (isWin) {
+			const output = (await Bun.$`netstat -ano`.quiet().nothrow()).text();
+			const ports: RunningPort[] = [];
+			const seenPorts = new Set<number>();
+
+			for (const line of output.trim().split("\n")) {
+				if (!line.includes("LISTENING")) continue;
+				const parts = line.trim().split(/\s+/);
+				if (parts.length < 5) continue;
+				const portMatch = parts[1].match(/:(\d+)$/);
+				if (!portMatch) continue;
+				const port = parseInt(portMatch[1], 10);
+				const pid = parseInt(parts[4], 10);
+				if (seenPorts.has(port) || !isDevPort(port)) continue;
+				seenPorts.add(port);
+				ports.push({ port, pid, command: "unknown", name: `port ${port}` });
+			}
+			return ports.sort((a, b) => a.port - b.port);
+		}
+
+		const output = (
+			await Bun.$`/usr/sbin/lsof -i -P -n -sTCP:LISTEN`.quiet().nothrow()
+		).text();
+		const ports: RunningPort[] = [];
+		const seenPorts = new Set<number>();
+
+		for (const line of output.trim().split("\n").slice(1)) {
+			const parts = line.split(/\s+/);
+			if (parts.length < 9) continue;
+
+			const command = parts[0];
+			const pid = parseInt(parts[1], 10);
+			const portMatch = parts[8].match(/:(\d+)$/);
+			if (!portMatch) continue;
+
+			const port = parseInt(portMatch[1], 10);
+			if (seenPorts.has(port) || EXCLUDED_COMMANDS.has(command)) continue;
+			if (!isDevPort(port) && !DEV_COMMANDS.has(command)) continue;
+			seenPorts.add(port);
+
+			const nameMap: Record<string, string> = {
+				node: "node server",
+				bun: "bun server",
+				ruby: "Ruby server",
+				nginx: "nginx",
+			};
+			ports.push({ port, pid, command, name: nameMap[command] || command });
+		}
+
+		return ports.sort((a, b) => a.port - b.port);
+	} catch (e) {
+		console.error("Failed to get running ports:", e);
+		return [];
+	}
+}
+
+async function killPort(pid: number): Promise<{ ok: boolean; error?: string }> {
+	try {
+		await (isWin
+			? Bun.$`taskkill /PID ${pid} /F`.quiet()
+			: Bun.$`kill -9 ${pid}`.quiet());
+		return { ok: true };
+	} catch (e) {
+		return {
+			ok: false,
+			error: e instanceof Error ? e.message : "Failed to kill process",
+		};
+	}
+}
+
+const TERMINAL_STATE_PATH = resolve(
+	import.meta.dir,
+	"../../data/terminal-state.json"
+);
+
+interface ClaudeProcess {
+	pid: number;
+	ppid: number;
+	cpu: number;
+	mem: number;
+	rss: number;
+	cwd: string;
+	command: string;
+	elapsed: string;
+}
+
+async function getClaudeProcesses(): Promise<ClaudeProcess[]> {
+	try {
+		if (isWin) return [];
+		const output = (
+			await Bun.$`ps -eo pid,ppid,pcpu,pmem,rss,etime,comm,args`
+				.quiet()
+				.nothrow()
+		).text();
+		const processes: ClaudeProcess[] = [];
+
+		for (const line of output.trim().split("\n").slice(1)) {
+			const parts = line.trim().split(/\s+/);
+			if (parts.length < 8 || parts[6] !== "claude") continue;
+
+			const pid = parseInt(parts[0], 10);
+			if (pid === process.pid) continue;
+
+			let cwd = "";
+			try {
+				const cwdOutput = (
+					await Bun.$`/usr/sbin/lsof -p ${pid} -Fn 2>/dev/null | grep '^n/' | head -1`
+						.quiet()
+						.nothrow()
+				)
+					.text()
+					.trim();
+				if (cwdOutput.startsWith("n/")) cwd = cwdOutput.slice(1);
+			} catch {}
+
+			processes.push({
+				pid,
+				ppid: parseInt(parts[1], 10),
+				cpu: parseFloat(parts[2]),
+				mem: parseFloat(parts[3]),
+				rss: parseInt(parts[4], 10),
+				cwd,
+				command: parts.slice(7).join(" "),
+				elapsed: parts[5],
+			});
+		}
+
+		const claudePids = new Set(processes.map((p) => p.pid));
+		return processes
+			.filter((p) => !claudePids.has(p.ppid))
+			.map((parent) => {
+				const children = processes.filter((p) => p.ppid === parent.pid);
+				return {
+					...parent,
+					cpu:
+						Math.round(
+							children.reduce((sum, c) => sum + c.cpu, parent.cpu) * 10
+						) / 10,
+					rss: children.reduce((sum, c) => sum + c.rss, parent.rss),
+					mem:
+						Math.round(
+							children.reduce((sum, c) => sum + c.mem, parent.mem) * 10
+						) / 10,
+				};
+			});
+	} catch (e) {
+		console.error("Failed to get claude processes:", e);
+		return [];
+	}
+}
+
+async function killClaudeProcess(
+	pid: number
+): Promise<{ ok: boolean; error?: string }> {
+	try {
+		killProcessTree(pid);
+		await new Promise((r) => setTimeout(r, 500));
+		try {
+			process.kill(pid, 0);
+			process.kill(pid, "SIGKILL");
+		} catch {}
+		return { ok: true };
+	} catch (e) {
+		return {
+			ok: false,
+			error: e instanceof Error ? e.message : "Failed to kill process",
+		};
+	}
+}
+
+async function killAllClaudeProcesses(): Promise<{
+	ok: boolean;
+	killed: number;
+}> {
+	try {
+		await Bun.$`pkill -9 -f "^claude"`.quiet().nothrow();
+		await Bun.$`killall -9 claude`.quiet().nothrow();
+	} catch {}
+	return { ok: true, killed: 0 };
+}
+
+function requirePid(req: Request): Promise<{ pid: number } | Response> {
+	return req.json().then(({ pid }) => {
+		if (!pid || typeof pid !== "number") return badRequest("Missing pid");
+		return { pid };
+	});
+}
+
+export function terminalRoutes() {
+	return {
+		"/api/terminal/state": {
+			GET: tryRoute(async () => {
+				return Response.json(await readJson(TERMINAL_STATE_PATH, null));
+			}),
+			POST: tryRoute(async (req) => {
+				await writeJson(TERMINAL_STATE_PATH, await req.json());
+				return Response.json({ ok: true });
+			}),
+		},
+		"/api/terminal/list": {
+			GET: () => Response.json({ sessions: TerminalService.listSessions() }),
+		},
+		"/api/terminal/agent-sessions": {
+			GET: () => Response.json({ sessions: ChatService.listSessions() }),
+		},
+		"/api/terminal/ports": {
+			GET: tryRoute(async () =>
+				Response.json({ ports: await getRunningPorts() })
+			),
+		},
+		"/api/terminal/ports/kill": {
+			POST: tryRoute(async (req) => {
+				const parsed = await requirePid(req);
+				if (parsed instanceof Response) return parsed;
+				return Response.json(await killPort(parsed.pid));
+			}),
+		},
+		"/api/terminal/claude-processes": {
+			GET: tryRoute(async () =>
+				Response.json({ processes: await getClaudeProcesses() })
+			),
+		},
+		"/api/terminal/claude-processes/kill": {
+			POST: tryRoute(async (req) => {
+				const parsed = await requirePid(req);
+				if (parsed instanceof Response) return parsed;
+				return Response.json(await killClaudeProcess(parsed.pid));
+			}),
+		},
+		"/api/terminal/claude-processes/kill-all": {
+			POST: tryRoute(async () => Response.json(await killAllClaudeProcesses())),
+		},
+		"/api/terminal/directories": {
+			GET: tryRoute(async (req) => {
+				const url = new URL(req.url);
+				const query = url.searchParams.get("q") || "";
+				const path = url.searchParams.get("path");
+
+				if (path) {
+					return Response.json({
+						directories: await listDirectories(path),
+						parent: dirname(path) !== path ? dirname(path) : null,
+					});
+				}
+				if (query) {
+					return Response.json({
+						directories: await searchDirectories(query),
+						parent: null,
+					});
+				}
+
+				const home = homedir();
+				if (url.searchParams.get("quickPicks") === "true") {
+					return Response.json({ quickPicks: await findQuickPicks(), home });
+				}
+
+				return Response.json({
+					directories: await listDirectories(home),
+					parent: null,
+					home,
+				});
+			}),
+		},
+	};
+}

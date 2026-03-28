@@ -1,0 +1,38 @@
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+.idea
+.DS_Store
+templates/dev-app/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.build/
+.swiftpm/
+Package.resolved
+src/data/terminal-state.json
+data/terminal-state.json
+
+src/data/checkpoints.json

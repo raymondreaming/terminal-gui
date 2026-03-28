@@ -1,0 +1,180 @@
+import type React from "react";
+import { memo, useCallback, useLayoutEffect, useRef, useState } from "react";
+import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
+import type {
+	TerminalPaneModel,
+	TerminalTheme,
+} from "../../lib/terminal-utils.ts";
+import { TerminalPaneView } from "./TerminalPaneView.tsx";
+
+interface TerminalGridProps {
+	panes: TerminalPaneModel[];
+	selectedPaneId: string | null;
+	columns: number;
+	rows: number;
+	layoutMode: "grid" | "rows";
+	theme: TerminalTheme;
+	fontSize: number;
+	fontFamily: string;
+	onSelectPane: (paneId: string) => void;
+	onClosePane: (paneId: string, force?: boolean) => void;
+	onDirectorySelect: (paneId: string, path: string | null) => void;
+	onDirectoryCancel: (paneId: string) => void;
+	onChatRef: (paneId: string, handle: ClaudeChatHandle | null) => void;
+	onAgentStatusChange?: (paneId: string, status: string) => void;
+	onReorderPanes?: (fromIndex: number, toIndex: number) => void;
+}
+
+const paneViewProps = (
+	p: TerminalGridProps,
+	pane: TerminalPaneModel,
+	idx: number,
+	onDragStart: (e: React.DragEvent, i: number) => void,
+	onDragEnd: () => void
+) => ({
+	pane,
+	isSelected: pane.id === p.selectedPaneId,
+	theme: p.theme,
+	fontSize: p.fontSize,
+	fontFamily: p.fontFamily,
+	onSelect: p.onSelectPane,
+	onClose: p.onClosePane,
+	onDirectorySelect: p.onDirectorySelect,
+	onDirectoryCancel: p.onDirectoryCancel,
+	chatRef: p.onChatRef,
+	onAgentStatusChange: p.onAgentStatusChange,
+	paneIndex: idx,
+	onHeaderDragStart: onDragStart,
+	onHeaderDragEnd: onDragEnd,
+});
+
+export const TerminalGrid = memo(function TerminalGrid(
+	props: TerminalGridProps
+) {
+	const { panes, columns, rows, layoutMode, theme, onReorderPanes } = props;
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [containerHeight, setContainerHeight] = useState(0);
+	const dragIndexRef = useRef<number | null>(null);
+	const [dragIndex, setDragIndex] = useState<number | null>(null);
+	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+	useLayoutEffect(() => {
+		const el = containerRef.current?.parentElement;
+		if (!el) return;
+		const ro = new ResizeObserver(([entry]) =>
+			setContainerHeight(entry.contentRect.height)
+		);
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, []);
+
+	const handleHeaderDragStart = useCallback(
+		(e: React.DragEvent, index: number) => {
+			dragIndexRef.current = index;
+			setDragIndex(index);
+			e.dataTransfer.effectAllowed = "move";
+		},
+		[]
+	);
+
+	const handleHeaderDragEnd = useCallback(() => {
+		dragIndexRef.current = null;
+		setDragIndex(null);
+		setDragOverIndex(null);
+	}, []);
+
+	const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = "move";
+		setDragOverIndex(index);
+	}, []);
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent, toIndex: number) => {
+			e.preventDefault();
+			const fromIndex = dragIndexRef.current;
+			if (fromIndex !== null && fromIndex !== toIndex && onReorderPanes)
+				onReorderPanes(fromIndex, toIndex);
+			dragIndexRef.current = null;
+			setDragIndex(null);
+			setDragOverIndex(null);
+		},
+		[onReorderPanes]
+	);
+
+	const cellStyle = (idx: number): React.CSSProperties =>
+		({
+			"--tw-ring-color":
+				dragOverIndex === idx && dragIndex !== idx
+					? (theme.cursor ?? "#d6ff00")
+					: theme.separator,
+			opacity: dragIndex === idx ? 0.4 : 1,
+		}) as React.CSSProperties;
+
+	if (layoutMode === "rows") {
+		return (
+			<div
+				ref={containerRef}
+				className="flex bg-surgent-bg h-full overflow-x-auto overscroll-none"
+			>
+				{panes.map((pane, idx) => (
+					<div
+						key={pane.id}
+						className="shrink-0 h-full overflow-hidden border-r border-surgent-border transition-all"
+						style={{ width: 400, ...cellStyle(idx) }}
+						onDragOver={(e) => handleDragOver(e, idx)}
+						onDrop={(e) => handleDrop(e, idx)}
+						onDragLeave={() => setDragOverIndex(null)}
+					>
+						<TerminalPaneView
+							{...paneViewProps(
+								props,
+								pane,
+								idx,
+								handleHeaderDragStart,
+								handleHeaderDragEnd
+							)}
+						/>
+					</div>
+				))}
+			</div>
+		);
+	}
+
+	const totalGridRows = Math.ceil(panes.length / columns);
+	const availableHeight = containerHeight;
+	const rowHeight =
+		availableHeight > 0 ? Math.floor(availableHeight / rows) : 400;
+
+	return (
+		<div
+			ref={containerRef}
+			className="grid bg-surgent-bg"
+			style={{
+				gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+				gridTemplateRows: `repeat(${totalGridRows}, ${rowHeight}px)`,
+			}}
+		>
+			{panes.map((pane, idx) => (
+				<div
+					key={pane.id}
+					className="overflow-hidden border border-surgent-border transition-all"
+					style={cellStyle(idx)}
+					onDragOver={(e) => handleDragOver(e, idx)}
+					onDrop={(e) => handleDrop(e, idx)}
+					onDragLeave={() => setDragOverIndex(null)}
+				>
+					<TerminalPaneView
+						{...paneViewProps(
+							props,
+							pane,
+							idx,
+							handleHeaderDragStart,
+							handleHeaderDragEnd
+						)}
+					/>
+				</div>
+			))}
+		</div>
+	);
+});
