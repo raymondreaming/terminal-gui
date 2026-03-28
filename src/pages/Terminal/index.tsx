@@ -93,6 +93,18 @@ function cwdLabel(cwd: string): string {
 	return parts[parts.length - 1] || cwd;
 }
 
+function TerminalEmptyStateBrand() {
+	return (
+		<div className="rounded-2xl border border-surgent-border bg-surgent-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+			<img
+				src="/logo.png"
+				alt="Terminal GUI logo"
+				className="h-14 w-14 rounded-xl"
+			/>
+		</div>
+	);
+}
+
 type GroupAction =
 	| {
 			type: "addPane";
@@ -542,9 +554,18 @@ export function TerminalPage({
 				<div className="flex-1 overflow-y-auto">
 					{!currentGroup || currentGroup.panes.length === 0 ? (
 						<div className="flex h-full items-center justify-center">
-							<div className="text-center">
-								<p className="text-xs text-surgent-text-3 mb-3">No sessions</p>
-								<NewSessionButtons onAddPane={handleAddPane} />
+							<div className="flex w-full max-w-sm flex-col items-center gap-4 px-6 text-center">
+								<TerminalEmptyStateBrand />
+								<div>
+									<p className="text-sm text-surgent-text-2">
+										Start a new terminal or agent session
+									</p>
+								</div>
+								<NewSessionButtons
+									labelPrefix="New"
+									layout="column"
+									onAddPane={handleAddPane}
+								/>
 							</div>
 						</div>
 					) : (
@@ -737,12 +758,12 @@ export function TerminalPage({
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
 								<EmptyState
-									icon="Terminal"
-									title="No sessions"
+									icon={<TerminalEmptyStateBrand />}
 									description="Start a new terminal or agent session"
 									action={
 										<NewSessionButtons
 											labelPrefix="New"
+											layout="column"
 											onAddPane={handleAddPane}
 										/>
 									}
