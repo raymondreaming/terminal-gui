@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# Build a polished DMG installer for Terminal GUI
+# Build a polished DMG installer for inferay
 # Usage: bash scripts/build-dmg.sh
 
 set -e
 
-APP_NAME="Terminal GUI"
-DMG_NAME="Terminal-GUI-Installer"
+APP_NAME="inferay"
+DMG_NAME="inferay-installer"
 BUILD_DIR="build/stable-macos-arm64"
 OUTPUT_DIR="artifacts"
 BACKGROUND="public/dmg-background.png"
 
-echo "Building Terminal GUI..."
+echo "Building inferay..."
 
 # Build the app first
 npm run build
@@ -21,7 +21,7 @@ echo "Creating polished DMG installer..."
 
 # Remove old DMGs
 rm -f "${OUTPUT_DIR}/${DMG_NAME}.dmg"
-rm -f "${OUTPUT_DIR}/stable-macos-arm64-TerminalGUI.dmg"
+rm -f "${OUTPUT_DIR}/stable-macos-arm64-inferay.dmg"
 
 # Create the polished DMG with create-dmg
 create-dmg \

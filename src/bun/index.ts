@@ -104,7 +104,7 @@ const windowRpc = defineElectrobunRPC<WindowControlsRPC>("bun", {
 });
 
 mainWindow = new BrowserWindow({
-	title: "Terminal GUI",
+	title: "inferay",
 	url: rendererUrl,
 	rpc: windowRpc,
 	titleBarStyle: "hidden",

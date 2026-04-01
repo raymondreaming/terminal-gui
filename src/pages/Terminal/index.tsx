@@ -99,11 +99,7 @@ function cwdLabel(cwd: string): string {
 function TerminalEmptyStateBrand() {
 	return (
 		<div className="rounded-2xl border border-surgent-border bg-surgent-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
-			<img
-				src={logoUrl}
-				alt="Terminal GUI logo"
-				className="h-14 w-14 rounded-xl"
-			/>
+			<img src={logoUrl} alt="inferay logo" className="h-14 w-14 rounded-xl" />
 		</div>
 	);
 }

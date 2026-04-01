@@ -2,10 +2,10 @@ import type { ElectrobunConfig } from "electrobun";
 
 const config: ElectrobunConfig = {
 	app: {
-		name: "Terminal GUI",
-		identifier: "com.realitydesigners.terminal-gui",
+		name: "inferay",
+		identifier: "com.inferay.app",
 		version: "1.0.0",
-		description: "AI-powered multi-pane terminal desktop app",
+		description: "Run Claude and Codex side by side in a multi-pane terminal",
 	},
 	build: {
 		bun: {
