@@ -52,15 +52,17 @@ export const AgentSidebar = memo(function AgentSidebar({
 	return (
 		<div className="w-48 flex-1 overflow-y-auto">
 			<div className="px-2 py-2">
-				<button
-					onClick={onCollapse}
-					className="flex items-center gap-1.5 px-1 mb-2 text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
-				>
-					<IconPanelLeft size={12} className="rotate-180" />
-					<span className="text-[9px] font-bold tracking-widest uppercase">
-						Agents
-					</span>
-				</button>
+				<div className="electrobun-webkit-app-region-drag py-1">
+					<button
+						onClick={onCollapse}
+						className="electrobun-webkit-app-region-no-drag flex items-center gap-1.5 px-1 text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
+					>
+						<IconPanelLeft size={12} className="rotate-180" />
+						<span className="text-[9px] font-bold tracking-widest uppercase">
+							Agents
+						</span>
+					</button>
+				</div>
 				{panes.map((pane) => {
 					const isSelected = pane.id === selectedPaneId;
 					const s = agentStatuses.get(pane.id) ?? "idle";

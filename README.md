@@ -93,6 +93,70 @@ Open [http://localhost:4000](http://localhost:4000) in Safari.
 | `bun run format` | Format source with Biome      |
 | `bun run check`  | Lint and check with Biome     |
 
+## Building for Distribution
+
+Terminal GUI can be packaged as a native macOS app using [Electrobun](https://electrobun.dev).
+
+### Build the DMG
+
+```bash
+# Install dependencies
+bun install
+
+# Build the app and create DMG
+npm run build
+bash scripts/electrobun.sh build --env=stable
+```
+
+After the build completes, you'll find these files in `artifacts/`:
+
+| File                                         | Description           |
+| -------------------------------------------- | --------------------- |
+| `stable-macos-arm64-TerminalGUI.dmg`         | The installer DMG     |
+| `stable-macos-arm64-TerminalGUI.app.tar.zst` | Compressed app bundle |
+| `stable-macos-arm64-update.json`             | Update metadata       |
+
+### Test Locally
+
+```bash
+open artifacts/stable-macos-arm64-TerminalGUI.dmg
+```
+
+Mount the DMG, drag the app to Applications, and run it.
+
+### Installing (for Users)
+
+1. Download the `.dmg` file
+2. Double-click to mount it
+3. Drag **Terminal GUI** to your **Applications** folder
+4. First launch: Right-click the app → **Open** (to bypass unsigned app warning)
+   - Or run: `xattr -cr /Applications/Terminal\ GUI.app`
+5. The app is now ready to use
+
+### Code Signing (Optional)
+
+For public distribution without security warnings, you'll need an Apple Developer account ($99/year).
+
+Add to `electrobun.config.ts`:
+
+```typescript
+mac: {
+  codesign: true,
+  notarize: true,
+}
+```
+
+Set environment variables:
+
+```bash
+export ELECTROBUN_DEVELOPER_ID="Your Developer ID"
+export ELECTROBUN_TEAMID="XXXXXXXXXX"
+export ELECTROBUN_APPLEID="your@email.com"
+export ELECTROBUN_APPLEIDPASS="app-specific-password"
+```
+
+Then rebuild with `--env=stable`.
+
 ## Project structure
 
 ```

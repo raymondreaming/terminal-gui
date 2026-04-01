@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { readStoredBoolean, writeStoredValue } from "../../lib/stored-json.ts";
 
 function IconTerm({
@@ -122,6 +123,8 @@ const navItems: NavItem[] = [
 	{ label: "Prompts", path: "/prompts", icon: IconSlash },
 ];
 
+const logoUrl = resolveServerUrl("/logo.png");
+
 export function Sidebar() {
 	const [collapsed, setCollapsed] = useState(() => {
 		return readStoredBoolean("sidebar-collapsed");
@@ -169,12 +172,12 @@ export function Sidebar() {
 				collapsed ? "w-12" : "w-48"
 			}`}
 		>
-			<div className="flex h-12 items-center px-3 border-b border-surgent-border">
+			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-surgent-border">
 				<button
 					onClick={() => setCollapsed(!collapsed)}
-					className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-surgent-text/[0.05] transition-colors"
+					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-surgent-text/[0.05] transition-colors"
 				>
-					<img src="/logo.png" alt="" className="h-7 w-7 rounded" />
+					<img src={logoUrl} alt="" className="h-7 w-7 rounded" />
 				</button>
 			</div>
 			<nav className="flex-1 overflow-y-auto py-1.5 scrollbar-none">

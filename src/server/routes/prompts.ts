@@ -72,7 +72,9 @@ export function promptRoutes() {
 }
 
 // These need to be handled in the fetch handler since Bun routes don't support path params
-export function handlePromptRequest(req: Request): Response | null {
+export function handlePromptRequest(
+	req: Request
+): Response | Promise<Response> | null {
 	const url = new URL(req.url);
 	const match = url.pathname.match(/^\/api\/prompts\/([^/]+)(\/usage)?$/);
 	if (!match) return null;

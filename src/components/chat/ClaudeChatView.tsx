@@ -214,8 +214,23 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		},
 		ref
 	) {
-		const [messages, setMessages] = useState<ChatMessage[]>(() =>
+		const [messages, setMessagesRaw] = useState<ChatMessage[]>(() =>
 			loadMessages(paneId)
+		);
+		const messagesRef = useRef(messages);
+		messagesRef.current = messages;
+		const setMessages = useCallback(
+			(update: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+				setMessagesRaw((prev) => {
+					const next =
+						typeof update === "function"
+							? (update as (prev: ChatMessage[]) => ChatMessage[])(prev)
+							: update;
+					messagesRef.current = next;
+					return next;
+				});
+			},
+			[]
 		);
 		const [input, setInputRaw] = useState(() => {
 			try {
@@ -500,8 +515,6 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		// Debounced save as crash safety net (2s), skips during active streaming
 		// Main saves happen on chat:done/chat:error
 		const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-		const messagesRef = useRef(messages);
-		messagesRef.current = messages;
 		useEffect(() => {
 			if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 			// Don't save on every streaming delta — wait for a pause
@@ -594,6 +607,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					currentAssistantRef.current = null;
 					currentToolRef.current = null;
 					hasStreamedRef.current = false;
+					wsClient.send({ type: "chat:reconnect", paneId });
 					const next = queueRef.current.shift();
 					setQueuedMessages([...queueRef.current]);
 					if (next) {

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+		/>
+		<title>Terminal GUI</title>
+		<meta name="theme-color" content="#09090b" />
+		<meta name="color-scheme" content="dark" />
+		<meta
+			name="description"
+			content="Terminal GUI — a multi-pane terminal manager"
+		/>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<script>
+			(function () {
+				try {
+					var id = localStorage.getItem("surgent-app-theme-id");
+					if (!id || id === "default") return;
+					var colors = null,
+						light = false;
+					if (id === "custom") {
+						var c = localStorage.getItem("surgent-app-custom-theme");
+						if (c) {
+							colors = JSON.parse(c);
+							var bg = colors.bg;
+							if (bg) {
+								var n = parseInt(bg.replace("#", ""), 16);
+								light =
+									(((n >> 16) & 255) * 299 +
+										((n >> 8) & 255) * 587 +
+										(n & 255) * 114) /
+										1000 >
+									128;
+							}
+						}
+					}
+					if (colors) {
+						var root = document.documentElement;
+						for (var k in colors)
+							root.style.setProperty("--surgent-" + k, colors[k]);
+						root.classList.toggle("light", light);
+					}
+				} catch {}
+			})();
+		</script>
+		<style>
+			__INLINE_APP_CSS__
+		</style>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="./index.js"></script>
+	</body>
+</html>

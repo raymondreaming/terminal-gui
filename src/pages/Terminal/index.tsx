@@ -34,6 +34,7 @@ import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { wsClient } from "../../lib/websocket.ts";
+import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
@@ -87,6 +88,8 @@ function markPopoutRestored() {
 	} catch {}
 }
 
+const logoUrl = resolveServerUrl("/logo.png");
+
 function cwdLabel(cwd: string): string {
 	if (!cwd) return "unknown";
 	const parts = cwd.split("/");
@@ -97,7 +100,7 @@ function TerminalEmptyStateBrand() {
 	return (
 		<div className="rounded-2xl border border-surgent-border bg-surgent-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
 			<img
-				src="/logo.png"
+				src={logoUrl}
 				alt="Terminal GUI logo"
 				className="h-14 w-14 rounded-xl"
 			/>
@@ -623,9 +626,9 @@ export function TerminalPage({
 		>
 			<div className="relative flex flex-1 flex-col overflow-hidden">
 				<div
-					className={`relative flex items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2 sm:gap-3 sm:px-3 ${isStandalone ? "py-1.5" : "h-12"}`}
+					className={`electrobun-webkit-app-region-drag relative flex items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2 sm:gap-3 sm:px-3 ${isStandalone ? "py-1.5" : "h-12"}`}
 				>
-					<div className="relative z-10 overflow-x-auto shrink-0">
+					<div className="electrobun-webkit-app-region-no-drag relative z-10 overflow-x-auto shrink-0">
 						<GroupTabs
 							items={groupTabItems}
 							activeId={selectedGroupId}
@@ -637,7 +640,7 @@ export function TerminalPage({
 						/>
 					</div>
 					<div className="flex-1 min-w-0" />
-					<div className="relative z-10 flex items-center gap-2 sm:gap-3 shrink-0">
+					<div className="electrobun-webkit-app-region-no-drag relative z-10 flex items-center gap-2 sm:gap-3 shrink-0">
 						<Button
 							size="sm"
 							variant={showSettings ? "secondary" : "ghost"}

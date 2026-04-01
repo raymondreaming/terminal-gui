@@ -1,3 +1,5 @@
+import { getServerWebSocketUrl } from "./server-origin.ts";
+
 type MessageHandler = (data: any) => void;
 type BinaryMessageHandler = (data: ArrayBuffer) => void;
 
@@ -22,8 +24,12 @@ class WebSocketClient {
 	private pendingMessages: string[] = [];
 	private url: string;
 	constructor(host?: string) {
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		this.url = `${protocol}//${host || window.location.host}/ws`;
+		if (host) {
+			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+			this.url = `${protocol}//${host}/ws`;
+			return;
+		}
+		this.url = getServerWebSocketUrl("/ws");
 	}
 	connect() {
 		if (
