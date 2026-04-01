@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/frontend-React_19-61dafb?style=flat-square" />
   <img src="https://img.shields.io/badge/terminal-xterm.js-22c55e?style=flat-square" />
   <img src="https://img.shields.io/badge/styling-Tailwind_4-38bdf8?style=flat-square" />
-  <img src="https://img.shields.io/badge/PWA-installable-8b5cf6?style=flat-square" />
+  <img src="https://img.shields.io/badge/desktop-Electrobun-8b5cf6?style=flat-square" />
 </p>
 
 ---
@@ -49,11 +49,11 @@ Every pane is a real PTY. Every agent chat is a real conversation. Everything ru
 - Font family and size controls
 - Pane opacity slider
 
-**Installable PWA**
+**Native desktop app**
 
-- Add to Dock on macOS
-- Works offline-capable with service worker
-- Native app feel in standalone mode
+- Packaged with Electrobun for macOS
+- DMG installer with drag-to-Applications
+- Runs as a standalone native app
 
 **Developer sidebar**
 
@@ -61,39 +61,11 @@ Every pane is a real PTY. Every agent chat is a real conversation. Everything ru
 - Claude process manager — view, kill, bulk kill
 - Real-time WebSocket state sync
 
-## Quick start
+## Download
 
-```bash
-# Clone and install
-git clone <repo-url> terminal-gui
-cd terminal-gui
-bun install
+Download the latest release from our website and drag to Applications.
 
-# Build CSS and start
-bun run build
-bun run dev
-```
-
-Open [http://localhost:4000](http://localhost:4000) in Safari.
-
-### Install as a desktop app
-
-1. Open `localhost:4000` in **Safari**
-2. Click the **Share** button (top right)
-3. Select **Add to Dock**
-4. Terminal GUI now lives in your Dock as a standalone app
-
-## Scripts
-
-| Command          | Description                   |
-| ---------------- | ----------------------------- |
-| `bun run dev`    | Start the dev server with HMR |
-| `bun run build`  | Build Tailwind CSS            |
-| `bun run start`  | Start production server       |
-| `bun run format` | Format source with Biome      |
-| `bun run check`  | Lint and check with Biome     |
-
-## Building for Distribution
+## Building from Source
 
 Terminal GUI can be packaged as a native macOS app using [Electrobun](https://electrobun.dev).
 
@@ -103,23 +75,16 @@ Terminal GUI can be packaged as a native macOS app using [Electrobun](https://el
 # Install dependencies
 bun install
 
-# Build the app and create DMG
-npm run build
-bash scripts/electrobun.sh build --env=stable
+# Build the app and create polished DMG installer
+bash scripts/build-dmg.sh
 ```
 
-After the build completes, you'll find these files in `artifacts/`:
-
-| File                                         | Description           |
-| -------------------------------------------- | --------------------- |
-| `stable-macos-arm64-TerminalGUI.dmg`         | The installer DMG     |
-| `stable-macos-arm64-TerminalGUI.app.tar.zst` | Compressed app bundle |
-| `stable-macos-arm64-update.json`             | Update metadata       |
+After the build completes, you'll find the installer at `artifacts/Terminal-GUI-Installer.dmg`.
 
 ### Test Locally
 
 ```bash
-open artifacts/stable-macos-arm64-TerminalGUI.dmg
+open artifacts/Terminal-GUI-Installer.dmg
 ```
 
 Mount the DMG, drag the app to Applications, and run it.
@@ -179,7 +144,7 @@ terminal-gui/
       lib/              Path utils, route helpers
     data/
       prompts.json      Slash command library (local JSON)
-  public/               PWA icons, manifest, service worker
+  public/               App icons, DMG background
 ```
 
 ## Tech stack
