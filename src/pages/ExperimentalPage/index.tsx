@@ -2,6 +2,7 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	type ReactNode,
 } from "react";
@@ -81,11 +82,22 @@ function flattenSessions(groups: TerminalGroupModel[]): ExperimentalSession[] {
 					paneTitle: pane.title,
 					agentKind: pane.agentKind,
 					cwd: pane.cwd,
-					messageCount: readStoredMessages(pane.id).length,
+					messageCount: 0,
 				} satisfies ExperimentalSession,
 			];
 		})
 	);
+}
+
+// Stable session identity — only rebuild when pane IDs actually change
+let prevSessionKey = "";
+let prevSessions: ExperimentalSession[] = [];
+function stableSessions(next: ExperimentalSession[]): ExperimentalSession[] {
+	const key = next.map((s) => s.paneId).join(",");
+	if (key === prevSessionKey) return prevSessions;
+	prevSessionKey = key;
+	prevSessions = next;
+	return next;
 }
 
 function getAllFiles(project: GitProjectStatus | null): GitFileEntry[] {
@@ -114,7 +126,7 @@ export function ExperimentalPage() {
 
 	const terminalState = useMemo(() => loadTerminalState(), [refreshTick]);
 	const sessions = useMemo(
-		() => flattenSessions(terminalState?.groups ?? []),
+		() => stableSessions(flattenSessions(terminalState?.groups ?? [])),
 		[terminalState]
 	);
 	const { sessions: liveAgentSessions } = useAgentSessions();
@@ -138,7 +150,7 @@ export function ExperimentalPage() {
 	useEffect(() => {
 		const id = window.setInterval(
 			() => setRefreshTick((value) => value + 1),
-			1500
+			5000
 		);
 		return () => window.clearInterval(id);
 	}, []);
@@ -202,6 +214,11 @@ export function ExperimentalPage() {
 		[loadDiff]
 	);
 
+	const selectedFilesRef = useRef(selectedFiles);
+	selectedFilesRef.current = selectedFiles;
+	const requestRef = useRef(request);
+	requestRef.current = request;
+
 	useEffect(() => {
 		if (!selectedSession?.cwd) {
 			clearDiff();
@@ -216,7 +233,8 @@ export function ExperimentalPage() {
 			return;
 		}
 
-		const currentSelection = selectedFiles[selectedSession.paneId] ?? null;
+		const currentSelection =
+			selectedFilesRef.current[selectedSession.paneId] ?? null;
 		const matchingFile = currentSelection
 			? files.find(
 					(file) =>
@@ -236,10 +254,11 @@ export function ExperimentalPage() {
 				[selectedSession.paneId]: { path: target.path, staged: target.staged },
 			}));
 		}
+		const req = requestRef.current;
 		if (
-			request?.cwd !== selectedSession.cwd ||
-			request?.file !== target.path ||
-			request?.staged !== target.staged
+			req?.cwd !== selectedSession.cwd ||
+			req?.file !== target.path ||
+			req?.staged !== target.staged
 		) {
 			loadDiff({
 				cwd: selectedSession.cwd,
@@ -247,7 +266,7 @@ export function ExperimentalPage() {
 				staged: target.staged,
 			});
 		}
-	}, [clearDiff, files, loadDiff, request, selectedFiles, selectedSession]);
+	}, [clearDiff, files, loadDiff, selectedSession]);
 
 	const cycleSession = useCallback(
 		(direction: -1 | 1) => {

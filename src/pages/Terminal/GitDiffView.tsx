@@ -1,6 +1,7 @@
 import { memo, useMemo, useRef, useCallback, useState, useEffect } from "react";
 import type { HunkDiff, DiffLine } from "../../hooks/useGitDiff.ts";
 import { tokenizeLine } from "../../lib/syntax-tokens.ts";
+import { MarkdownPreview } from "../../components/MarkdownPreview.tsx";
 
 export type DiffViewMode = "split" | "stacked" | "hunks";
 
@@ -278,6 +279,29 @@ export const GitDiffView = memo(function GitDiffView({
 					<p className="max-w-xs text-center text-[11px] leading-5 text-surgent-text-3">
 						{statusMessage}
 					</p>
+				</div>
+			</div>
+		);
+	}
+
+	const isMarkdown = ext === "md" || ext === "mdx";
+	const markdownContent = isMarkdown
+		? diff.newLines
+				.filter((l) => l.type !== "hunk" && l.type !== "spacer")
+				.map((l) => l.content)
+				.join("\n")
+		: "";
+
+	if (isMarkdown) {
+		return (
+			<div className="flex h-full flex-col bg-surgent-bg">
+				{!hideHeader && (
+					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
+				)}
+				<div className="flex-1 overflow-y-auto p-6">
+					<div className="mx-auto max-w-3xl">
+						<MarkdownPreview content={markdownContent} />
+					</div>
 				</div>
 			</div>
 		);

@@ -144,6 +144,8 @@ export function Sidebar() {
 			if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
 			if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+				if (location.pathname.startsWith("/experimental")) return;
+
 				const currentIdx = navItems.findIndex((item) =>
 					location.pathname.startsWith(item.path)
 				);

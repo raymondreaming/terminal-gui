@@ -354,6 +354,10 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		const fileInputRef = useRef<HTMLInputElement>(null);
 		const currentBtwRef = useRef<string | null>(null);
 
+		useEffect(() => {
+			requestAnimationFrame(() => textareaRef.current?.focus());
+		}, [paneId]);
+
 		const appendLocalMessages = useCallback(
 			(pending: Array<Pick<ChatMessage, "role" | "content">>) => {
 				if (pending.length === 0) return;

@@ -36,3 +36,5 @@ src/data/terminal-state.json
 data/terminal-state.json
 
 src/data/checkpoints.json
+
+.env.codesign
