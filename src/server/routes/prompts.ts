@@ -1,7 +1,10 @@
-import { resolve } from "path";
+import { mkdir } from "fs/promises";
+import { dirname, resolve } from "path";
+import { PROJECT_ROOT } from "../lib/path-utils.ts";
 import { tryRoute } from "../lib/route-helpers.ts";
 
-const PROMPTS_FILE = resolve(import.meta.dir, "../../data/prompts.json");
+const PROMPTS_FILE = resolve(PROJECT_ROOT, "data/prompts.json");
+const LEGACY_PROMPTS_FILE = resolve(PROJECT_ROOT, "src/data/prompts.json");
 
 interface Prompt {
 	_id: string;
@@ -20,11 +23,20 @@ interface Prompt {
 
 async function loadPrompts(): Promise<Prompt[]> {
 	const file = Bun.file(PROMPTS_FILE);
-	if (!(await file.exists())) return [];
-	return JSON.parse(await file.text());
+	if (await file.exists()) {
+		return JSON.parse(await file.text());
+	}
+
+	const legacyFile = Bun.file(LEGACY_PROMPTS_FILE);
+	if (!(await legacyFile.exists())) return [];
+
+	const prompts = JSON.parse(await legacyFile.text()) as Prompt[];
+	await savePrompts(prompts);
+	return prompts;
 }
 
 async function savePrompts(prompts: Prompt[]): Promise<void> {
+	await mkdir(dirname(PROMPTS_FILE), { recursive: true });
 	await Bun.write(PROMPTS_FILE, JSON.stringify(prompts, null, 2));
 }
 
