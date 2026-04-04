@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { IconPencil, IconTrash, IconX } from "../../components/ui/Icons.tsx";
-import { Button } from "../../components/ui/Button.tsx";
 import { measureTextHeight } from "../../lib/pretext-utils.ts";
 import { CATEGORIES, type Prompt } from "./support.ts";
 
@@ -47,7 +46,7 @@ function AutoTextarea({
 		const width = ta.clientWidth - 24;
 		if (width > 0 && value) {
 			const h = measureTextHeight(value, width, MONO_FONT, 18);
-			ta.style.height = Math.min(Math.max(h + 24, 100), 300) + "px";
+			ta.style.height = `${Math.min(Math.max(h + 24, 100), 300)}px`;
 		} else {
 			ta.style.height = "100px";
 		}
@@ -129,12 +128,14 @@ export function PromptDetailPanel({
 					{isCreatingNew ? (
 						<>
 							<button
+								type="button"
 								onClick={onCancelEditing}
 								className="h-6 px-2 rounded text-[10px] text-surgent-text-3 hover:bg-surgent-text/[0.05]"
 							>
 								Cancel
 							</button>
 							<button
+								type="button"
 								onClick={() => onSave(false)}
 								disabled={isSaving}
 								className="h-6 px-2 rounded text-[10px] text-surgent-text bg-surgent-text/[0.08] hover:bg-surgent-text/[0.12]"
@@ -145,12 +146,14 @@ export function PromptDetailPanel({
 					) : isEditing ? (
 						<>
 							<button
+								type="button"
 								onClick={onCancelEditing}
 								className="h-6 px-2 rounded text-[10px] text-surgent-text-3 hover:bg-surgent-text/[0.05]"
 							>
 								Cancel
 							</button>
 							<button
+								type="button"
 								onClick={() => onSave(true)}
 								disabled={isSaving}
 								className="h-6 px-2 rounded text-[10px] text-surgent-text bg-surgent-text/[0.08] hover:bg-surgent-text/[0.12]"
@@ -161,6 +164,7 @@ export function PromptDetailPanel({
 					) : (
 						<>
 							<button
+								type="button"
 								onClick={onStartEditing}
 								className="h-6 w-6 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-text/[0.05]"
 							>
@@ -168,6 +172,7 @@ export function PromptDetailPanel({
 							</button>
 							{selectedPrompt && !selectedPrompt.isBuiltIn && (
 								<button
+									type="button"
 									onClick={onDelete}
 									className="h-6 w-6 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-text/[0.05]"
 								>
@@ -177,6 +182,7 @@ export function PromptDetailPanel({
 						</>
 					)}
 					<button
+						type="button"
 						onClick={onClose}
 						className="h-6 w-6 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-text/[0.05]"
 					>

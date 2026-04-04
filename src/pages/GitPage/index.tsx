@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
-import { useGitDiff, type DiffRequest } from "../../hooks/useGitDiff.ts";
-import { useGitStatus, type GitFileEntry } from "../../hooks/useGitStatus.ts";
+import { useGitDiff } from "../../hooks/useGitDiff.ts";
+import { type GitFileEntry, useGitStatus } from "../../hooks/useGitStatus.ts";
 import { fetchJson } from "../../lib/fetch-json.ts";
 import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
 import { GitDiffView } from "../Terminal/GitDiffView.tsx";
@@ -18,7 +18,7 @@ const DOT_COLORS: Record<string, string> = {
 	U: "bg-git-unmerged",
 };
 
-function StatusDot({ status }: { status: string }) {
+function _StatusDot({ status }: { status: string }) {
 	const c = DOT_COLORS[status] || "bg-surgent-text-3/40";
 	return (
 		<span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${c}`} />
@@ -82,7 +82,7 @@ export function GitPage() {
 		loadDiff({ cwd: project.cwd, file: f.path, staged: f.staged });
 		// Only depend on cwd and files length — NOT on selFile or loadDiff
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [project?.cwd, project?.files.length]);
+	}, [project?.cwd, project?.files.length, loadDiff, project]);
 
 	// ── All files flat list for keyboard nav ──
 	const allFiles = useMemo(() => {
@@ -100,7 +100,7 @@ export function GitPage() {
 			setSelFile({ path, staged });
 			loadDiff({ cwd: project.cwd, file: path, staged });
 		},
-		[project?.cwd, loadDiff]
+		[project?.cwd, loadDiff, project]
 	);
 
 	// Arrow up/down to navigate files
@@ -131,7 +131,7 @@ export function GitPage() {
 		};
 		window.addEventListener("keydown", handler);
 		return () => window.removeEventListener("keydown", handler);
-	}, [project?.cwd, allFiles, selFile, loadDiff]);
+	}, [project?.cwd, allFiles, selFile, loadDiff, project]);
 
 	const switchRepo = useCallback(
 		(cwd: string) => {
@@ -212,6 +212,7 @@ export function GitPage() {
 				<div className="text-center">
 					<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-surgent-surface border border-surgent-border">
 						<svg
+							aria-hidden="true"
 							width="24"
 							height="24"
 							viewBox="0 0 24 24"
@@ -233,6 +234,7 @@ export function GitPage() {
 						Add a local git repo to get started
 					</p>
 					<button
+						type="button"
 						onClick={() => setPickerOpen(true)}
 						className="rounded-lg bg-surgent-surface border border-surgent-border px-3 py-1.5 text-[10px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
 					>
@@ -274,11 +276,13 @@ export function GitPage() {
 					onDelete={removeRepo}
 				/>
 				<button
+					type="button"
 					onClick={() => setPickerOpen(true)}
 					className="flex items-center justify-center h-7 w-7 rounded-lg border border-surgent-border bg-surgent-surface text-surgent-text-3 hover:bg-surgent-text/[0.06] hover:text-surgent-text-2 transition-colors"
 					title="Add repository"
 				>
 					<svg
+						aria-hidden="true"
 						width="10"
 						height="10"
 						viewBox="0 0 12 12"
@@ -294,6 +298,7 @@ export function GitPage() {
 					<>
 						<div className="w-px h-4 bg-surgent-border/40" />
 						<svg
+							aria-hidden="true"
 							width="11"
 							height="11"
 							viewBox="0 0 24 24"
@@ -468,6 +473,7 @@ function FileGroup({
 				const active = selFile?.path === f.path && selFile?.staged === f.staged;
 				return (
 					<button
+						type="button"
 						key={`${f.staged ? "s" : "u"}-${f.path}`}
 						onClick={() => onSelect(f.path)}
 						className={`w-full flex items-center px-2.5 h-[24px] text-left transition-colors ${

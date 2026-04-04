@@ -87,7 +87,7 @@ export function DropdownButton({
 			}
 		};
 		const handleScroll = (e: Event) => {
-			if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
+			if (menuRef.current?.contains(e.target as Node)) return;
 			setOpen(false);
 		};
 		const handleKey = (e: KeyboardEvent) => {
@@ -130,6 +130,7 @@ export function DropdownButton({
 	return (
 		<>
 			<button
+				type="button"
 				ref={btnRef}
 				onClick={toggle}
 				className={`flex h-7 items-center gap-2 rounded-lg border px-3 text-xs transition-colors ${
@@ -201,6 +202,7 @@ export function DropdownButton({
 										/>
 									) : (
 										<button
+											type="button"
 											key={opt.id}
 											onClick={() => {
 												onChange(opt.id);

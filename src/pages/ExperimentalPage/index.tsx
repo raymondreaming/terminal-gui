@@ -1,10 +1,10 @@
 import {
+	type ReactNode,
 	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
-	type ReactNode,
 } from "react";
 import { ClaudeChatView } from "../../components/chat/ClaudeChatView.tsx";
 import {
@@ -12,7 +12,6 @@ import {
 	IconLayoutGrid,
 	IconLayoutRows,
 } from "../../components/ui/Icons.tsx";
-import { GitDiffView, type DiffViewMode } from "../Terminal/GitDiffView.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { type DiffRequest, useGitDiff } from "../../hooks/useGitDiff.ts";
 import {
@@ -22,11 +21,12 @@ import {
 } from "../../hooks/useGitStatus.ts";
 import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
 import {
-	type TerminalGroupModel,
 	getStatusInfo,
 	getThemeById,
 	loadTerminalState,
+	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
+import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { StatusIcon } from "../Terminal/StatusIcon.tsx";
 
 interface StoredChatMessage {
@@ -52,7 +52,7 @@ interface SelectedFile {
 
 const CHAT_STORAGE_KEY_PREFIX = "surgent-chat-";
 
-const STATUS_TONE: Record<string, string> = {
+const _STATUS_TONE: Record<string, string> = {
 	M: "bg-git-modified/15 text-git-modified border-git-modified/20",
 	A: "bg-git-added/15 text-git-added border-git-added/20",
 	D: "bg-git-deleted/15 text-git-deleted border-git-deleted/20",
@@ -61,7 +61,7 @@ const STATUS_TONE: Record<string, string> = {
 	"?": "bg-surgent-text/[0.05] text-surgent-text-3 border-surgent-border",
 };
 
-function readStoredMessages(paneId: string): StoredChatMessage[] {
+function _readStoredMessages(paneId: string): StoredChatMessage[] {
 	try {
 		const raw = localStorage.getItem(CHAT_STORAGE_KEY_PREFIX + paneId);
 		return raw ? (JSON.parse(raw) as StoredChatMessage[]) : [];
@@ -114,7 +114,7 @@ function basename(path?: string): string {
 }
 
 export function ExperimentalPage() {
-	const [refreshTick, setRefreshTick] = useState(0);
+	const [_refreshTick, setRefreshTick] = useState(0);
 	const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
 	const [selectedFiles, setSelectedFiles] = useState<
 		Record<string, SelectedFile | null>
@@ -124,7 +124,7 @@ export function ExperimentalPage() {
 	);
 	const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>("split");
 
-	const terminalState = useMemo(() => loadTerminalState(), [refreshTick]);
+	const terminalState = useMemo(() => loadTerminalState(), []);
 	const sessions = useMemo(
 		() => stableSessions(flattenSessions(terminalState?.groups ?? [])),
 		[terminalState]
@@ -134,7 +134,7 @@ export function ExperimentalPage() {
 		() => [...new Set(sessions.map((session) => session.cwd).filter(Boolean))],
 		[sessions]
 	);
-	const { projects, projectMap } = useGitStatus(trackedDirs);
+	const { projectMap } = useGitStatus(trackedDirs);
 	const theme = useMemo(
 		() => getThemeById(terminalState?.themeId ?? "default"),
 		[terminalState?.themeId]
@@ -176,7 +176,7 @@ export function ExperimentalPage() {
 		setSelectedPaneId((current) =>
 			current && sessions.some((session) => session.paneId === current)
 				? current
-				: sessions[0]!.paneId
+				: sessions[0]?.paneId
 		);
 	}, [sessions]);
 
@@ -280,7 +280,7 @@ export function ExperimentalPage() {
 					: currentIndex <= 0
 						? sessions.length - 1
 						: currentIndex - 1;
-			setSelectedPaneId(sessions[nextIndex]!.paneId);
+			setSelectedPaneId(sessions[nextIndex]?.paneId);
 		},
 		[sessionIndex, sessions]
 	);

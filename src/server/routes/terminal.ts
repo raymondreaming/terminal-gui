@@ -1,17 +1,18 @@
+import { readdir, stat } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, resolve } from "node:path";
 import type { ServerWebSocket } from "bun";
-import { resolve, dirname } from "path";
-import { homedir } from "os";
-import { readdir, stat } from "fs/promises";
 import type { AgentKind } from "../../lib/agents.ts";
 import { resolveInteractiveAgentCommand } from "../agents/terminal-command.ts";
-import { ChatService } from "../services/claude-chat.ts";
+import { PROJECT_ROOT } from "../lib/path-utils.ts";
 import {
-	tryRoute,
 	badRequest,
 	readJson,
+	tryRoute,
 	writeJson,
 } from "../lib/route-helpers.ts";
-import { PROJECT_ROOT } from "../lib/path-utils.ts";
+import { ChatService } from "../services/claude-chat.ts";
+
 const isWin = process.platform === "win32";
 
 class OutputBuffer {

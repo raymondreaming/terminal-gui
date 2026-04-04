@@ -1,15 +1,17 @@
 import type { ServerWebSocket } from "bun";
 import { TerminalService } from "./routes/terminal.ts";
-import { ChatService } from "./services/claude-chat.ts";
 import { CheckpointService } from "./services/checkpoint.ts";
-
-const g = globalThis as any;
-if (!g.__surgent_wsClients)
-	g.__surgent_wsClients = new Set<ServerWebSocket<WSData>>();
+import { ChatService } from "./services/claude-chat.ts";
 
 interface WSData {
 	subscriptions: Set<string>;
 }
+
+const g = globalThis as unknown as {
+	__surgent_wsClients?: Set<ServerWebSocket<WSData>>;
+};
+if (!g.__surgent_wsClients)
+	g.__surgent_wsClients = new Set<ServerWebSocket<WSData>>();
 
 const clients: Set<ServerWebSocket<WSData>> = g.__surgent_wsClients;
 

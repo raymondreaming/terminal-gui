@@ -1,4 +1,4 @@
-import { prepare, layout } from "@chenglou/pretext";
+import { layout, prepare } from "@chenglou/pretext";
 
 // Font strings matching the CSS declarations
 const UI_FONT =
@@ -84,7 +84,7 @@ export function measureMessageHeight(
 		}
 
 		if (inCodeBlock) {
-			codeContent += line + "\n";
+			codeContent += `${line}\n`;
 			continue;
 		}
 

@@ -1,5 +1,5 @@
-import type { AgentAdapter, AgentHandle } from "../types.ts";
 import { createClaudeEnv, resolveClaudeBinary } from "../terminal-command.ts";
+import type { AgentAdapter, AgentHandle } from "../types.ts";
 
 const MAX_STDERR_CHARS = 64_000;
 

@@ -1,5 +1,5 @@
-import { existsSync } from "fs";
-import { resolve } from "path";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 function resolveProjectRoot(): string {
 	if (process.env.TERMINAL_GUI_APP_ROOT) {

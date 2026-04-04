@@ -1,5 +1,5 @@
-import { resolve, relative, dirname } from "path";
-import { mkdir, unlink, readdir } from "fs/promises";
+import { mkdir, readdir, unlink } from "node:fs/promises";
+import { dirname, relative, resolve } from "node:path";
 import { readJson } from "../lib/route-helpers.ts";
 
 interface FileSnapshot {
@@ -290,7 +290,8 @@ export const CheckpointService = {
 		};
 
 		if (!checkpoints.has(paneId)) checkpoints.set(paneId, []);
-		const list = checkpoints.get(paneId)!;
+		const list = checkpoints.get(paneId);
+		if (!list) return id;
 		list.push(checkpoint);
 		while (list.length > MAX_CHECKPOINTS_PER_PANE) list.shift();
 

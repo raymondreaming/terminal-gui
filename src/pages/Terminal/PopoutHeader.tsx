@@ -1,4 +1,6 @@
 import { memo, type ReactElement, useEffect, useRef, useState } from "react";
+import { Button } from "../../components/ui/Button.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconArrowLeft,
 	IconChevronDown,
@@ -14,8 +16,6 @@ import {
 	IconTrash,
 	IconX,
 } from "../../components/ui/Icons.tsx";
-import { Button } from "../../components/ui/Button.tsx";
-import { IconButton } from "../../components/ui/IconButton.tsx";
 import type { RunningPort } from "../../hooks/useRunningPorts.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
@@ -191,7 +191,14 @@ export const PopoutHeader = memo(function PopoutHeader(
 		};
 		document.addEventListener("mousedown", handleClick);
 		return () => document.removeEventListener("mousedown", handleClick);
-	}, [menus.newMenu, menus.layoutMenu, menus.groupMenu, menus.servicesMenu]);
+	}, [
+		menus.newMenu,
+		menus.layoutMenu,
+		menus.groupMenu,
+		menus.servicesMenu,
+		menus,
+		refs,
+	]);
 
 	const commitRename = (gId: string) => {
 		if (editingGroupName.trim()) onRenameGroup(gId, editingGroupName.trim());

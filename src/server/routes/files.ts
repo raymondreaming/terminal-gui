@@ -1,5 +1,6 @@
-import { resolve, relative, join } from "path";
-import { readdir, stat, mkdir } from "fs/promises";
+import { existsSync } from "node:fs";
+import { mkdir, readdir } from "node:fs/promises";
+import { join, relative, resolve } from "node:path";
 import { PROJECT_ROOT } from "../lib/path-utils.ts";
 import { tryRoute } from "../lib/route-helpers.ts";
 
@@ -72,6 +73,34 @@ export function fileRoutes() {
 				const filePath = resolve(TMP_DIR, `${Date.now()}-${safeName}`);
 				await Bun.write(filePath, file);
 				return Response.json({ path: filePath });
+			}),
+		},
+
+		"/api/file": {
+			GET: tryRoute(async (req) => {
+				const url = new URL(req.url);
+				const filePath = url.searchParams.get("path");
+				if (!filePath) {
+					return Response.json({ error: "No path provided" }, { status: 400 });
+				}
+
+				// Only allow serving files from the temp directory for security
+				const resolvedPath = resolve(filePath);
+				if (!resolvedPath.startsWith(TMP_DIR)) {
+					return Response.json({ error: "Access denied" }, { status: 403 });
+				}
+
+				if (!existsSync(resolvedPath)) {
+					return Response.json({ error: "File not found" }, { status: 404 });
+				}
+
+				const file = Bun.file(resolvedPath);
+				return new Response(file, {
+					headers: {
+						"Content-Type": file.type || "application/octet-stream",
+						"Cache-Control": "public, max-age=3600",
+					},
+				});
 			}),
 		},
 	};

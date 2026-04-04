@@ -60,7 +60,14 @@ const TERM_THEME_DATA: [
 	["rose", "Rose Pine", "#191724", "#e0def4", "#c4a7e7", "#26233a"],
 	["light", "Light", "#ffffff", "#333333", "#000000", "#e0e0e0"],
 	["githubLight", "GitHub Light", "#ffffff", "#1f2328", "#0969da", "#e1e4e8"],
-	["solarizedLight", "Solarized Light", "#fdf6e3", "#073642", "#268bd2", "#eee8d5"],
+	[
+		"solarizedLight",
+		"Solarized Light",
+		"#fdf6e3",
+		"#073642",
+		"#268bd2",
+		"#eee8d5",
+	],
 ];
 
 export const TERMINAL_THEMES: readonly TerminalTheme[] = TERM_THEME_DATA.map(
@@ -383,6 +390,7 @@ export function getThemeById(themeId: string): TerminalTheme {
 	}
 	return (
 		TERMINAL_THEMES.find((t) => t.id === themeId) ??
-		TERMINAL_THEMES.find((t) => t.id === DEFAULT_THEME_ID)!
+		TERMINAL_THEMES.find((t) => t.id === DEFAULT_THEME_ID) ??
+		TERMINAL_THEMES[0]
 	);
 }

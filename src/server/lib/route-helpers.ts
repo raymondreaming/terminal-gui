@@ -1,5 +1,5 @@
-import { dirname } from "path";
-import { mkdir } from "fs/promises";
+import { mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
 
 export function errorResponse(e: unknown, status = 500): Response {
 	const message = e instanceof Error ? e.message : "Unknown error";

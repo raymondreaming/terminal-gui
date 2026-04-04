@@ -258,9 +258,12 @@ export function tokenizeLine(line: string, ext: string): Token[] {
 		}
 
 		// Numbers
-		if (/\d/.test(line[i]!) && (i === 0 || !/\w/.test(line[i - 1]!))) {
+		if (
+			/\d/.test(line[i] ?? "") &&
+			(i === 0 || !/\w/.test(line[i - 1] ?? ""))
+		) {
 			let j = i;
-			while (j < line.length && /[\d.xXa-fA-Fe_]/.test(line[j]!)) j++;
+			while (j < line.length && /[\d.xXa-fA-Fe_]/.test(line[j] ?? "")) j++;
 			tokens.push({ text: line.slice(i, j), type: "number" });
 			i = j;
 			continue;
@@ -277,9 +280,9 @@ export function tokenizeLine(line: string, ext: string): Token[] {
 		}
 
 		// Words (keywords or identifiers)
-		if (/[a-zA-Z_$@]/.test(line[i]!)) {
+		if (/[a-zA-Z_$@]/.test(line[i] ?? "")) {
 			let j = i;
-			while (j < line.length && /[\w$]/.test(line[j]!)) j++;
+			while (j < line.length && /[\w$]/.test(line[j] ?? "")) j++;
 			const word = line.slice(i, j);
 			tokens.push({
 				text: word,
@@ -290,8 +293,9 @@ export function tokenizeLine(line: string, ext: string): Token[] {
 		}
 
 		// Punctuation
-		if (/[{}()\[\];:,.<>!=+\-*/%&|^~?@]/.test(line[i]!)) {
-			tokens.push({ text: line[i]!, type: "punctuation" });
+		const char = line[i] ?? "";
+		if (/[{}()[\];:,.<>!=+\-*/%&|^~?@]/.test(char)) {
+			tokens.push({ text: char, type: "punctuation" });
 			i++;
 			continue;
 		}
@@ -300,7 +304,7 @@ export function tokenizeLine(line: string, ext: string): Token[] {
 		let j = i;
 		while (
 			j < line.length &&
-			!/[a-zA-Z_$@0-9"'`/{}()\[\];:,.<>!=+\-*/%&|^~?#]/.test(line[j]!)
+			!/[a-zA-Z_$@0-9"'`/{}()[\];:,.<>!=+\-*/%&|^~?#]/.test(line[j] ?? "")
 		) {
 			j++;
 		}

@@ -45,6 +45,7 @@ export function Modal({
 					<div className="flex items-center justify-between border-b border-surgent-border px-5 py-3">
 						<h2 className="text-sm font-semibold text-surgent-text">{title}</h2>
 						<button
+							type="button"
 							onClick={onClose}
 							className="p-1 text-surgent-text-3 hover:text-surgent-text-2 rounded-md hover:bg-surgent-text/[0.06]"
 						>

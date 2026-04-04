@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Button } from "../../components/ui/Button.tsx";
-import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
+import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
 import type { AgentKind } from "../../lib/terminal-utils.ts";
 
 interface NewSessionButtonsProps {

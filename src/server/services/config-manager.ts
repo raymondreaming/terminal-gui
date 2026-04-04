@@ -1,4 +1,4 @@
-import { resolve } from "path";
+import { resolve } from "node:path";
 import YAML from "yaml";
 
 const CONFIG_PATH = resolve(import.meta.dir, "../../scripts/config.yaml");
@@ -41,7 +41,7 @@ export class ConfigManager {
 			}
 
 			this.cache = base;
-			return this.cache!;
+			return this.cache;
 		} catch {
 			this.cache = { ...DEFAULT_CONFIG };
 			return this.cache;

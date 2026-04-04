@@ -12,6 +12,7 @@ function IconTerm({
 }) {
 	return (
 		<svg
+			aria-hidden="true"
 			width={size}
 			height={size}
 			viewBox="0 0 24 24"
@@ -37,6 +38,7 @@ function IconBranch({
 }) {
 	return (
 		<svg
+			aria-hidden="true"
 			width={size}
 			height={size}
 			viewBox="0 0 24 24"
@@ -64,6 +66,7 @@ function IconSlash({
 }) {
 	return (
 		<svg
+			aria-hidden="true"
 			width={size}
 			height={size}
 			viewBox="0 0 24 24"
@@ -90,6 +93,7 @@ function IconFusion({
 }) {
 	return (
 		<svg
+			aria-hidden="true"
 			width={size}
 			height={size}
 			viewBox="0 0 24 24"
@@ -157,7 +161,7 @@ export function Sidebar() {
 					nextIdx = currentIdx >= navItems.length - 1 ? 0 : currentIdx + 1;
 				}
 				e.preventDefault();
-				navigate(navItems[nextIdx]!.path);
+				navigate(navItems[nextIdx]?.path);
 			}
 		},
 		[location.pathname, navigate]
@@ -176,6 +180,7 @@ export function Sidebar() {
 		>
 			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-surgent-border">
 				<button
+					type="button"
 					onClick={() => setCollapsed(!collapsed)}
 					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-surgent-text/[0.05] transition-colors"
 				>

@@ -1,8 +1,5 @@
 import { getServerWebSocketUrl } from "./server-origin.ts";
 
-type MessageHandler = (data: any) => void;
-type BinaryMessageHandler = (data: ArrayBuffer) => void;
-
 export interface WSMessage {
 	type: string;
 	runId?: string;
@@ -11,8 +8,11 @@ export interface WSMessage {
 	exitCode?: number;
 	ok?: boolean;
 	error?: string;
-	[key: string]: any;
+	[key: string]: unknown;
 }
+
+type MessageHandler = (data: WSMessage) => void;
+type BinaryMessageHandler = (data: ArrayBuffer) => void;
 
 class WebSocketClient {
 	private ws: WebSocket | null = null;
@@ -92,7 +92,7 @@ class WebSocketClient {
 		if (!this.listeners.has(runId)) {
 			this.listeners.set(runId, new Set());
 		}
-		this.listeners.get(runId)!.add(handler);
+		this.listeners.get(runId)?.add(handler);
 		return () => {
 			this.listeners.get(runId)?.delete(handler);
 			if (this.listeners.get(runId)?.size === 0) {

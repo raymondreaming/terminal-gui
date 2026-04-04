@@ -99,8 +99,8 @@ select,
 *:focus,
 *:focus-visible,
 *:focus-within {
-	outline: none !important;
-	box-shadow: none !important;
+	outline: none;
+	box-shadow: none;
 }
 
 * {

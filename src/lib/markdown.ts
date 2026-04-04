@@ -145,7 +145,7 @@ export function parseInline(src: string): MdInlineToken[] {
 
 		// Plain text — consume until next special character
 		const textMatch = remaining.match(
-			/^[\s\S](?:(?![*_`~!\[\\]| {2}\n)[\s\S])*/
+			/^[\s\S](?:(?![*_`~![\\]| {2}\n)[\s\S])*/
 		);
 		if (textMatch) {
 			tokens.push({ type: "text", text: textMatch[0] });
@@ -154,7 +154,7 @@ export function parseInline(src: string): MdInlineToken[] {
 		}
 
 		// Fallback: consume one char
-		tokens.push({ type: "text", text: remaining[0]! });
+		tokens.push({ type: "text", text: remaining[0] ?? "" });
 		remaining = remaining.slice(1);
 	}
 
@@ -163,7 +163,7 @@ export function parseInline(src: string): MdInlineToken[] {
 
 // ── Block parser ──
 
-function parseListItems(
+function _parseListItems(
 	lines: string[],
 	startIndex: number,
 	marker: RegExp
@@ -172,7 +172,8 @@ function parseListItems(
 	let i = startIndex;
 
 	while (i < lines.length) {
-		const line = lines[i]!;
+		const line = lines[i];
+		if (!line) break;
 		const match = line.match(marker);
 		if (!match) break;
 
@@ -189,7 +190,7 @@ function parseListItems(
 		const taskMatch = content.match(/^\[([ xX])\]\s(.*)/);
 		if (taskMatch) {
 			item.checked = taskMatch[1] !== " ";
-			item.content = taskMatch[2]!;
+			item.content = taskMatch[2] ?? "";
 		}
 
 		items.push(item);
@@ -205,16 +206,17 @@ export function parseBlocks(src: string): MdBlock[] {
 	let i = 0;
 
 	while (i < lines.length) {
-		const line = lines[i]!;
+		const line = lines[i];
+		if (line === undefined) break;
 
 		// Fenced code block
 		if (/^`{3,}/.test(line)) {
-			const fence = line.match(/^(`{3,})/)![0];
+			const fence = line.match(/^(`{3,})/)?.[0] ?? "```";
 			const lang = line.slice(fence.length).trim();
 			const codeLines: string[] = [];
 			i++;
-			while (i < lines.length && !lines[i]!.startsWith(fence)) {
-				codeLines.push(lines[i]!);
+			while (i < lines.length && !lines[i]?.startsWith(fence)) {
+				codeLines.push(lines[i] ?? "");
 				i++;
 			}
 			if (i < lines.length) i++; // skip closing fence
@@ -231,8 +233,8 @@ export function parseBlocks(src: string): MdBlock[] {
 		if (headingMatch) {
 			blocks.push({
 				type: "heading",
-				level: headingMatch[1]!.length,
-				content: headingMatch[2]!.replace(/\s+#+\s*$/, ""), // strip trailing #
+				level: headingMatch[1]?.length,
+				content: headingMatch[2]?.replace(/\s+#+\s*$/, ""), // strip trailing #
 			});
 			i++;
 			continue;
@@ -244,7 +246,7 @@ export function parseBlocks(src: string): MdBlock[] {
 			line.trim() !== "" &&
 			/^[=-]{2,}\s*$/.test(lines[i + 1]!)
 		) {
-			const level = lines[i + 1]!.startsWith("=") ? 1 : 2;
+			const level = lines[i + 1]?.startsWith("=") ? 1 : 2;
 			blocks.push({ type: "heading", level, content: line.trim() });
 			i += 2;
 			continue;
@@ -264,8 +266,9 @@ export function parseBlocks(src: string): MdBlock[] {
 			/^\|?\s*[-:]+[-|:\s]+$/.test(lines[i + 1]!)
 		) {
 			const rows: string[][] = [];
-			while (i < lines.length && lines[i]!.includes("|")) {
-				const row = lines[i]!.replace(/^\||\|$/g, "")
+			while (i < lines.length && lines[i]?.includes("|")) {
+				const row = lines[i]
+					?.replace(/^\||\|$/g, "")
 					.split("|")
 					.map((c) => c.trim());
 				rows.push(row);
@@ -282,9 +285,9 @@ export function parseBlocks(src: string): MdBlock[] {
 			const bqLines: string[] = [];
 			while (
 				i < lines.length &&
-				(lines[i]!.startsWith("> ") || lines[i] === ">")
+				(lines[i]?.startsWith("> ") || lines[i] === ">")
 			) {
-				bqLines.push(lines[i]!.replace(/^>\s?/, ""));
+				bqLines.push(lines[i]?.replace(/^>\s?/, ""));
 				i++;
 			}
 			blocks.push({ type: "blockquote", content: bqLines.join("\n") });
@@ -293,7 +296,7 @@ export function parseBlocks(src: string): MdBlock[] {
 
 		// Task list: - [ ] or - [x]
 		if (/^[\s]*[-*+]\s\[[ xX]\]\s/.test(line)) {
-			const { items, consumed } = parseListItems(lines, i, /^[\s]*[-*+]\s/);
+			const { items, consumed } = _parseListItems(lines, i, /^[\s]*[-*+]\s/);
 			blocks.push({
 				type: "checklist",
 				content: "",
@@ -305,7 +308,7 @@ export function parseBlocks(src: string): MdBlock[] {
 
 		// Unordered list
 		if (/^[\s]*[-*+]\s/.test(line)) {
-			const { items, consumed } = parseListItems(lines, i, /^[\s]*[-*+]\s/);
+			const { items, consumed } = _parseListItems(lines, i, /^[\s]*[-*+]\s/);
 			blocks.push({ type: "ul", content: "", items });
 			i += consumed;
 			continue;
@@ -313,7 +316,7 @@ export function parseBlocks(src: string): MdBlock[] {
 
 		// Ordered list
 		if (/^[\s]*\d+[.)]\s/.test(line)) {
-			const { items, consumed } = parseListItems(lines, i, /^[\s]*\d+[.)]\s/);
+			const { items, consumed } = _parseListItems(lines, i, /^[\s]*\d+[.)]\s/);
 			blocks.push({ type: "ol", content: "", items });
 			i += consumed;
 			continue;
@@ -329,14 +332,14 @@ export function parseBlocks(src: string): MdBlock[] {
 		const pLines: string[] = [];
 		while (
 			i < lines.length &&
-			lines[i]!.trim() !== "" &&
+			lines[i]?.trim() !== "" &&
 			!/^`{3,}/.test(lines[i]!) &&
 			!/^#{1,6}\s/.test(lines[i]!) &&
 			!/^(-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i]!) &&
 			!/^>\s/.test(lines[i]!) &&
 			!/^[\s]*[-*+]\s/.test(lines[i]!) &&
 			!/^[\s]*\d+[.)]\s/.test(lines[i]!) &&
-			!(lines[i]!.includes("|") && lines[i + 1]?.match(/^\|?\s*[-:]+[-|:\s]+$/))
+			!(lines[i]?.includes("|") && lines[i + 1]?.match(/^\|?\s*[-:]+[-|:\s]+$/))
 		) {
 			pLines.push(lines[i]!);
 			i++;

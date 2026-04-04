@@ -167,7 +167,7 @@ export function InlineDirectoryPicker({
 	};
 	const shortenPath = (path: string) => {
 		if (pickerData.homePath && path.startsWith(pickerData.homePath)) {
-			return "~" + path.slice(pickerData.homePath.length);
+			return `~${path.slice(pickerData.homePath.length)}`;
 		}
 		return path;
 	};
@@ -197,6 +197,7 @@ export function InlineDirectoryPicker({
 				) : (
 					displayList.map((pick, i) => (
 						<button
+							type="button"
 							key={pick.path}
 							onClick={() => onSelect(pick.path)}
 							className={`w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors ${

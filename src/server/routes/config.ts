@@ -1,4 +1,4 @@
-import { hostname } from "os";
+import { hostname } from "node:os";
 import { ConfigManager } from "../services/config-manager.ts";
 
 const configManager = new ConfigManager();

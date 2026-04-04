@@ -121,6 +121,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 						THEME
 					</span>
 					<button
+						type="button"
 						onClick={onClose}
 						className="text-[10px] font-bold text-surgent-text-3 hover:text-surgent-text"
 					>
@@ -137,6 +138,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 								);
 								return (
 									<button
+										type="button"
 										key={t.id}
 										onClick={() => handleThemeChange(t.id)}
 										className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${
@@ -179,6 +181,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 							})}
 							{/* Custom theme card */}
 							<button
+								type="button"
 								onClick={() => handleThemeChange("custom")}
 								className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${isCustom ? "bg-surgent-accent/15 ring-1 ring-surgent-accent" : "hover:bg-surgent-surface-2"}`}
 							>

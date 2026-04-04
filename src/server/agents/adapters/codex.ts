@@ -1,8 +1,8 @@
-import { unlink } from "fs/promises";
-import { tmpdir } from "os";
-import { resolve } from "path";
-import type { AgentAdapter, AgentHandle, AgentRunContext } from "../types.ts";
+import { unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import { createCodexEnv, resolveCodexBinary } from "../terminal-command.ts";
+import type { AgentAdapter, AgentHandle, AgentRunContext } from "../types.ts";
 
 interface CodexRunState {
 	outputPath: string;

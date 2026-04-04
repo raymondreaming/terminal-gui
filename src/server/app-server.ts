@@ -1,13 +1,13 @@
+import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { resolve } from "node:path";
+import { PROJECT_ROOT } from "./lib/path-utils.ts";
 import { buildApiRoutes } from "./routes/api.ts";
 import { handlePromptRequest } from "./routes/prompts.ts";
-import { websocketHandler } from "./ws.ts";
 import { TerminalService } from "./routes/terminal.ts";
-import { ChatService } from "./services/claude-chat.ts";
 import { CheckpointService } from "./services/checkpoint.ts";
-import { resolve } from "path";
-import { existsSync } from "fs";
-import { readdir } from "fs/promises";
-import { PROJECT_ROOT } from "./lib/path-utils.ts";
+import { ChatService } from "./services/claude-chat.ts";
+import { websocketHandler } from "./ws.ts";
 
 const apiRoutes = buildApiRoutes();
 const publicDir = resolve(PROJECT_ROOT, "public");

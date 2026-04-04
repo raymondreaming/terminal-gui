@@ -1,6 +1,6 @@
 import { memo } from "react";
-import { IconCircle, IconRobot, IconX } from "../../components/ui/Icons.tsx";
 import { IconButton } from "../../components/ui/IconButton.tsx";
+import { IconCircle, IconRobot, IconX } from "../../components/ui/Icons.tsx";
 import type { ClaudeProcess } from "../../hooks/useClaudeProcesses.ts";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
 
@@ -62,6 +62,7 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 					</span>
 					{processes.length > 1 && (
 						<button
+							type="button"
 							onClick={onKillAll}
 							className="text-[9px] font-medium text-red-400 hover:text-red-300 transition-colors"
 						>

@@ -8,6 +8,11 @@ import {
 } from "react";
 import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
 import { clearChatMessages } from "../../components/chat/ClaudeChatView.tsx";
+import { Button } from "../../components/ui/Button.tsx";
+import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
+import { EmptyState } from "../../components/ui/EmptyState.tsx";
+import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconArrowLeft,
 	IconChevronDown,
@@ -16,30 +21,23 @@ import {
 	IconFolder,
 	IconFolderOpen,
 	IconGlobe,
-	IconLayout,
 	IconLayoutGrid,
 	IconLayoutRows,
 	IconPalette,
 	IconPlus,
-	IconRobot,
 	IconX,
 } from "../../components/ui/Icons.tsx";
-import { Button } from "../../components/ui/Button.tsx";
-import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
-import { EmptyState } from "../../components/ui/EmptyState.tsx";
-import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
-import { IconButton } from "../../components/ui/IconButton.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import { wsClient } from "../../lib/websocket.ts";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
+import { wsClient } from "../../lib/websocket.ts";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
-import { PopoutHeader } from "./PopoutHeader.tsx";
 import { NewSessionButtons } from "./NewSessionButtons.tsx";
+import { PopoutHeader } from "./PopoutHeader.tsx";
 import { TerminalGrid } from "./TerminalGrid.tsx";
 import { TerminalSettingsPanel } from "./TerminalSettingsPanel.tsx";
 
@@ -90,7 +88,7 @@ function markPopoutRestored() {
 
 const logoUrl = resolveServerUrl("/logo.png");
 
-function cwdLabel(cwd: string): string {
+function _cwdLabel(cwd: string): string {
 	if (!cwd) return "unknown";
 	const parts = cwd.split("/");
 	return parts[parts.length - 1] || cwd;
@@ -267,7 +265,7 @@ export function TerminalPage({
 		new Map()
 	);
 	const { ports: runningPorts, killPort, openInBrowser } = useRunningPorts();
-	const { sessions: agentSessions } = useAgentSessions();
+	useAgentSessions();
 	const {
 		processes: claudeProcesses,
 		killProcess: killClaudeProcess,
@@ -497,9 +495,10 @@ export function TerminalPage({
 	const removeGroup = useCallback(
 		(groupId: string) => {
 			if (groups.length <= 1) return;
-			groups
-				.find((g) => g.id === groupId)
-				?.panes.forEach((p) => cleanupPane(p.id));
+			const group = groups.find((g) => g.id === groupId);
+			if (group) {
+				for (const p of group.panes) cleanupPane(p.id);
+			}
 			groupsDispatch({ type: "removeGroup", groupId });
 			if (selectedGroupId === groupId)
 				setSelectedGroupId(groups.find((g) => g.id !== groupId)?.id ?? null);

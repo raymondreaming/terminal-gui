@@ -1,7 +1,7 @@
-import { memo, useMemo, useRef, useCallback, useState, useEffect } from "react";
-import type { HunkDiff, DiffLine } from "../../hooks/useGitDiff.ts";
-import { tokenizeLine } from "../../lib/syntax-tokens.ts";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MarkdownPreview } from "../../components/MarkdownPreview.tsx";
+import type { DiffLine, HunkDiff } from "../../hooks/useGitDiff.ts";
+import { tokenizeLine } from "../../lib/syntax-tokens.ts";
 
 export type DiffViewMode = "split" | "stacked" | "hunks";
 
@@ -40,8 +40,11 @@ function SyntaxContent({
 	ext: string;
 	disableTokenize: boolean;
 }) {
-	if (disableTokenize) return content;
-	const tokens = useMemo(() => tokenizeLine(content, ext), [content, ext]);
+	const tokens = useMemo(
+		() => (disableTokenize ? null : tokenizeLine(content, ext)),
+		[content, ext, disableTokenize]
+	);
+	if (!tokens) return content;
 	return (
 		<>
 			{/* Tokens are static per render and never reorder — index key is safe */}
@@ -146,7 +149,7 @@ function VirtualPanel({
 		const el = scrollRef.current;
 		if (!el) return;
 		setViewH(el.clientHeight);
-		const obs = new ResizeObserver((e) => setViewH(e[0]!.contentRect.height));
+		const obs = new ResizeObserver((e) => setViewH(e[0]?.contentRect.height));
 		obs.observe(el);
 		return () => obs.disconnect();
 	}, [scrollRef]);
@@ -529,10 +532,12 @@ function DiffHeader({
 			)}
 			<span className="flex-1" />
 			<button
+				type="button"
 				onClick={onClose}
 				className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3/50 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
 			>
 				<svg
+					aria-hidden="true"
 					width="9"
 					height="9"
 					viewBox="0 0 8 8"

@@ -1,4 +1,4 @@
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 export interface GitFileEntry {
 	status: string; // M, A, D, ?, R, C, U
@@ -101,8 +101,8 @@ export async function getStatus(cwd: string): Promise<GitStatusResult | null> {
 			continue;
 		}
 
-		const x = line[0]!; // index (staged)
-		const y = line[1]!; // worktree (unstaged)
+		const x = line[0] ?? " "; // index (staged)
+		const y = line[1] ?? " "; // worktree (unstaged)
 		const filePath = line.slice(3);
 
 		// Handle renames: "R  old -> new"

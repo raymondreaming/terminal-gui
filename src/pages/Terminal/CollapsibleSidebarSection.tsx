@@ -27,6 +27,7 @@ export const CollapsibleSidebarSection = memo(
 		return (
 			<div className="border-t border-surgent-border">
 				<button
+					type="button"
 					onClick={onToggle}
 					className="flex items-center gap-1.5 px-2 py-1.5 w-full text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
 				>

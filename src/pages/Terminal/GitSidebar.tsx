@@ -1,8 +1,7 @@
 import { memo, useState } from "react";
-import { IconButton } from "../../components/ui/IconButton.tsx";
 import type {
-	GitProjectStatus,
 	GitFileEntry,
+	GitProjectStatus,
 } from "../../hooks/useGitStatus.ts";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
 
@@ -49,6 +48,7 @@ function FileRow({
 
 	return (
 		<button
+			type="button"
 			onClick={onClick}
 			className="w-full flex items-center gap-1.5 px-2 py-1 text-left transition-colors hover:bg-surgent-surface rounded-md group"
 			title={file.path}
@@ -85,10 +85,12 @@ function ProjectSection({
 	return (
 		<div className="border-b border-surgent-border/50 last:border-b-0">
 			<button
+				type="button"
 				onClick={() => setExpanded(!expanded)}
 				className="w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors hover:bg-surgent-surface/50"
 			>
 				<svg
+					aria-hidden="true"
 					width="8"
 					height="8"
 					viewBox="0 0 8 8"
@@ -183,6 +185,7 @@ export const GitSidebar = memo(function GitSidebar({
 		<CollapsibleSidebarSection
 			icon={
 				<svg
+					aria-hidden="true"
 					width="12"
 					height="12"
 					viewBox="0 0 24 24"

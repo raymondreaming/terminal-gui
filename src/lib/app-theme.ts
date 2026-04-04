@@ -1,7 +1,6 @@
 import {
 	readStoredJson,
 	readStoredValue,
-	writeStoredJson,
 	writeStoredValue,
 } from "./stored-json.ts";
 

@@ -33,6 +33,7 @@ interface QueuedMessage {
 	id: string;
 	text: string;
 	displayText: string;
+	images?: string[];
 }
 
 let queueIdCounter = 0;
@@ -64,6 +65,8 @@ interface ChatMessage {
 	toolName?: string;
 	isStreaming?: boolean;
 	btwQuestion?: string;
+	/** Image paths attached to user messages */
+	images?: string[];
 }
 
 interface CheckpointInfo {
@@ -97,7 +100,7 @@ function trimMessages(msgs: ChatMessage[]): ChatMessage[] {
 
 	let totalChars = trimmed.reduce((sum, m) => sum + m.content.length, 0);
 	while (totalChars > MAX_TOTAL_CHARS && trimmed.length > 1) {
-		totalChars -= trimmed[0]!.content.length;
+		totalChars -= trimmed[0]?.content.length ?? 0;
 		trimmed = trimmed.slice(1);
 	}
 
@@ -307,7 +310,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		}>({ show: false, selectedIdx: 0, position: null });
 		const showCommands = commandMenu.show;
 		const selectedCommandIdx = commandMenu.selectedIdx;
-		const menuPosition = commandMenu.position;
+		const _menuPosition = commandMenu.position;
 		// @ file reference menu
 		const [fileMenu, setFileMenu] = useState<{
 			show: boolean;
@@ -355,10 +358,10 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 
 		useEffect(() => {
 			requestAnimationFrame(() => textareaRef.current?.focus());
-		}, [paneId]);
+		}, []);
 
 		const appendLocalMessages = useCallback(
-			(pending: Array<Pick<ChatMessage, "role" | "content">>) => {
+			(pending: Array<Pick<ChatMessage, "role" | "content" | "images">>) => {
 				if (pending.length === 0) return;
 				setMessages((prev) =>
 					trimMessages([
@@ -367,20 +370,25 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 							id: nextId(),
 							role: msg.role,
 							content: msg.content,
+							images: msg.images,
 						})),
 					])
 				);
 			},
+			[setMessages]
+		);
+		const queueMessage = useCallback(
+			(text: string, displayText: string, images?: string[]) => {
+				queueRef.current.push({
+					id: String(++queueIdCounter),
+					text,
+					displayText,
+					images: images?.length ? images : undefined,
+				});
+				setQueuedMessages([...queueRef.current]);
+			},
 			[]
 		);
-		const queueMessage = useCallback((text: string, displayText: string) => {
-			queueRef.current.push({
-				id: String(++queueIdCounter),
-				text,
-				displayText,
-			});
-			setQueuedMessages([...queueRef.current]);
-		}, []);
 
 		// Load prompts from local JSON
 		const { prompts: localPrompts, incrementUsage: incrementLocalUsage } =
@@ -418,7 +426,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		}, [agentKind, localPrompts]);
 
 		const commandQuery = input.startsWith("/")
-			? (input.slice(1).match(/^\S*/) ?? [""])[0]!.toLowerCase()
+			? (input.slice(1).match(/^\S*/) ?? [""])[0]?.toLowerCase()
 			: "";
 		const filteredCommands = input.startsWith("/")
 			? allCommands.filter((cmd) =>
@@ -527,7 +535,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					}
 				}, 150);
 			},
-			[cwd, fileMenu.show, fileMenu.position]
+			[cwd, fileMenu.show, fileMenu.position, getMenuPosition]
 		);
 
 		// Debounced save as crash safety net (2s), skips during active streaming
@@ -543,7 +551,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			return () => {
 				if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 			};
-		}, [paneId, messages]);
+		}, [paneId]);
 
 		// Notify parent of status changes
 		useEffect(() => {
@@ -576,7 +584,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 				},
 				getStatus: () => status,
 			}),
-			[appendLocalMessages, isLoading, queueMessage, status]
+			[appendLocalMessages, isLoading, queueMessage, status, sendToServer]
 		);
 
 		useEffect(() => {
@@ -629,7 +637,13 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					const next = queueRef.current.shift();
 					setQueuedMessages([...queueRef.current]);
 					if (next) {
-						appendLocalMessages([{ role: "user", content: next.displayText }]);
+						appendLocalMessages([
+							{
+								role: "user",
+								content: next.displayText,
+								images: next.images,
+							},
+						]);
 						sendToServer(next.text);
 					}
 				} else if (msg.type === "chat:user_message") {
@@ -662,7 +676,13 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					const next = queueRef.current.shift();
 					setQueuedMessages([...queueRef.current]);
 					if (next) {
-						appendLocalMessages([{ role: "user", content: next.displayText }]);
+						appendLocalMessages([
+							{
+								role: "user",
+								content: next.displayText,
+								images: next.images,
+							},
+						]);
 						sendToServer(next.text);
 					}
 				} else if (msg.type === "chat:system") {
@@ -731,11 +751,11 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					if (targetId) {
 						setMessages((prev) => {
 							for (let i = prev.length - 1; i >= 0; i--) {
-								if (prev[i]!.id === targetId) {
+								if (prev[i]?.id === targetId) {
 									const updated = prev.slice();
 									updated[i] = {
 										...updated[i]!,
-										content: updated[i]!.content + msg.text,
+										content: updated[i]?.content + msg.text,
 									};
 									return updated;
 								}
@@ -750,7 +770,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						setMessages((prev) => {
 							const updated = prev.slice();
 							for (let i = prev.length - 1; i >= 0; i--) {
-								if (updated[i]!.id === targetId) {
+								if (updated[i]?.id === targetId) {
 									updated[i] = {
 										...updated[i]!,
 										content: msg.answer,
@@ -845,7 +865,14 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 				cleanupReconnect();
 				cleanup();
 			};
-		}, [paneId]);
+		}, [
+			paneId,
+			appendLocalMessages,
+			handleChatEvent,
+			sendToServer,
+			setLoadingState,
+			setMessages,
+		]);
 
 		function handleChatEvent(event: any) {
 			if (!event?.type) return;
@@ -962,11 +989,11 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					setMessages((prev) => {
 						// Streaming target is always near the end — search backwards
 						for (let i = prev.length - 1; i >= 0; i--) {
-							if (prev[i]!.id === targetId) {
+							if (prev[i]?.id === targetId) {
 								const updated = prev.slice();
 								updated[i] = {
 									...updated[i]!,
-									content: updated[i]!.content + delta.text,
+									content: updated[i]?.content + delta.text,
 								};
 								return updated;
 							}
@@ -981,11 +1008,11 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					const targetId = currentToolRef.current;
 					setMessages((prev) => {
 						for (let i = prev.length - 1; i >= 0; i--) {
-							if (prev[i]!.id === targetId) {
+							if (prev[i]?.id === targetId) {
 								const updated = prev.slice();
 								updated[i] = {
 									...updated[i]!,
-									content: updated[i]!.content + delta.partial_json,
+									content: updated[i]?.content + delta.partial_json,
 								};
 								return updated;
 							}
@@ -1000,7 +1027,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					if (currentAssistantRef.current) {
 						const targetId = currentAssistantRef.current;
 						for (let i = prev.length - 1; i >= 0; i--) {
-							if (prev[i]!.id === targetId) {
+							if (prev[i]?.id === targetId) {
 								updated[i] = { ...updated[i]!, isStreaming: false };
 								changed = true;
 								break;
@@ -1010,7 +1037,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					if (currentToolRef.current) {
 						const targetId = currentToolRef.current;
 						for (let i = prev.length - 1; i >= 0; i--) {
-							if (prev[i]!.id === targetId) {
+							if (prev[i]?.id === targetId) {
 								updated[i] = { ...updated[i]!, isStreaming: false };
 								changed = true;
 								break;
@@ -1075,7 +1102,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			if (el && wasAtBottom.current) {
 				el.scrollTop = el.scrollHeight;
 			}
-		}, [messages]);
+		}, []);
 
 		useEffect(() => {
 			const ta = textareaRef.current;
@@ -1090,7 +1117,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					19.2
 				);
 				const target = Math.min(Math.max(measured + 16, 36), 120); // +padding, min 36, max 120
-				ta.style.height = target + "px";
+				ta.style.height = `${target}px`;
 			} else {
 				ta.style.height = "auto";
 			}
@@ -1199,12 +1226,12 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					}
 
 					if (isLoading) {
-						queueMessage(prompt, `/${cmd.name}${args ? " " + args : ""}`);
+						queueMessage(prompt, `/${cmd.name}${args ? ` ${args}` : ""}`);
 					} else {
 						appendLocalMessages([
 							{
 								role: "user",
-								content: `/${cmd.name}${args ? " " + args : ""}`,
+								content: `/${cmd.name}${args ? ` ${args}` : ""}`,
 							},
 							{
 								role: "system",
@@ -1221,6 +1248,11 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 				allCommands,
 				incrementLocalUsage,
 				queueMessage,
+				cwd,
+				paneId,
+				sendToServer,
+				setInput,
+				setMessages,
 			]
 		);
 
@@ -1258,7 +1290,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					}
 				});
 			},
-			[fileResults, fileMenu.atIndex, input]
+			[fileResults, fileMenu.atIndex, input, setInput]
 		);
 
 		const sendMessage = useCallback(() => {
@@ -1279,7 +1311,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			// Build the full message with image references
 			const imagePaths = attachedImages.map((img) => img.path);
 			const displayText =
-				text || "Attached image" + (attachedImages.length > 1 ? "s" : "");
+				text || `Attached image${attachedImages.length > 1 ? "s" : ""}`;
 			const fullText =
 				imagePaths.length > 0
 					? `${text}${text ? "\n\n" : ""}Here are the images at these paths:\n${imagePaths.join("\n")}`
@@ -1293,9 +1325,15 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			if (textareaRef.current) textareaRef.current.style.height = "auto";
 
 			if (isLoading) {
-				queueMessage(fullText, displayText);
+				queueMessage(fullText, displayText, imagePaths);
 			} else {
-				appendLocalMessages([{ role: "user", content: displayText }]);
+				appendLocalMessages([
+					{
+						role: "user",
+						content: displayText,
+						images: imagePaths.length > 0 ? imagePaths : undefined,
+					},
+				]);
 				sendToServer(fullText);
 			}
 		}, [
@@ -1305,6 +1343,9 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			attachedImages,
 			appendLocalMessages,
 			queueMessage,
+			allCommands.find,
+			sendToServer,
+			setInput,
 		]);
 
 		const handleKeyDown = useCallback(
@@ -1399,7 +1440,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					if (file.type.startsWith("image/")) await attachImage(file);
 				}
 			},
-			[paneId]
+			[attachImage]
 		);
 
 		const handlePaste = useCallback(
@@ -1413,7 +1454,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					}
 				}
 			},
-			[paneId]
+			[attachImage]
 		);
 
 		async function attachImage(file: File) {
@@ -1443,13 +1484,16 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			});
 		}
 
-		const toggleTool = useCallback((id: string) => {
-			setExpandedTools((prev) => {
-				const next = new Set(prev);
-				next.has(id) ? next.delete(id) : next.add(id);
-				return next;
-			});
-		}, []);
+		const toggleTool = useCallback(
+			(id: string) => {
+				setExpandedTools((prev) => {
+					const next = new Set(prev);
+					next.has(id) ? next.delete(id) : next.add(id);
+					return next;
+				});
+			},
+			[setExpandedTools]
+		);
 
 		const handleSendMessage = useCallback(
 			(text: string) => {
@@ -1461,16 +1505,16 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					sendToServer(text.trim());
 				}
 			},
-			[appendLocalMessages, isLoading, queueMessage]
+			[appendLocalMessages, isLoading, queueMessage, sendToServer]
 		);
 
 		const bgColor = theme?.bg ?? "#000000";
 		const fgColor = theme?.fg ?? "#e5e5e5";
 		const cursorColor = theme?.cursor ?? "#d6ff00";
-		const fgMuted = fgColor + "88";
-		const fgDim = fgColor + "55";
+		const fgMuted = `${fgColor}88`;
+		const fgDim = `${fgColor}55`;
 		const surfaceColor = theme ? adjustBrightness(bgColor, 15) : undefined;
-		const borderColor = theme ? fgColor + "15" : undefined;
+		const borderColor = theme ? `${fgColor}15` : undefined;
 		const bubbleTheme = useMemo<BubbleTheme | undefined>(
 			() =>
 				theme
@@ -1549,7 +1593,6 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 									return <IconWrench {...iconProps} />;
 								case "terminal":
 									return <IconTerminal {...iconProps} />;
-								case "circle":
 								default:
 									return <IconCircle {...iconProps} />;
 							}
@@ -1592,7 +1635,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 										className="px-1.5 py-0.5 rounded text-[9px] font-medium tabular-nums"
 										style={{
 											backgroundColor: theme
-												? cursorColor + "20"
+												? `${cursorColor}20`
 												: "rgba(0,122,255,0.15)",
 											color: theme
 												? cursorColor
@@ -1604,6 +1647,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								)}
 								{isLoading && (
 									<button
+										type="button"
 										onClick={stopGeneration}
 										className="px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors bg-red-500/20 text-red-400 hover:bg-red-500/30"
 									>
@@ -1621,14 +1665,14 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						style={{
 							maxHeight: "140px",
 							borderTop: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
-							backgroundColor: theme ? bgColor + "cc" : "rgba(0,0,0,0.4)",
+							backgroundColor: theme ? `${bgColor}cc` : "rgba(0,0,0,0.4)",
 						}}
 					>
 						<div
 							className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase"
 							style={{
 								color: theme ? fgDim : "var(--color-surgent-text-3)",
-								borderBottom: `1px solid ${theme ? borderColor + "60" : "rgba(255,255,255,0.06)"}`,
+								borderBottom: `1px solid ${theme ? `${borderColor}60` : "rgba(255,255,255,0.06)"}`,
 							}}
 						>
 							Queued messages
@@ -1640,12 +1684,12 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								style={{
 									borderBottom:
 										idx < queuedMessages.length - 1
-											? `1px solid ${theme ? borderColor + "40" : "rgba(255,255,255,0.04)"}`
+											? `1px solid ${theme ? `${borderColor}40` : "rgba(255,255,255,0.04)"}`
 											: undefined,
 								}}
 								onMouseEnter={(e) => {
 									e.currentTarget.style.backgroundColor = theme
-										? cursorColor + "08"
+										? `${cursorColor}08`
 										: "rgba(255,255,255,0.03)";
 								}}
 								onMouseLeave={(e) => {
@@ -1694,6 +1738,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											}}
 										/>
 										<button
+											type="button"
 											onClick={() => {
 												const trimmed = editingQueueText.trim();
 												if (trimmed) {
@@ -1719,6 +1764,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											<IconCheck size={11} />
 										</button>
 										<button
+											type="button"
 											onClick={() => setEditingQueueId(null)}
 											className="shrink-0 p-0.5 rounded transition-colors"
 											style={{
@@ -1741,6 +1787,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 										</span>
 										<div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
 											<button
+												type="button"
 												onClick={() => {
 													setEditingQueueId(qm.id);
 													setEditingQueueText(qm.text);
@@ -1754,6 +1801,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 												<IconPencil size={11} />
 											</button>
 											<button
+												type="button"
 												onClick={() => {
 													queueRef.current = queueRef.current.filter(
 														(q) => q.id !== qm.id
@@ -1798,6 +1846,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											}}
 										/>
 										<button
+											type="button"
 											onClick={() => removeAttachedImage(img.path)}
 											className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
 										>
@@ -1834,7 +1883,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								}}
 								onMouseEnter={(e) => {
 									e.currentTarget.style.backgroundColor = theme
-										? cursorColor + "15"
+										? `${cursorColor}15`
 										: "rgba(255,255,255,0.06)";
 								}}
 								onMouseLeave={(e) => {
@@ -1843,6 +1892,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								title="Attach image"
 							>
 								<svg
+									aria-hidden="true"
 									width="16"
 									height="16"
 									viewBox="0 0 24 24"
@@ -1883,6 +1933,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 										</div>
 										{fileResults.map((file, idx) => (
 											<button
+												type="button"
 												key={file.path}
 												onClick={() => selectFile(idx)}
 												onMouseEnter={() =>
@@ -1896,7 +1947,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 													backgroundColor:
 														idx === fileMenu.selectedIdx
 															? theme
-																? cursorColor + "20"
+																? `${cursorColor}20`
 																: "rgba(0,122,255,0.15)"
 															: "transparent",
 												}}
@@ -1951,6 +2002,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 									>
 										{filteredCommands.map((cmd, idx) => (
 											<button
+												type="button"
 												key={cmd.id || cmd.name}
 												onClick={() => selectCommand(idx)}
 												onMouseEnter={() =>
@@ -1964,7 +2016,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 													backgroundColor:
 														idx === selectedCommandIdx
 															? theme
-																? cursorColor + "20"
+																? `${cursorColor}20`
 																: "rgba(0,122,255,0.15)"
 															: "transparent",
 												}}
@@ -1994,7 +2046,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 														className="shrink-0 rounded px-1 py-0.5 text-[8px]"
 														style={{
 															backgroundColor: theme
-																? cursorColor + "15"
+																? `${cursorColor}15`
 																: "rgba(0,122,255,0.1)",
 															color: theme
 																? cursorColor
@@ -2052,7 +2104,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											className="h-1 w-1 rounded-full animate-pulse"
 											style={
 												theme
-													? { backgroundColor: cursorColor + "b3" }
+													? { backgroundColor: `${cursorColor}b3` }
 													: undefined
 											}
 										/>
@@ -2061,7 +2113,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											style={
 												theme
 													? {
-															backgroundColor: cursorColor + "b3",
+															backgroundColor: `${cursorColor}b3`,
 															animationDelay: "150ms",
 														}
 													: { animationDelay: "150ms" }
@@ -2072,7 +2124,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											style={
 												theme
 													? {
-															backgroundColor: cursorColor + "b3",
+															backgroundColor: `${cursorColor}b3`,
 															animationDelay: "300ms",
 														}
 													: { animationDelay: "300ms" }
@@ -2323,12 +2375,29 @@ const Bubble = React.memo(function Bubble({
 		return (
 			<div className="flex justify-end">
 				<div className="max-w-[85%] rounded-lg rounded-br-sm px-2.5 py-1.5">
-					<p
-						className="whitespace-pre-wrap break-words text-[12px]"
-						style={theme ? { color: theme.fg } : undefined}
-					>
-						{msg.content}
-					</p>
+					{msg.images && msg.images.length > 0 && (
+						<div className="flex flex-wrap gap-1.5 mb-1.5">
+							{msg.images.map((imgPath) => (
+								<img
+									key={imgPath}
+									src={`/api/file?path=${encodeURIComponent(imgPath)}`}
+									alt=""
+									className="rounded max-h-24 max-w-32 object-cover"
+									style={{
+										border: `1px solid ${theme?.fgDim ?? "rgba(255,255,255,0.2)"}`,
+									}}
+								/>
+							))}
+						</div>
+					)}
+					{msg.content && (
+						<p
+							className="whitespace-pre-wrap break-words text-[12px]"
+							style={theme ? { color: theme.fg } : undefined}
+						>
+							{msg.content}
+						</p>
+					)}
 				</div>
 			</div>
 		);
@@ -2336,7 +2405,7 @@ const Bubble = React.memo(function Bubble({
 
 	if (msg.role === "system") {
 		const runningMatch = msg.content.match(/^Running \/(.+)\.\.\.$/);
-		if (runningMatch && runningMatch[1]) {
+		if (runningMatch?.[1]) {
 			const commandName = runningMatch[1];
 			return (
 				<div className="flex justify-center py-1">
@@ -2467,11 +2536,13 @@ const Bubble = React.memo(function Bubble({
 		return (
 			<div>
 				<button
+					type="button"
 					onClick={() => onToggle(msg.id)}
 					className="flex items-center gap-1 text-[10px]"
 					style={theme ? { color: theme.fgDim } : undefined}
 				>
 					<svg
+						aria-hidden="true"
 						width="7"
 						height="7"
 						viewBox="0 0 8 8"
@@ -2492,7 +2563,7 @@ const Bubble = React.memo(function Bubble({
 						<span
 							className="h-1 w-1 rounded-full animate-pulse"
 							style={
-								theme ? { backgroundColor: theme.cursor + "99" } : undefined
+								theme ? { backgroundColor: `${theme.cursor}99` } : undefined
 							}
 						/>
 					)}
@@ -2522,7 +2593,7 @@ const Bubble = React.memo(function Bubble({
 			{msg.isStreaming && (
 				<span
 					className="inline-block ml-0.5 h-2.5 w-[1.5px] animate-pulse align-text-bottom"
-					style={theme ? { backgroundColor: theme.cursor + "b3" } : undefined}
+					style={theme ? { backgroundColor: `${theme.cursor}b3` } : undefined}
 				/>
 			)}
 			{!msg.isStreaming && msg.content.length > 0 && (
@@ -2637,6 +2708,7 @@ const ToolActivityGroup = React.memo(function ToolActivityGroup({
 									>
 										<td className="w-6 px-2 py-1.5 align-top">
 											<svg
+												aria-hidden="true"
 												width="7"
 												height="7"
 												viewBox="0 0 8 8"
@@ -2851,7 +2923,7 @@ function parseBlocks(text: string): Block[] {
 		if (line.trimStart().startsWith("```")) {
 			const code: string[] = [];
 			i++;
-			while (i < lines.length && !lines[i]!.trimStart().startsWith("```")) {
+			while (i < lines.length && !lines[i]?.trimStart().startsWith("```")) {
 				code.push(lines[i]!);
 				i++;
 			}
@@ -2861,7 +2933,11 @@ function parseBlocks(text: string): Block[] {
 		}
 		const hm = line.match(/^(#{1,4})\s+(.+)/);
 		if (hm) {
-			blocks.push({ type: "heading", content: hm[2]!, level: hm[1]!.length });
+			blocks.push({
+				type: "heading",
+				content: hm[2] ?? "",
+				level: hm[1]?.length ?? 1,
+			});
 			i++;
 			continue;
 		}
@@ -2869,8 +2945,8 @@ function parseBlocks(text: string): Block[] {
 		if (lm) {
 			blocks.push({
 				type: "list-item",
-				content: lm[2]!,
-				bullet: lm[1]!.trim(),
+				content: lm[2] ?? "",
+				bullet: lm[1]?.trim() ?? "-",
 			});
 			i++;
 			continue;
@@ -2881,8 +2957,8 @@ function parseBlocks(text: string): Block[] {
 			i++;
 			while (
 				i < lines.length &&
-				lines[i]!.trim().startsWith("|") &&
-				lines[i]!.trim().endsWith("|")
+				lines[i]?.trim().startsWith("|") &&
+				lines[i]?.trim().endsWith("|")
 			) {
 				tableLines.push(lines[i]!);
 				i++;
@@ -2895,7 +2971,7 @@ function parseBlocks(text: string): Block[] {
 						.map((c) => c.trim());
 				const headers = parseCells(tableLines[0]!);
 				// Skip separator row (e.g. |---|---|)
-				const startRow = tableLines[1]!.trim().match(/^\|[\s:?-]+\|/) ? 2 : 1;
+				const startRow = tableLines[1]?.trim().match(/^\|[\s:?-]+\|/) ? 2 : 1;
 				const rows = tableLines.slice(startRow).map(parseCells);
 				blocks.push({ type: "table", headers, rows });
 			} else {
@@ -2911,10 +2987,10 @@ function parseBlocks(text: string): Block[] {
 		i++;
 		while (
 			i < lines.length &&
-			lines[i]!.trim() &&
-			!lines[i]!.trimStart().startsWith("```") &&
-			!lines[i]!.match(/^#{1,4}\s+/) &&
-			!lines[i]!.match(/^\s*(?:[-*]|\d+\.)\s+/)
+			lines[i]?.trim() &&
+			!lines[i]?.trimStart().startsWith("```") &&
+			!lines[i]?.match(/^#{1,4}\s+/) &&
+			!lines[i]?.match(/^\s*(?:[-*]|\d+\.)\s+/)
 		) {
 			p.push(lines[i]!);
 			i++;
@@ -3052,6 +3128,7 @@ function AskUserQuestionCard({
 							style={{ borderBottom: `1px solid ${borderClr}` }}
 						>
 							<svg
+								aria-hidden="true"
 								width="12"
 								height="12"
 								viewBox="0 0 24 24"
@@ -3069,7 +3146,7 @@ function AskUserQuestionCard({
 								<span
 									className="rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider"
 									style={{
-										backgroundColor: accentColor + "18",
+										backgroundColor: `${accentColor}18`,
 										color: accentColor,
 									}}
 								>
@@ -3109,17 +3186,18 @@ function AskUserQuestionCard({
 									const isSelected = qSelections.has(oi);
 									return (
 										<button
+											type="button"
 											key={oi}
 											onClick={() => toggleOption(qi, oi, !!q.multiSelect)}
 											disabled={submitted}
 											className="flex w-full items-start gap-2 rounded-md px-2.5 py-1.5 text-left transition-all"
 											style={{
 												backgroundColor: isSelected
-													? accentColor + "18"
+													? `${accentColor}18`
 													: theme
-														? theme.bg + "80"
+														? `${theme.bg}80`
 														: "rgba(0,0,0,0.15)",
-												border: `1px solid ${isSelected ? accentColor + "50" : borderClr}`,
+												border: `1px solid ${isSelected ? `${accentColor}50` : borderClr}`,
 												cursor: submitted ? "default" : "pointer",
 												opacity: submitted && !isSelected ? 0.4 : 1,
 											}}
@@ -3129,12 +3207,13 @@ function AskUserQuestionCard({
 												style={{
 													backgroundColor: isSelected
 														? accentColor
-														: accentColor + "20",
+														: `${accentColor}20`,
 													color: isSelected ? "#fff" : accentColor,
 												}}
 											>
 												{isSelected ? (
 													<svg
+														aria-hidden="true"
 														width="8"
 														height="8"
 														viewBox="0 0 24 24"
@@ -3178,17 +3257,19 @@ function AskUserQuestionCard({
 			{/* Submit button */}
 			{!submitted && !isStreaming && onSendMessage && (
 				<button
+					type="button"
 					onClick={handleSubmit}
 					disabled={!hasSelections}
 					className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-medium transition-all"
 					style={{
-						backgroundColor: hasSelections ? accentColor : accentColor + "30",
+						backgroundColor: hasSelections ? accentColor : `${accentColor}30`,
 						color: hasSelections ? "#fff" : fgDim,
 						cursor: hasSelections ? "pointer" : "not-allowed",
 						opacity: hasSelections ? 1 : 0.6,
 					}}
 				>
 					<svg
+						aria-hidden="true"
 						width="10"
 						height="10"
 						viewBox="0 0 24 24"
@@ -3212,6 +3293,7 @@ function AskUserQuestionCard({
 					style={{ color: fgDim }}
 				>
 					<svg
+						aria-hidden="true"
 						width="10"
 						height="10"
 						viewBox="0 0 24 24"
@@ -3266,7 +3348,7 @@ function ToolOutputHighlight({
 			if (parsed.file_path && parsed.content) {
 				const preview =
 					parsed.content.length > 300
-						? parsed.content.slice(0, 300) + "..."
+						? `${parsed.content.slice(0, 300)}...`
 						: parsed.content;
 				return (
 					<>
@@ -3339,6 +3421,7 @@ function CopyButton({
 
 	return (
 		<button
+			type="button"
 			onClick={handleCopy}
 			className={`flex items-center justify-center h-5 w-5 rounded transition-colors ${className ?? ""}`}
 			style={{
@@ -3353,6 +3436,7 @@ function CopyButton({
 		>
 			{copied ? (
 				<svg
+					aria-hidden="true"
 					width="10"
 					height="10"
 					viewBox="0 0 24 24"
@@ -3366,6 +3450,7 @@ function CopyButton({
 				</svg>
 			) : (
 				<svg
+					aria-hidden="true"
 					width="10"
 					height="10"
 					viewBox="0 0 24 24"
@@ -3407,18 +3492,19 @@ function CheckpointMarker({
 		<div
 			className="rounded my-1"
 			style={{
-				backgroundColor: baseColor + "08",
-				borderLeft: `2px solid ${baseColor + "40"}`,
+				backgroundColor: `${baseColor}08`,
+				borderLeft: `2px solid ${`${baseColor}40`}`,
 			}}
 		>
 			<div className="flex items-center gap-2 px-2 py-1">
 				{/* Clock icon */}
 				<svg
+					aria-hidden="true"
 					width="11"
 					height="11"
 					viewBox="0 0 24 24"
 					fill="none"
-					stroke={baseColor + "80"}
+					stroke={`${baseColor}80`}
 					strokeWidth="2"
 					strokeLinecap="round"
 					strokeLinejoin="round"
@@ -3429,10 +3515,11 @@ function CheckpointMarker({
 
 				{/* File count badge (clickable to expand) */}
 				<button
+					type="button"
 					onClick={() => setExpanded(!expanded)}
 					className="text-[9px] font-mono px-1.5 py-0.5 rounded transition-colors"
 					style={{
-						backgroundColor: accentColor + "15",
+						backgroundColor: `${accentColor}15`,
 						color: accentColor,
 					}}
 				>
@@ -3445,11 +3532,12 @@ function CheckpointMarker({
 				{/* Revert / reverted state */}
 				{!checkpoint.reverted ? (
 					<button
+						type="button"
 						onClick={() => onRevert(checkpoint.id)}
 						disabled={disabled}
 						className="text-[9px] px-2 py-0.5 rounded font-medium transition-colors disabled:opacity-40"
 						style={{
-							backgroundColor: revertedColor + "15",
+							backgroundColor: `${revertedColor}15`,
 							color: revertedColor,
 						}}
 					>
@@ -3510,14 +3598,14 @@ function Inline({ text, theme }: { text: string; theme?: BubbleTheme }) {
 			),
 		[text]
 	);
-	const linkStyle = theme ? { color: theme.cursor + "cc" } : undefined;
+	const linkStyle = theme ? { color: `${theme.cursor}cc` } : undefined;
 	return (
 		<>
 			{parts.map((p, i) => {
 				const partKey = `${i}-${p.slice(0, 12)}`;
 				if (p.startsWith("`") && p.endsWith("`") && p.length > 2) {
 					const cs = theme
-						? { backgroundColor: theme.surface, color: theme.cursor + "cc" }
+						? { backgroundColor: theme.surface, color: `${theme.cursor}cc` }
 						: undefined;
 					return (
 						<code

@@ -1,10 +1,10 @@
 import { memo } from "react";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconPanelLeft,
 	IconTerminal,
 	IconX,
 } from "../../components/ui/Icons.tsx";
-import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	getPaneTitle,
 	getStatusInfo,
@@ -54,6 +54,7 @@ export const AgentSidebar = memo(function AgentSidebar({
 			<div className="px-2 py-2">
 				<div className="electrobun-webkit-app-region-drag py-1">
 					<button
+						type="button"
 						onClick={onCollapse}
 						className="electrobun-webkit-app-region-no-drag flex items-center gap-1.5 px-1 text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
 					>
@@ -127,6 +128,7 @@ export const CollapsedAgentBar = memo(function CollapsedAgentBar({
 	return (
 		<div className="shrink-0 flex items-center gap-1 px-2 py-1 border-b border-surgent-border bg-surgent-bg">
 			<button
+				type="button"
 				onClick={onExpand}
 				className="flex items-center justify-center h-6 w-6 rounded-md hover:bg-surgent-surface transition-colors"
 				title="Expand Agents"
@@ -141,6 +143,7 @@ export const CollapsedAgentBar = memo(function CollapsedAgentBar({
 					const name = getPaneTitle(pane);
 					return (
 						<button
+							type="button"
 							key={pane.id}
 							onClick={() => onSelectPane(pane.id)}
 							className={`flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors ${

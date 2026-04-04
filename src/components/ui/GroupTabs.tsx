@@ -122,6 +122,7 @@ export function GroupTabs({
 								)}
 								{deletable && onDelete && editingId !== item.id && (
 									<button
+										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
 											onDelete(item.id);
@@ -138,6 +139,7 @@ export function GroupTabs({
 			</div>
 			{onAdd && !showNew && (
 				<button
+					type="button"
 					onClick={() => setShowNew(true)}
 					className={`flex items-center justify-center rounded-lg border border-surgent-border bg-surgent-surface text-surgent-text-3 transition-colors hover:bg-surgent-text/[0.06] hover:text-surgent-text-2 ${compact ? "h-6 w-6" : "h-7 w-7"}`}
 				>
@@ -174,6 +176,7 @@ export function GroupTabs({
 							className="w-20 appearance-none bg-transparent text-xs text-surgent-text caret-surgent-text placeholder-surgent-text-3 outline-none border-none shadow-none ring-0 ring-transparent focus:outline-none focus:border-none focus:shadow-none focus:ring-0 focus:ring-transparent"
 						/>
 						<button
+							type="button"
 							onClick={() => {
 								setShowNew(false);
 								setNewName("");

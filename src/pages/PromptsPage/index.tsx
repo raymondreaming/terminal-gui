@@ -189,6 +189,7 @@ export function PromptsPage() {
 
 				<div className="relative">
 					<svg
+						aria-hidden="true"
 						width="12"
 						height="12"
 						viewBox="0 0 24 24"
@@ -218,10 +219,12 @@ export function PromptsPage() {
 				<span className="flex-1" />
 
 				<button
+					type="button"
 					onClick={startCreate}
 					className="flex items-center gap-1 h-7 rounded-lg border border-surgent-border bg-surgent-surface px-2.5 text-[11px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
 				>
 					<svg
+						aria-hidden="true"
 						width="10"
 						height="10"
 						viewBox="0 0 12 12"
@@ -261,6 +264,7 @@ export function PromptsPage() {
 								const isActive = selectedPrompt?._id === prompt._id;
 								return (
 									<button
+										type="button"
 										key={prompt._id}
 										onClick={() => selectPrompt(prompt)}
 										className={`text-left rounded-lg border p-3 transition-colors ${
@@ -368,11 +372,13 @@ function FilterDropdown({
 	return (
 		<div ref={ref} className="relative">
 			<button
+				type="button"
 				onClick={() => setOpen(!open)}
 				className="flex items-center gap-1.5 h-7 rounded-lg border border-surgent-border bg-surgent-surface px-2.5 text-[11px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
 			>
 				{activeLabel}
 				<svg
+					aria-hidden="true"
 					width="8"
 					height="8"
 					viewBox="0 0 8 8"
@@ -389,6 +395,7 @@ function FilterDropdown({
 				<div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] rounded-lg border border-surgent-border bg-surgent-surface p-1 shadow-2xl">
 					{FILTER_OPTIONS.map((opt) => (
 						<button
+							type="button"
 							key={opt.value}
 							onClick={() => {
 								onFilterChange(opt.value);

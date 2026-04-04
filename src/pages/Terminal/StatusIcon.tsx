@@ -28,7 +28,6 @@ export function StatusIcon({
 			return <IconWrench size={size} className={className} />;
 		case "terminal":
 			return <IconTerminal size={size} className={className} />;
-		case "circle":
 		default:
 			return <IconCircle size={size} className={className} />;
 	}

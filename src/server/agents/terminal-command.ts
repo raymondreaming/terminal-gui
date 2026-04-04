@@ -1,5 +1,5 @@
-import { existsSync } from "fs";
-import { delimiter, dirname, join, resolve } from "path";
+import { existsSync } from "node:fs";
+import { delimiter, dirname, join, resolve } from "node:path";
 import type { AgentKind, ChatAgentKind } from "../../lib/agents.ts";
 
 // ── Binary resolution helpers ──

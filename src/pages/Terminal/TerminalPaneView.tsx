@@ -8,10 +8,9 @@ import { ClaudeChatView } from "../../components/chat/ClaudeChatView.tsx";
 import { IconTerminal } from "../../components/ui/Icons.tsx";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
-import {
-	getPaneTitle,
-	type TerminalPaneModel,
-	type TerminalTheme,
+import type {
+	TerminalPaneModel,
+	TerminalTheme,
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { InlineDirectoryPicker } from "./InlineDirectoryPicker.tsx";
@@ -146,7 +145,19 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			termRef.current = null;
 			fitAddonRef.current = null;
 		};
-	}, [isAgentChatPane, pane.id, pane.pendingCwd]);
+	}, [
+		isAgentChatPane,
+		pane.id,
+		pane.pendingCwd,
+		fontFamily,
+		fontSize,
+		pane.agentKind,
+		pane.cwd,
+		pane.isClaude,
+		theme.bg,
+		theme.cursor,
+		theme.fg,
+	]);
 
 	useEffect(() => {
 		if (termRef.current) {
@@ -200,6 +211,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					</span>
 					<span className="flex-1" />
 					<button
+						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onClose(pane.id, true);
@@ -208,6 +220,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						title="Close pane"
 					>
 						<svg
+							aria-hidden="true"
 							width="8"
 							height="8"
 							viewBox="0 0 8 8"
@@ -291,6 +304,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					<div className="h-1.5 w-1.5 rounded-full bg-surgent-accent" />
 				)}
 				<button
+					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
 						onClose(pane.id);
@@ -299,6 +313,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					title="Close pane"
 				>
 					<svg
+						aria-hidden="true"
 						width="8"
 						height="8"
 						viewBox="0 0 8 8"

@@ -1,10 +1,10 @@
 import { memo, useEffect, useRef, useState } from "react";
 import {
-	parseBlocks,
-	parseInline,
 	type MdBlock,
 	type MdInlineToken,
 	type MdListItem,
+	parseBlocks,
+	parseInline,
 } from "../lib/markdown.ts";
 
 // ── Mermaid (CDN, loaded on demand) ──
@@ -181,8 +181,6 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 					)}
 				</del>
 			);
-
-		case "text":
 		default:
 			return <>{token.text}</>;
 	}
@@ -279,7 +277,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 					<table className="w-full text-[10px]">
 						<thead>
 							<tr className="border-b border-surgent-border bg-surgent-surface">
-								{block.rows[0]!.map((cell, j) => (
+								{block.rows[0]?.map((cell, j) => (
 									<th
 										key={j}
 										className="px-3 py-2 text-left font-medium text-surgent-text whitespace-nowrap"

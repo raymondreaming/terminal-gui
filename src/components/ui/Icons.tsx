@@ -6,6 +6,7 @@ function icon(d: string, viewBox = "0 0 24 24") {
 	return function Icon({ size = 16, ...props }: IconProps) {
 		return (
 			<svg
+				aria-hidden="true"
 				xmlns="http://www.w3.org/2000/svg"
 				width={size}
 				height={size}
@@ -27,6 +28,7 @@ function iconMulti(paths: string[], viewBox = "0 0 24 24") {
 	return function Icon({ size = 16, ...props }: IconProps) {
 		return (
 			<svg
+				aria-hidden="true"
 				xmlns="http://www.w3.org/2000/svg"
 				width={size}
 				height={size}
@@ -154,6 +156,7 @@ export const IconRobot = iconMulti([
 export function IconAnthropic({ size = 16, ...props }: IconProps) {
 	return (
 		<svg
+			aria-hidden="true"
 			xmlns="http://www.w3.org/2000/svg"
 			width={size}
 			height={size}
@@ -181,6 +184,7 @@ export function IconAnthropic({ size = 16, ...props }: IconProps) {
 export function IconOpenAI({ size = 16, ...props }: IconProps) {
 	return (
 		<svg
+			aria-hidden="true"
 			xmlns="http://www.w3.org/2000/svg"
 			width={size}
 			height={size}
