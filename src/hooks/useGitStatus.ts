@@ -37,7 +37,8 @@ export function useGitStatus(cwds: string[]) {
 	const { data: projects, refetch } = usePollingResource<GitProjectStatus[]>(
 		fetcher,
 		5000,
-		[]
+		[],
+		{ deferInitialFetch: true }
 	);
 
 	const projectMap = useMemo(() => {

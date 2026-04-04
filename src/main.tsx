@@ -1,13 +1,25 @@
+import { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { applyAppTheme, loadAppThemeId } from "./lib/app-theme.ts";
 import { getServerOrigin, resolveServerUrl } from "./lib/server-origin.ts";
-import { ExperimentalPage } from "./pages/ExperimentalPage";
-import { GitPage } from "./pages/GitPage";
-import { PromptsPage } from "./pages/PromptsPage";
-import { TerminalPage } from "./pages/Terminal";
+
+const TerminalPage = lazy(() =>
+	import("./pages/Terminal").then((m) => ({ default: m.TerminalPage }))
+);
+const ExperimentalPage = lazy(() =>
+	import("./pages/ExperimentalPage").then((m) => ({
+		default: m.ExperimentalPage,
+	}))
+);
+const GitPage = lazy(() =>
+	import("./pages/GitPage").then((m) => ({ default: m.GitPage }))
+);
+const PromptsPage = lazy(() =>
+	import("./pages/PromptsPage").then((m) => ({ default: m.PromptsPage }))
+);
 
 if (window.location.origin !== getServerOrigin()) {
 	const originalFetch = window.fetch.bind(window);
@@ -51,13 +63,15 @@ root.render(
 				<div className="flex min-h-0 flex-1">
 					<Sidebar />
 					<main className="min-w-0 flex-1 overflow-hidden">
-						<Routes>
-							<Route path="/" element={<Navigate to="/terminal" replace />} />
-							<Route path="/terminal" element={<TerminalPage />} />
-							<Route path="/experimental" element={<ExperimentalPage />} />
-							<Route path="/git" element={<GitPage />} />
-							<Route path="/prompts" element={<PromptsPage />} />
-						</Routes>
+						<Suspense fallback={null}>
+							<Routes>
+								<Route path="/" element={<Navigate to="/terminal" replace />} />
+								<Route path="/terminal" element={<TerminalPage />} />
+								<Route path="/experimental" element={<ExperimentalPage />} />
+								<Route path="/git" element={<GitPage />} />
+								<Route path="/prompts" element={<PromptsPage />} />
+							</Routes>
+						</Suspense>
 					</main>
 				</div>
 			</div>

@@ -29,7 +29,9 @@ export function useClaudeProcesses(pollInterval = 10000) {
 		setData: setProcesses,
 		refetch: refetchProcesses,
 		mountedRef,
-	} = usePollingResource(fetchProcesses, pollInterval, [] as ClaudeProcess[]);
+	} = usePollingResource(fetchProcesses, pollInterval, [] as ClaudeProcess[], {
+		deferInitialFetch: true,
+	});
 	const killProcess = useCallback(
 		async (pid: number) => {
 			try {

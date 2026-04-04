@@ -6,7 +6,11 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { ClaudeChatView } from "../../components/chat/ClaudeChatView.tsx";
+import {
+	type ClaudeChatHandle,
+	ClaudeChatView,
+	clearChatMessages,
+} from "../../components/chat/ClaudeChatView.tsx";
 import {
 	IconGitBranch,
 	IconLayoutGrid,
@@ -123,11 +127,17 @@ export function ExperimentalPage() {
 		new Map()
 	);
 	const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>("split");
+	const [closedPaneIds, setClosedPaneIds] = useState<Set<string>>(new Set());
+	const chatRef = useRef<ClaudeChatHandle>(null);
 
 	const terminalState = useMemo(() => loadTerminalState(), []);
-	const sessions = useMemo(
+	const allSessions = useMemo(
 		() => stableSessions(flattenSessions(terminalState?.groups ?? [])),
 		[terminalState]
+	);
+	const sessions = useMemo(
+		() => allSessions.filter((s) => !closedPaneIds.has(s.paneId)),
+		[allSessions, closedPaneIds]
 	);
 	const { sessions: liveAgentSessions } = useAgentSessions();
 	const trackedDirs = useMemo(
@@ -320,11 +330,13 @@ export function ExperimentalPage() {
 			if (event.key === "ArrowLeft") {
 				event.preventDefault();
 				cycleSession(-1);
+				requestAnimationFrame(() => chatRef.current?.focusInput());
 				return;
 			}
 			if (event.key === "ArrowRight") {
 				event.preventDefault();
 				cycleSession(1);
+				requestAnimationFrame(() => chatRef.current?.focusInput());
 				return;
 			}
 			if (event.key === "ArrowDown") {
@@ -342,6 +354,19 @@ export function ExperimentalPage() {
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [cycleFile, cycleSession]);
 
+	const closePane = useCallback(
+		(paneId: string) => {
+			clearChatMessages(paneId);
+			setClosedPaneIds((prev) => new Set(prev).add(paneId));
+			// Select another pane if we closed the selected one
+			if (selectedPaneId === paneId) {
+				const remaining = sessions.filter((s) => s.paneId !== paneId);
+				setSelectedPaneId(remaining[0]?.paneId ?? null);
+			}
+		},
+		[selectedPaneId, sessions]
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-surgent-bg">
 			<div className="flex min-h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
@@ -351,6 +376,7 @@ export function ExperimentalPage() {
 						agentStatuses={agentStatuses}
 						selectedPaneId={selectedSession?.paneId ?? null}
 						onSelectPane={setSelectedPaneId}
+						onClosePane={closePane}
 					/>
 				</div>
 				<div className="flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
@@ -391,6 +417,7 @@ export function ExperimentalPage() {
 				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
 					<section className="min-h-0 min-w-0 border-r border-surgent-border">
 						<ClaudeChatView
+							ref={chatRef}
 							paneId={selectedSession.paneId}
 							cwd={selectedSession.cwd}
 							agentKind={selectedSession.agentKind}
@@ -521,11 +548,13 @@ function AgentStrip({
 	agentStatuses,
 	selectedPaneId,
 	onSelectPane,
+	onClosePane,
 }: {
 	sessions: ExperimentalSession[];
 	agentStatuses: Map<string, string>;
 	selectedPaneId: string | null;
 	onSelectPane: (id: string) => void;
+	onClosePane: (id: string) => void;
 }) {
 	return (
 		<div className="flex items-center gap-1 overflow-x-auto py-1">
@@ -533,16 +562,15 @@ function AgentStrip({
 				const isSelected = session.paneId === selectedPaneId;
 				const info = getStatusInfo(agentStatuses.get(session.paneId) ?? "idle");
 				return (
-					<button
+					<div
 						key={session.paneId}
-						type="button"
-						onClick={() => onSelectPane(session.paneId)}
-						className={`flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 transition-colors ${
+						className={`group flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 transition-colors cursor-pointer ${
 							isSelected
 								? "bg-surgent-surface-2 text-surgent-text"
 								: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
 						}`}
 						title={`${basename(session.cwd)} - ${getAgentDefinition(session.agentKind).label}`}
+						onClick={() => onSelectPane(session.paneId)}
 					>
 						<StatusIcon
 							iconType={info.iconType}
@@ -563,7 +591,29 @@ function AgentStrip({
 								{session.messageCount}
 							</span>
 						)}
-					</button>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onClosePane(session.paneId);
+							}}
+							className="ml-0.5 w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-surgent-text/10 transition-opacity"
+							title="Close"
+						>
+							<svg
+								aria-hidden="true"
+								width="8"
+								height="8"
+								viewBox="0 0 8 8"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="1.5"
+								strokeLinecap="round"
+							>
+								<path d="M1 1l6 6M7 1L1 7" />
+							</svg>
+						</button>
+					</div>
 				);
 			})}
 		</div>

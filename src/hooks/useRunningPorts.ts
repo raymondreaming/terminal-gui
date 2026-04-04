@@ -25,7 +25,9 @@ export function useRunningPorts(pollInterval = 10000) {
 		setData: setPorts,
 		refetch: refetchPorts,
 		mountedRef,
-	} = usePollingResource(fetchPorts, pollInterval, [] as RunningPort[]);
+	} = usePollingResource(fetchPorts, pollInterval, [] as RunningPort[], {
+		deferInitialFetch: true,
+	});
 	const killPort = useCallback(
 		async (pid: number) => {
 			try {

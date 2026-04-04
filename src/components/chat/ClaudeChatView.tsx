@@ -56,6 +56,7 @@ interface ClaudeChatViewProps {
 export interface ClaudeChatHandle {
 	sendMessage: (text: string) => void;
 	getStatus: () => string;
+	focusInput: () => void;
 }
 
 interface ChatMessage {
@@ -583,6 +584,9 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					}
 				},
 				getStatus: () => status,
+				focusInput: () => {
+					textareaRef.current?.focus();
+				},
 			}),
 			[appendLocalMessages, isLoading, queueMessage, status, sendToServer]
 		);
@@ -2631,15 +2635,6 @@ const ToolActivityGroup = React.memo(function ToolActivityGroup({
 	theme?: BubbleTheme;
 }) {
 	const activeCount = messages.filter((msg) => msg.isStreaming).length;
-	const toolCounts = new Map<string, number>();
-	for (const msg of messages) {
-		if (!msg.toolName) continue;
-		toolCounts.set(msg.toolName, (toolCounts.get(msg.toolName) ?? 0) + 1);
-	}
-	const summary = Array.from(toolCounts.entries())
-		.slice(0, 4)
-		.map(([name, count]) => `${name}${count > 1 ? ` x${count}` : ""}`)
-		.join(", ");
 
 	return (
 		<div
@@ -2650,27 +2645,17 @@ const ToolActivityGroup = React.memo(function ToolActivityGroup({
 			}}
 		>
 			<div
-				className="flex items-start justify-between gap-3 px-3 py-2"
+				className="flex items-center justify-between gap-3 px-3 py-2"
 				style={{
 					borderBottom: `1px solid ${theme?.border ?? "rgba(255,255,255,0.08)"}`,
 					backgroundColor: theme?.surface ?? "rgba(255,255,255,0.02)",
 				}}
 			>
-				<div className="min-w-0">
-					<div
-						className="text-[10px] font-medium"
-						style={{ color: theme?.fg ?? "var(--color-surgent-text)" }}
-					>
-						Tool Activity
-					</div>
-					{summary && (
-						<div
-							className="mt-0.5 truncate text-[10px]"
-							style={{ color: theme?.fgDim ?? "var(--color-surgent-text-3)" }}
-						>
-							{summary}
-						</div>
-					)}
+				<div
+					className="text-[10px] font-medium"
+					style={{ color: theme?.fg ?? "var(--color-surgent-text)" }}
+				>
+					Tool Activity
 				</div>
 				<div className="shrink-0 flex items-center gap-2">
 					{activeCount > 0 && (

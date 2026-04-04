@@ -80,7 +80,7 @@ function DiffRow({
 			<div
 				style={{
 					height: LINE_H,
-					background: `repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.20) 3px, rgba(255,255,255,0.20) 4px), rgba(255,255,255,0.06)`,
+					background: `repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(255,255,255,0.06) 6px, rgba(255,255,255,0.06) 7px), rgba(255,255,255,0.02)`,
 				}}
 			/>
 		);

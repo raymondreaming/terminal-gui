@@ -28,7 +28,8 @@ export function useAgentSessions(pollInterval = 3000) {
 	const { data: sessions, refetch } = usePollingResource(
 		fetchSessions,
 		pollInterval,
-		[] as AgentSession[]
+		[] as AgentSession[],
+		{ deferInitialFetch: true }
 	);
 	return { sessions, refetch };
 }

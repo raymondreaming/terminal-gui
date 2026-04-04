@@ -16,12 +16,14 @@ function isAbortLikeError(error: unknown): boolean {
 export function usePollingResource<T>(
 	fetcher: (signal?: AbortSignal) => Promise<T>,
 	pollInterval: number,
-	initialValue: T
+	initialValue: T,
+	options?: { deferInitialFetch?: boolean }
 ) {
 	const [data, setData] = useState(initialValue);
 	const mountedRef = useRef(true);
 	const dataRef = useRef(data);
 	dataRef.current = data;
+	const deferInitialFetch = options?.deferInitialFetch ?? false;
 	const refetch = useCallback(
 		async (signal?: AbortSignal) => {
 			try {
@@ -42,7 +44,16 @@ export function usePollingResource<T>(
 	useEffect(() => {
 		mountedRef.current = true;
 		const controller = new AbortController();
-		void refetch(controller.signal);
+		// Defer initial fetch to next frame to avoid blocking render
+		if (deferInitialFetch) {
+			requestAnimationFrame(() => {
+				if (mountedRef.current) {
+					void refetch(controller.signal);
+				}
+			});
+		} else {
+			void refetch(controller.signal);
+		}
 		const interval = window.setInterval(() => {
 			void refetch(controller.signal);
 		}, pollInterval);
@@ -51,6 +62,6 @@ export function usePollingResource<T>(
 			controller.abort();
 			window.clearInterval(interval);
 		};
-	}, [pollInterval, refetch]);
+	}, [pollInterval, refetch, deferInitialFetch]);
 	return { data, setData, refetch, mountedRef };
 }
