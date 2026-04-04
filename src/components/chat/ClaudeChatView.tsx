@@ -2372,12 +2372,26 @@ const Bubble = React.memo(function Bubble({
 			return null;
 		}
 
+		// Extract image paths from content if not in msg.images
+		// Pattern: "Here are the images at these paths:\n/path/to/image.png"
+		let imagePaths = msg.images ?? [];
+		let displayContent = msg.content;
+		if (
+			imagePaths.length === 0 &&
+			msg.content.includes("Here are the images at these paths:")
+		) {
+			const parts = msg.content.split("Here are the images at these paths:\n");
+			displayContent = parts[0]?.trim() ?? "";
+			const pathLines = parts[1]?.split("\n").filter((p) => p.trim()) ?? [];
+			imagePaths = pathLines.filter((p) => p.includes("/.tmp/"));
+		}
+
 		return (
 			<div className="flex justify-end">
 				<div className="max-w-[85%] rounded-lg rounded-br-sm px-2.5 py-1.5">
-					{msg.images && msg.images.length > 0 && (
+					{imagePaths.length > 0 && (
 						<div className="flex flex-wrap gap-1.5 mb-1.5">
-							{msg.images.map((imgPath) => (
+							{imagePaths.map((imgPath) => (
 								<img
 									key={imgPath}
 									src={`/api/file?path=${encodeURIComponent(imgPath)}`}
@@ -2390,12 +2404,12 @@ const Bubble = React.memo(function Bubble({
 							))}
 						</div>
 					)}
-					{msg.content && (
+					{displayContent && (
 						<p
 							className="whitespace-pre-wrap break-words text-[12px]"
 							style={theme ? { color: theme.fg } : undefined}
 						>
-							{msg.content}
+							{displayContent}
 						</p>
 					)}
 				</div>
