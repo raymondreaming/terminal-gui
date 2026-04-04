@@ -2,6 +2,7 @@ import { unlink } from "fs/promises";
 import { tmpdir } from "os";
 import { resolve } from "path";
 import type { AgentAdapter, AgentHandle, AgentRunContext } from "../types.ts";
+import { createCodexEnv, resolveCodexBinary } from "../terminal-command.ts";
 
 interface CodexRunState {
 	outputPath: string;
@@ -229,7 +230,7 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 
 		return {
 			async run() {
-				const codexCmd = process.platform === "win32" ? "codex.cmd" : "codex";
+				const codexCmd = resolveCodexBinary();
 				const baseArgs = [
 					"--json",
 					"--skip-git-repo-check",
@@ -246,7 +247,7 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 					stdout: "pipe",
 					stderr: "pipe",
 					cwd: ctx.cwd,
-					env: { ...process.env },
+					env: createCodexEnv(),
 				});
 
 				const stderrPromise = drainStreamToString(

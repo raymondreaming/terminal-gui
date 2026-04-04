@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { delimiter, dirname, join, resolve } from "path";
 import type { AgentKind, ChatAgentKind } from "../../lib/agents.ts";
 
-// ── Claude binary resolution ──
+// ── Binary resolution helpers ──
 
 const isWin = process.platform === "win32";
 
@@ -12,6 +12,8 @@ function withExecutableExtension(pathname: string): string {
 	}
 	return `${pathname}.cmd`;
 }
+
+// ── Claude binary resolution ──
 
 function getClaudePathCandidates(): string[] {
 	const home = process.env.HOME;
@@ -42,6 +44,49 @@ export function createClaudeEnv(): Record<string, string> {
 
 	const pathEntries = (env.PATH || "").split(delimiter).filter(Boolean);
 	for (const candidate of getClaudePathCandidates()) {
+		const candidateDir = dirname(candidate);
+		if (candidateDir && !pathEntries.includes(candidateDir)) {
+			pathEntries.unshift(candidateDir);
+		}
+	}
+	if (pathEntries.length > 0) {
+		env.PATH = pathEntries.join(delimiter);
+	}
+
+	return env;
+}
+
+// ── Codex binary resolution ──
+
+function getCodexPathCandidates(): string[] {
+	const home = process.env.HOME;
+	const candidates = [
+		process.env.CODEX_PATH,
+		home ? join(home, ".npm-global", "bin", "codex") : null,
+		home ? join(home, ".local", "bin", "codex") : null,
+		"/usr/local/bin/codex",
+		"/opt/homebrew/bin/codex",
+	];
+
+	return candidates
+		.filter((candidate): candidate is string => Boolean(candidate))
+		.map(withExecutableExtension);
+}
+
+export function resolveCodexBinary(): string {
+	for (const candidate of getCodexPathCandidates()) {
+		if (existsSync(candidate)) {
+			return candidate;
+		}
+	}
+	return isWin ? "codex.cmd" : "codex";
+}
+
+export function createCodexEnv(): Record<string, string> {
+	const env = { ...process.env } as Record<string, string>;
+
+	const pathEntries = (env.PATH || "").split(delimiter).filter(Boolean);
+	for (const candidate of getCodexPathCandidates()) {
 		const candidateDir = dirname(candidate);
 		if (candidateDir && !pathEntries.includes(candidateDir)) {
 			pathEntries.unshift(candidateDir);
@@ -105,9 +150,6 @@ export async function resolveInteractiveAgentCommand(
 
 	return {
 		ok: true,
-		cmd: [
-			isWin ? "codex.cmd" : "codex",
-			"--dangerously-bypass-approvals-and-sandbox",
-		],
+		cmd: [resolveCodexBinary(), "--dangerously-bypass-approvals-and-sandbox"],
 	};
 }

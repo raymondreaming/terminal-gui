@@ -7,7 +7,6 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { createPortal } from "react-dom";
 import { usePrompts } from "../../hooks/usePrompts.ts";
 import { getAgentDefinition } from "../../lib/agents.ts";
 import { measureTextHeight } from "../../lib/pretext-utils.ts";
@@ -406,12 +405,24 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 				action: "send",
 				isLocalCommand: true,
 			}));
-			return [...LOCAL_COMMANDS, ...nativeCommands, ...libraryCommands];
+			const deduped = new Map<string, SlashCommand>();
+			for (const cmd of [
+				...LOCAL_COMMANDS,
+				...libraryCommands,
+				...nativeCommands,
+			]) {
+				const key = cmd.name.toLowerCase();
+				if (!deduped.has(key)) deduped.set(key, cmd);
+			}
+			return [...deduped.values()];
 		}, [agentKind, localPrompts]);
 
+		const commandQuery = input.startsWith("/")
+			? (input.slice(1).match(/^\S*/) ?? [""])[0]!.toLowerCase()
+			: "";
 		const filteredCommands = input.startsWith("/")
 			? allCommands.filter((cmd) =>
-					cmd.name.toLowerCase().startsWith(input.slice(1).toLowerCase())
+					cmd.name.toLowerCase().startsWith(commandQuery)
 				)
 			: [];
 
@@ -449,7 +460,10 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		}, []);
 
 		useEffect(() => {
-			if (input.startsWith("/") && !input.includes(" ")) {
+			if (
+				input.startsWith("/") &&
+				commandQuery.length === input.slice(1).length
+			) {
 				setCommandMenu({
 					show: true,
 					selectedIdx: 0,
@@ -458,7 +472,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			} else {
 				setCommandMenu({ show: false, selectedIdx: 0, position: null });
 			}
-		}, [input, getMenuPosition]);
+		}, [input, commandQuery, getMenuPosition]);
 
 		// @ file reference: detect trigger and search
 		const handleInputForFileMenu = useCallback(
@@ -1255,7 +1269,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 				const parts = text.slice(1).split(" ");
 				const cmdName = parts[0]?.toLowerCase();
 				const args = parts.slice(1).join(" ");
-				const cmd = allCommands.find((c) => c.name === cmdName);
+				const cmd = allCommands.find((c) => c.name.toLowerCase() === cmdName);
 				if (cmd) {
 					executeCommand(cmd, args || undefined);
 					return;
@@ -1844,172 +1858,156 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 							</button>
 							<div className="relative flex-1">
 								{/* @ file reference menu */}
-								{fileMenu.show &&
-									fileResults.length > 0 &&
-									fileMenu.position &&
-									createPortal(
+								{fileMenu.show && fileResults.length > 0 && (
+									<div
+										className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-y-auto z-[9999]"
+										style={{
+											maxHeight: 300,
+											backgroundColor: theme
+												? surfaceColor
+												: "var(--color-surgent-surface)",
+											borderColor: theme
+												? borderColor
+												: "var(--color-surgent-border)",
+										}}
+									>
 										<div
-											className="fixed rounded-lg border shadow-lg overflow-y-auto z-[9999]"
+											className="px-3 py-1.5 text-[9px] font-semibold tracking-wide"
 											style={{
-												top: fileMenu.position.top,
-												left: fileMenu.position.left,
-												width: fileMenu.position.width,
-												maxHeight: fileMenu.position.maxHeight,
-												transform: "translateY(-100%) translateY(-4px)",
-												backgroundColor: theme
-													? surfaceColor
-													: "var(--color-surgent-surface)",
-												borderColor: theme
-													? borderColor
-													: "var(--color-surgent-border)",
+												color: theme ? fgDim : "var(--color-surgent-text-3)",
+												borderBottom: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
 											}}
 										>
-											<div
-												className="px-3 py-1.5 text-[9px] font-semibold tracking-wide"
+											FILES
+											{fileMenu.query ? ` matching "${fileMenu.query}"` : ""}
+										</div>
+										{fileResults.map((file, idx) => (
+											<button
+												key={file.path}
+												onClick={() => selectFile(idx)}
+												onMouseEnter={() =>
+													setFileMenu((prev) => ({
+														...prev,
+														selectedIdx: idx,
+													}))
+												}
+												className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors"
 												style={{
-													color: theme ? fgDim : "var(--color-surgent-text-3)",
-													borderBottom: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
+													backgroundColor:
+														idx === fileMenu.selectedIdx
+															? theme
+																? cursorColor + "20"
+																: "rgba(0,122,255,0.15)"
+															: "transparent",
 												}}
 											>
-												FILES
-												{fileMenu.query ? ` matching "${fileMenu.query}"` : ""}
-											</div>
-											{fileResults.map((file, idx) => (
-												<button
-													key={file.path}
-													onClick={() => selectFile(idx)}
-													onMouseEnter={() =>
-														setFileMenu((prev) => ({
-															...prev,
-															selectedIdx: idx,
-														}))
-													}
-													className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors"
+												<span
+													className="shrink-0 text-[11px]"
 													style={{
-														backgroundColor:
-															idx === fileMenu.selectedIdx
-																? theme
-																	? cursorColor + "20"
-																	: "rgba(0,122,255,0.15)"
-																: "transparent",
+														color: theme
+															? fgDim
+															: "var(--color-surgent-text-3)",
 													}}
 												>
-													<span
-														className="text-[11px] shrink-0"
-														style={{
-															color: theme
-																? fgDim
-																: "var(--color-surgent-text-3)",
-														}}
-													>
-														{file.isDir ? "\u{1F4C1}" : "\u{1F4C4}"}
-													</span>
-													<span
-														className="font-mono text-[11px] font-medium truncate"
-														style={{
-															color: theme
-																? cursorColor
-																: "var(--color-surgent-accent)",
-														}}
-													>
-														{file.name}
-													</span>
-													<span
-														className="text-[9px] truncate flex-1 text-right"
-														style={{
-															color: theme
-																? fgDim
-																: "var(--color-surgent-text-3)",
-														}}
-													>
-														{file.path}
-													</span>
-												</button>
-											))}
-										</div>,
-										document.body
-									)}
+													{file.isDir ? "\u{1F4C1}" : "\u{1F4C4}"}
+												</span>
+												<span
+													className="truncate font-mono text-[11px] font-medium"
+													style={{
+														color: theme
+															? cursorColor
+															: "var(--color-surgent-accent)",
+													}}
+												>
+													{file.name}
+												</span>
+												<span
+													className="flex-1 truncate text-right text-[9px]"
+													style={{
+														color: theme
+															? fgDim
+															: "var(--color-surgent-text-3)",
+													}}
+												>
+													{file.path}
+												</span>
+											</button>
+										))}
+									</div>
+								)}
 								{/* / command menu */}
-								{showCommands &&
-									filteredCommands.length > 0 &&
-									menuPosition &&
-									createPortal(
-										<div
-											className="fixed rounded-lg border shadow-lg overflow-y-auto z-[9999]"
-											style={{
-												top: menuPosition.top,
-												left: menuPosition.left,
-												width: menuPosition.width,
-												maxHeight: menuPosition.maxHeight,
-												transform: "translateY(-100%) translateY(-4px)",
-												backgroundColor: theme
-													? surfaceColor
-													: "var(--color-surgent-surface)",
-												borderColor: theme
-													? borderColor
-													: "var(--color-surgent-border)",
-											}}
-										>
-											{filteredCommands.map((cmd, idx) => (
-												<button
-													key={cmd.id || cmd.name}
-													onClick={() => selectCommand(idx)}
-													onMouseEnter={() =>
-														setCommandMenu((prev) => ({
-															...prev,
-															selectedIdx: idx,
-														}))
-													}
-													className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors"
+								{showCommands && filteredCommands.length > 0 && (
+									<div
+										className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-y-auto z-[9999]"
+										style={{
+											maxHeight: 400,
+											backgroundColor: theme
+												? surfaceColor
+												: "var(--color-surgent-surface)",
+											borderColor: theme
+												? borderColor
+												: "var(--color-surgent-border)",
+										}}
+									>
+										{filteredCommands.map((cmd, idx) => (
+											<button
+												key={cmd.id || cmd.name}
+												onClick={() => selectCommand(idx)}
+												onMouseEnter={() =>
+													setCommandMenu((prev) => ({
+														...prev,
+														selectedIdx: idx,
+													}))
+												}
+												className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors"
+												style={{
+													backgroundColor:
+														idx === selectedCommandIdx
+															? theme
+																? cursorColor + "20"
+																: "rgba(0,122,255,0.15)"
+															: "transparent",
+												}}
+											>
+												<span
+													className="shrink-0 font-mono text-[11px] font-medium"
 													style={{
-														backgroundColor:
-															idx === selectedCommandIdx
-																? theme
-																	? cursorColor + "20"
-																	: "rgba(0,122,255,0.15)"
-																: "transparent",
+														color: theme
+															? cursorColor
+															: "var(--color-surgent-accent)",
 													}}
 												>
+													/{cmd.name}
+												</span>
+												<span
+													className="flex-1 truncate text-[10px]"
+													style={{
+														color: theme
+															? fgDim
+															: "var(--color-surgent-text-3)",
+													}}
+												>
+													{cmd.description}
+												</span>
+												{cmd.isLocalCommand && (
 													<span
-														className="font-mono text-[11px] font-medium shrink-0"
+														className="shrink-0 rounded px-1 py-0.5 text-[8px]"
 														style={{
+															backgroundColor: theme
+																? cursorColor + "15"
+																: "rgba(0,122,255,0.1)",
 															color: theme
 																? cursorColor
 																: "var(--color-surgent-accent)",
 														}}
 													>
-														/{cmd.name}
+														claude code
 													</span>
-													<span
-														className="text-[10px] truncate flex-1"
-														style={{
-															color: theme
-																? fgDim
-																: "var(--color-surgent-text-3)",
-														}}
-													>
-														{cmd.description}
-													</span>
-													{cmd.isLocalCommand && (
-														<span
-															className="text-[8px] px-1 py-0.5 rounded shrink-0"
-															style={{
-																backgroundColor: theme
-																	? cursorColor + "15"
-																	: "rgba(0,122,255,0.1)",
-																color: theme
-																	? cursorColor
-																	: "var(--color-surgent-accent)",
-															}}
-														>
-															claude code
-														</span>
-													)}
-												</button>
-											))}
-										</div>,
-										document.body
-									)}
+												)}
+											</button>
+										))}
+									</div>
+								)}
 								<textarea
 									ref={textareaRef}
 									value={input}
