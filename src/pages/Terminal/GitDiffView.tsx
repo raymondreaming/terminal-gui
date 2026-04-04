@@ -135,7 +135,7 @@ function VirtualPanel({
 	scrollRef,
 	onScroll,
 	disableTokenize,
-	showMinimap = false,
+	showMinimap: _showMinimap = false,
 }: {
 	lines: DiffLine[];
 	ext: string;
@@ -198,7 +198,7 @@ function VirtualPanel({
 					</div>
 				</div>
 			</div>
-			{showMinimap && lines.length > 0 && (
+			{false && _showMinimap && lines.length > 0 && (
 				<DiffMinimap
 					lines={lines}
 					scrollTop={scrollTop}
@@ -239,95 +239,78 @@ function DiffMinimap({
 		return () => obs.disconnect();
 	}, []);
 
-	// Scale factor: map total content height to minimap height
+	// Guard against bad values
+	if (totalHeight <= 0 || lines.length === 0 || containerHeight <= 0) {
+		return (
+			<div
+				ref={containerRef}
+				className="w-[14px] shrink-0 bg-surgent-bg border-l border-surgent-border/30"
+			/>
+		);
+	}
+
 	const scale = containerHeight / totalHeight;
-	const thumbHeight = Math.max(20, viewHeight * scale);
-	const thumbTop = scrollTop * scale;
-
-	// Build minimap segments - group consecutive lines of same type
-	const segments = useMemo(() => {
-		if (containerHeight === 0 || lines.length === 0) return [];
-		const result: { type: string; startLine: number; endLine: number }[] = [];
-		let currentType = "";
-		let startLine = 0;
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			const type =
-				line.type === "add" || line.type === "remove" ? line.type : "";
-			if (type !== currentType) {
-				if (currentType) {
-					result.push({ type: currentType, startLine, endLine: i });
-				}
-				currentType = type;
-				startLine = i;
-			}
-		}
-		if (currentType) {
-			result.push({ type: currentType, startLine, endLine: lines.length });
-		}
-		return result;
-	}, [lines, containerHeight]);
-
-	const handlePointerDown = useCallback(
-		(e: React.PointerEvent) => {
-			if (!containerRef.current) return;
-			isDragging.current = true;
-			const rect = containerRef.current.getBoundingClientRect();
-			const y = e.clientY - rect.top;
-			const lineIndex = Math.floor((y / containerHeight) * lines.length);
-			onScrollTo(lineIndex);
-			(e.target as HTMLElement).setPointerCapture(e.pointerId);
-		},
-		[containerHeight, lines.length, onScrollTo]
+	const thumbHeight = Math.max(
+		16,
+		Math.min(viewHeight * scale, containerHeight)
 	);
-
-	const handlePointerMove = useCallback(
-		(e: React.PointerEvent) => {
-			if (!isDragging.current || !containerRef.current) return;
-			const rect = containerRef.current.getBoundingClientRect();
-			const y = e.clientY - rect.top;
-			const lineIndex = Math.floor((y / containerHeight) * lines.length);
-			onScrollTo(Math.max(0, Math.min(lines.length - 1, lineIndex)));
-		},
-		[containerHeight, lines.length, onScrollTo]
+	const thumbTop = Math.max(
+		0,
+		Math.min(scrollTop * scale, containerHeight - thumbHeight)
 	);
-
-	const handlePointerUp = useCallback(() => {
-		isDragging.current = false;
-	}, []);
-
 	const lineHeight = containerHeight / lines.length;
+
+	// Build segments inline, limit to 100 max for performance
+	const segments: { type: string; top: number; height: number }[] = [];
+	let currentType = "";
+	let startLine = 0;
+	for (let i = 0; i < lines.length && segments.length < 100; i++) {
+		const t = lines[i].type;
+		const type = t === "add" || t === "remove" ? t : "";
+		if (type !== currentType) {
+			if (currentType) {
+				segments.push({
+					type: currentType,
+					top: startLine * lineHeight,
+					height: Math.max(2, (i - startLine) * lineHeight),
+				});
+			}
+			currentType = type;
+			startLine = i;
+		}
+	}
+	if (currentType && segments.length < 100) {
+		segments.push({
+			type: currentType,
+			top: startLine * lineHeight,
+			height: Math.max(2, (lines.length - startLine) * lineHeight),
+		});
+	}
+
+	const handleClick = (e: React.MouseEvent) => {
+		if (!containerRef.current) return;
+		const rect = containerRef.current.getBoundingClientRect();
+		const y = e.clientY - rect.top;
+		const lineIndex = Math.floor((y / containerHeight) * lines.length);
+		onScrollTo(Math.max(0, Math.min(lines.length - 1, lineIndex)));
+	};
 
 	return (
 		<div
 			ref={containerRef}
 			className="w-[14px] shrink-0 bg-surgent-bg border-l border-surgent-border/30 cursor-pointer relative"
-			onPointerDown={handlePointerDown}
-			onPointerMove={handlePointerMove}
-			onPointerUp={handlePointerUp}
+			onClick={handleClick}
 		>
-			{/* Change markers */}
 			{segments.map((seg, i) => (
 				<div
 					key={i}
-					className={`absolute right-0 w-[6px] ${
-						seg.type === "add" ? "bg-git-added" : "bg-git-deleted"
-					}`}
-					style={{
-						top: seg.startLine * lineHeight,
-						height: Math.max(2, (seg.endLine - seg.startLine) * lineHeight),
-						opacity: 0.8,
-					}}
+					className={`absolute right-0 w-[6px] ${seg.type === "add" ? "bg-git-added" : "bg-git-deleted"}`}
+					style={{ top: seg.top, height: seg.height, opacity: 0.7 }}
 				/>
 			))}
-			{/* Viewport indicator */}
 			<div
-				className="absolute left-0 right-0 bg-surgent-text/10 border-y border-surgent-text/20"
-				style={{
-					top: thumbTop,
-					height: thumbHeight,
-				}}
+				className="absolute left-0 right-0 bg-surgent-text/10 border-y border-surgent-text/20 pointer-events-none"
+				style={{ top: thumbTop, height: thumbHeight }}
 			/>
 		</div>
 	);
