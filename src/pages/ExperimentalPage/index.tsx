@@ -447,8 +447,8 @@ export function ExperimentalPage() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-surgent-bg">
-			<header className="flex min-h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
-				<div className="min-w-0 flex-1 overflow-x-auto">
+			<div className="electrobun-webkit-app-region-drag relative flex h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
+				<div className="electrobun-webkit-app-region-no-drag relative z-10 min-w-0 shrink-0 overflow-x-auto">
 					<AgentStrip
 						sessions={sessions}
 						statuses={agentStatuses}
@@ -457,7 +457,8 @@ export function ExperimentalPage() {
 						onClose={closePane}
 					/>
 				</div>
-				<div className="flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
+				<div className="flex-1 min-w-0" />
+				<div className="electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
 					<ToolbarButton
 						active={diffViewMode === "split"}
 						title="Split diff"
@@ -481,7 +482,7 @@ export function ExperimentalPage() {
 					type="button"
 					onClick={() => setZenMode((v) => !v)}
 					title={zenMode ? "Zen mode: ON" : "Zen mode: OFF"}
-					className={`flex shrink-0 items-center justify-center rounded-lg border border-surgent-border bg-surgent-surface h-7 w-7 transition-all ${
+					className={`electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center justify-center rounded-lg border border-surgent-border bg-surgent-surface h-7 w-7 transition-all ${
 						zenMode
 							? "bg-surgent-text/10 text-surgent-text"
 							: "text-surgent-text-3 hover:text-surgent-text-2"
@@ -489,7 +490,7 @@ export function ExperimentalPage() {
 				>
 					<IconZen size={13} />
 				</button>
-			</header>
+			</div>
 
 			{!session ? (
 				<EmptyState />
