@@ -15,6 +15,8 @@ import {
 	IconGitBranch,
 	IconLayoutGrid,
 	IconLayoutRows,
+	IconPanelRight,
+	IconZen,
 } from "../../components/ui/Icons.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { type DiffRequest, useGitDiff } from "../../hooks/useGitDiff.ts";
@@ -30,16 +32,11 @@ import {
 	loadTerminalState,
 	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
+import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { StatusIcon } from "../Terminal/StatusIcon.tsx";
 
-interface StoredChatMessage {
-	id: string;
-	role: "user" | "assistant" | "tool" | "system" | "btw";
-	content: string;
-}
-
-interface ExperimentalSession {
+interface Session {
 	groupId: string;
 	groupName: string;
 	paneId: string;
@@ -54,71 +51,52 @@ interface SelectedFile {
 	staged: boolean;
 }
 
-const CHAT_STORAGE_KEY_PREFIX = "surgent-chat-";
+let cachedKey = "";
+let cachedSessions: Session[] = [];
 
-const _STATUS_TONE: Record<string, string> = {
-	M: "bg-git-modified/15 text-git-modified border-git-modified/20",
-	A: "bg-git-added/15 text-git-added border-git-added/20",
-	D: "bg-git-deleted/15 text-git-deleted border-git-deleted/20",
-	R: "bg-sky-400/15 text-sky-300 border-sky-400/20",
-	U: "bg-orange-400/15 text-orange-300 border-orange-400/20",
-	"?": "bg-surgent-text/[0.05] text-surgent-text-3 border-surgent-border",
-};
-
-function _readStoredMessages(paneId: string): StoredChatMessage[] {
-	try {
-		const raw = localStorage.getItem(CHAT_STORAGE_KEY_PREFIX + paneId);
-		return raw ? (JSON.parse(raw) as StoredChatMessage[]) : [];
-	} catch {
-		return [];
-	}
-}
-
-function flattenSessions(groups: TerminalGroupModel[]): ExperimentalSession[] {
-	return groups.flatMap((group) =>
-		group.panes.flatMap((pane) => {
-			if (!isChatAgentKind(pane.agentKind)) return [];
-			return [
-				{
-					groupId: group.id,
-					groupName: group.name,
-					paneId: pane.id,
-					paneTitle: pane.title,
-					agentKind: pane.agentKind,
-					cwd: pane.cwd,
-					messageCount: 0,
-				} satisfies ExperimentalSession,
-			];
-		})
+function flattenSessions(groups: TerminalGroupModel[]): Session[] {
+	return groups.flatMap((g) =>
+		g.panes.flatMap((p) =>
+			isChatAgentKind(p.agentKind)
+				? [
+						{
+							groupId: g.id,
+							groupName: g.name,
+							paneId: p.id,
+							paneTitle: p.title,
+							agentKind: p.agentKind,
+							cwd: p.cwd,
+							messageCount: 0,
+						},
+					]
+				: []
+		)
 	);
 }
 
-// Stable session identity — only rebuild when pane IDs actually change
-let prevSessionKey = "";
-let prevSessions: ExperimentalSession[] = [];
-function stableSessions(next: ExperimentalSession[]): ExperimentalSession[] {
+function stableSessions(next: Session[]): Session[] {
 	const key = next.map((s) => s.paneId).join(",");
-	if (key === prevSessionKey) return prevSessions;
-	prevSessionKey = key;
-	prevSessions = next;
+	if (key === cachedKey) return cachedSessions;
+	cachedKey = key;
+	cachedSessions = next;
 	return next;
 }
 
 function getAllFiles(project: GitProjectStatus | null): GitFileEntry[] {
 	if (!project) return [];
-	const unstaged = project.files.filter((file) => !file.staged);
-	const staged = project.files.filter((file) => file.staged);
-	return [...unstaged, ...staged];
+	return [
+		...project.files.filter((f) => !f.staged),
+		...project.files.filter((f) => f.staged),
+	];
 }
 
-function basename(path?: string): string {
-	if (!path) return "No directory";
-	const parts = path.split("/");
-	return parts[parts.length - 1] || path;
+function basename(filePath?: string): string {
+	if (!filePath) return "No directory";
+	return filePath.split("/").pop() || filePath;
 }
 
 export function ExperimentalPage() {
-	const [_refreshTick, setRefreshTick] = useState(0);
+	const [, setTick] = useState(0);
 	const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
 	const [selectedFiles, setSelectedFiles] = useState<
 		Record<string, SelectedFile | null>
@@ -130,6 +108,9 @@ export function ExperimentalPage() {
 	const [closedPaneIds, setClosedPaneIds] = useState<Set<string>>(new Set());
 	const [commitMessage, setCommitMessage] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
+	const [scrollToChange, setScrollToChange] = useState(0);
+	const [zenMode, setZenMode] = useState(true);
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const chatRef = useRef<ClaudeChatHandle>(null);
 
 	const terminalState = useMemo(() => loadTerminalState(), []);
@@ -143,7 +124,7 @@ export function ExperimentalPage() {
 	);
 	const { sessions: liveAgentSessions } = useAgentSessions();
 	const trackedDirs = useMemo(
-		() => [...new Set(sessions.map((session) => session.cwd).filter(Boolean))],
+		() => [...new Set(sessions.map((s) => s.cwd).filter(Boolean))],
 		[sessions]
 	);
 	const { projectMap } = useGitStatus(trackedDirs);
@@ -159,21 +140,20 @@ export function ExperimentalPage() {
 		clear: clearDiff,
 	} = useGitDiff();
 
-	useEffect(() => {
-		const id = window.setInterval(
-			() => setRefreshTick((value) => value + 1),
-			5000
-		);
-		return () => window.clearInterval(id);
-	}, []);
+	const refresh = useCallback(() => setTick((v) => v + 1), []);
 
 	useEffect(() => {
-		setAgentStatuses((current) => {
-			const next = new Map(current);
-			for (const session of liveAgentSessions) {
-				const existing = next.get(session.paneId);
+		const id = setInterval(refresh, 5000);
+		return () => clearInterval(id);
+	}, [refresh]);
+
+	useEffect(() => {
+		setAgentStatuses((cur) => {
+			const next = new Map(cur);
+			for (const s of liveAgentSessions) {
+				const existing = next.get(s.paneId);
 				if (!existing || existing === "idle" || existing === "thinking") {
-					next.set(session.paneId, session.isRunning ? "thinking" : "idle");
+					next.set(s.paneId, s.isRunning ? "thinking" : "idle");
 				}
 			}
 			return next;
@@ -185,40 +165,29 @@ export function ExperimentalPage() {
 			setSelectedPaneId(null);
 			return;
 		}
-		setSelectedPaneId((current) =>
-			current && sessions.some((session) => session.paneId === current)
-				? current
-				: sessions[0]?.paneId
+		setSelectedPaneId((cur) =>
+			cur && sessions.some((s) => s.paneId === cur) ? cur : sessions[0]?.paneId
 		);
 	}, [sessions]);
 
-	const sessionIndex = useMemo(
-		() => sessions.findIndex((session) => session.paneId === selectedPaneId),
+	const sessionIdx = useMemo(
+		() => sessions.findIndex((s) => s.paneId === selectedPaneId),
 		[sessions, selectedPaneId]
 	);
-	const selectedSession =
-		sessionIndex >= 0
-			? (sessions[sessionIndex] ?? null)
-			: (sessions[0] ?? null);
-	const selectedProject = selectedSession?.cwd
-		? (projectMap.get(selectedSession.cwd) ?? null)
-		: null;
-	const files = useMemo(() => getAllFiles(selectedProject), [selectedProject]);
-	const staged = selectedProject?.files.filter((file) => file.staged) ?? [];
+	const session =
+		sessionIdx >= 0 ? sessions[sessionIdx] : (sessions[0] ?? null);
+	const project = session?.cwd ? (projectMap.get(session.cwd) ?? null) : null;
+	const files = useMemo(() => getAllFiles(project), [project]);
+	const staged = project?.files.filter((f) => f.staged) ?? [];
 	const modified =
-		selectedProject?.files.filter(
-			(file) => !file.staged && file.status !== "?"
-		) ?? [];
-	const untracked =
-		selectedProject?.files.filter((file) => file.status === "?") ?? [];
-	const selectedFile = selectedSession
-		? (selectedFiles[selectedSession.paneId] ?? null)
-		: null;
+		project?.files.filter((f) => !f.staged && f.status !== "?") ?? [];
+	const untracked = project?.files.filter((f) => f.status === "?") ?? [];
+	const selectedFile = session ? (selectedFiles[session.paneId] ?? null) : null;
 
 	const selectFile = useCallback(
 		(paneId: string, req: DiffRequest) => {
-			setSelectedFiles((current) => ({
-				...current,
+			setSelectedFiles((cur) => ({
+				...cur,
 				[paneId]: { path: req.file, staged: req.staged },
 			}));
 			loadDiff(req);
@@ -226,271 +195,257 @@ export function ExperimentalPage() {
 		[loadDiff]
 	);
 
+	const { checkPendingScroll } = useFileWatcher({
+		enabled: zenMode,
+		cwd: session?.cwd,
+		paneId: session?.paneId,
+		currentFile: request?.file,
+		loadDiff,
+		setSelectedFile: useCallback(
+			(path: string, staged: boolean) => {
+				if (!session?.paneId) return;
+				setSelectedFiles((cur) => ({
+					...cur,
+					[session.paneId]: { path, staged },
+				}));
+			},
+			[session?.paneId]
+		),
+		onDiffLoaded: useCallback(() => {
+			refresh();
+			setTimeout(() => setScrollToChange((v) => v + 1), 50);
+		}, [refresh]),
+	});
+
+	useEffect(() => {
+		if (diff && !diffLoading) checkPendingScroll();
+	}, [diff, diffLoading, checkPendingScroll]);
+
 	const selectedFilesRef = useRef(selectedFiles);
 	selectedFilesRef.current = selectedFiles;
 	const requestRef = useRef(request);
 	requestRef.current = request;
 
 	useEffect(() => {
-		if (!selectedSession?.cwd) {
+		if (!session?.cwd) {
 			clearDiff();
 			return;
 		}
 		if (!files.length) {
 			clearDiff();
-			setSelectedFiles((current) => ({
-				...current,
-				[selectedSession.paneId]: null,
-			}));
+			setSelectedFiles((cur) => ({ ...cur, [session.paneId]: null }));
 			return;
 		}
 
-		const currentSelection =
-			selectedFilesRef.current[selectedSession.paneId] ?? null;
-		const matchingFile = currentSelection
-			? files.find(
-					(file) =>
-						file.path === currentSelection.path &&
-						file.staged === currentSelection.staged
-				)
+		const cur = selectedFilesRef.current[session.paneId] ?? null;
+		const match = cur
+			? files.find((f) => f.path === cur.path && f.staged === cur.staged)
 			: null;
+		const target = match ?? files[0]!;
 
-		const target = matchingFile ?? files[0]!;
-		if (
-			!currentSelection ||
-			currentSelection.path !== target.path ||
-			currentSelection.staged !== target.staged
-		) {
-			setSelectedFiles((current) => ({
-				...current,
-				[selectedSession.paneId]: { path: target.path, staged: target.staged },
+		if (!cur || cur.path !== target.path || cur.staged !== target.staged) {
+			setSelectedFiles((c) => ({
+				...c,
+				[session.paneId]: { path: target.path, staged: target.staged },
 			}));
 		}
+
 		const req = requestRef.current;
 		if (
-			req?.cwd !== selectedSession.cwd ||
+			req?.cwd !== session.cwd ||
 			req?.file !== target.path ||
 			req?.staged !== target.staged
 		) {
-			loadDiff({
-				cwd: selectedSession.cwd,
-				file: target.path,
-				staged: target.staged,
-			});
+			loadDiff({ cwd: session.cwd, file: target.path, staged: target.staged });
 		}
-	}, [clearDiff, files, loadDiff, selectedSession]);
+	}, [clearDiff, files, loadDiff, session]);
 
 	const cycleSession = useCallback(
-		(direction: -1 | 1) => {
+		(dir: -1 | 1) => {
 			if (!sessions.length) return;
-			const currentIndex = sessionIndex >= 0 ? sessionIndex : 0;
-			const nextIndex =
-				direction === 1
-					? currentIndex >= sessions.length - 1
+			const idx = sessionIdx >= 0 ? sessionIdx : 0;
+			const next =
+				dir === 1
+					? idx >= sessions.length - 1
 						? 0
-						: currentIndex + 1
-					: currentIndex <= 0
+						: idx + 1
+					: idx <= 0
 						? sessions.length - 1
-						: currentIndex - 1;
-			setSelectedPaneId(sessions[nextIndex]?.paneId);
+						: idx - 1;
+			setSelectedPaneId(sessions[next]?.paneId);
 		},
-		[sessionIndex, sessions]
+		[sessionIdx, sessions]
 	);
 
 	const cycleFile = useCallback(
-		(direction: -1 | 1) => {
-			if (!selectedSession?.cwd || files.length === 0) return;
-			const currentIndex = selectedFile
+		(dir: -1 | 1) => {
+			if (!session?.cwd || !files.length) return;
+			const idx = selectedFile
 				? files.findIndex(
-						(file) =>
-							file.path === selectedFile.path &&
-							file.staged === selectedFile.staged
+						(f) =>
+							f.path === selectedFile.path && f.staged === selectedFile.staged
 					)
 				: -1;
-			const nextIndex =
-				direction === 1
-					? currentIndex >= files.length - 1
+			const next =
+				dir === 1
+					? idx >= files.length - 1
 						? 0
-						: currentIndex + 1
-					: currentIndex <= 0
+						: idx + 1
+					: idx <= 0
 						? files.length - 1
-						: currentIndex - 1;
-			const nextFile = files[nextIndex]!;
-			selectFile(selectedSession.paneId, {
-				cwd: selectedSession.cwd,
-				file: nextFile.path,
-				staged: nextFile.staged,
+						: idx - 1;
+			const f = files[next]!;
+			selectFile(session.paneId, {
+				cwd: session.cwd,
+				file: f.path,
+				staged: f.staged,
 			});
 		},
-		[files, selectFile, selectedFile, selectedSession]
+		[files, selectFile, selectedFile, session]
 	);
 
 	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			// All arrow keys work globally for navigation on this page
-			if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-				event.preventDefault();
-				cycleSession(event.key === "ArrowLeft" ? -1 : 1);
-				// Wait for component to remount, then focus at end of text
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+				e.preventDefault();
+				cycleSession(e.key === "ArrowLeft" ? -1 : 1);
 				setTimeout(() => chatRef.current?.focusInput(true), 50);
-				return;
-			}
-			if (event.key === "ArrowDown") {
-				event.preventDefault();
+			} else if (e.key === "ArrowDown") {
+				e.preventDefault();
 				cycleFile(1);
-				return;
-			}
-			if (event.key === "ArrowUp") {
-				event.preventDefault();
+			} else if (e.key === "ArrowUp") {
+				e.preventDefault();
 				cycleFile(-1);
 			}
 		};
-
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
 	}, [cycleFile, cycleSession]);
 
 	const closePane = useCallback(
 		(paneId: string) => {
 			clearChatMessages(paneId);
 			setClosedPaneIds((prev) => new Set(prev).add(paneId));
-			// Select another pane if we closed the selected one
 			if (selectedPaneId === paneId) {
-				const remaining = sessions.filter((s) => s.paneId !== paneId);
-				setSelectedPaneId(remaining[0]?.paneId ?? null);
+				const rest = sessions.filter((s) => s.paneId !== paneId);
+				setSelectedPaneId(rest[0]?.paneId ?? null);
 			}
 		},
 		[selectedPaneId, sessions]
 	);
 
+	const gitAction = useCallback(
+		async (endpoint: string, body: object) => {
+			await fetch(`/api/git/${endpoint}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
+			});
+			refresh();
+		},
+		[refresh]
+	);
+
 	const stageFile = useCallback(
-		async (file: string) => {
-			if (!selectedSession?.cwd) return;
-			await fetch("/api/git/stage", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ cwd: selectedSession.cwd, file }),
-			});
-			setRefreshTick((v) => v + 1);
-		},
-		[selectedSession?.cwd]
+		(file: string) =>
+			session?.cwd && gitAction("stage", { cwd: session.cwd, file }),
+		[session?.cwd, gitAction]
 	);
-
 	const unstageFile = useCallback(
-		async (file: string) => {
-			if (!selectedSession?.cwd) return;
-			await fetch("/api/git/unstage", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ cwd: selectedSession.cwd, file }),
-			});
-			setRefreshTick((v) => v + 1);
-		},
-		[selectedSession?.cwd]
+		(file: string) =>
+			session?.cwd && gitAction("unstage", { cwd: session.cwd, file }),
+		[session?.cwd, gitAction]
 	);
-
-	const stageAll = useCallback(async () => {
-		if (!selectedSession?.cwd) return;
-		await fetch("/api/git/stage", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ cwd: selectedSession.cwd }),
-		});
-		setRefreshTick((v) => v + 1);
-	}, [selectedSession?.cwd]);
-
-	const unstageAll = useCallback(async () => {
-		if (!selectedSession?.cwd) return;
-		await fetch("/api/git/unstage", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ cwd: selectedSession.cwd }),
-		});
-		setRefreshTick((v) => v + 1);
-	}, [selectedSession?.cwd]);
+	const stageAll = useCallback(
+		() => session?.cwd && gitAction("stage", { cwd: session.cwd }),
+		[session?.cwd, gitAction]
+	);
+	const unstageAll = useCallback(
+		() => session?.cwd && gitAction("unstage", { cwd: session.cwd }),
+		[session?.cwd, gitAction]
+	);
 
 	const handleCommit = useCallback(async () => {
-		if (!selectedSession?.cwd || !commitMessage.trim() || isCommitting) return;
+		if (!session?.cwd || !commitMessage.trim() || isCommitting) return;
 		setIsCommitting(true);
 		try {
 			const res = await fetch("/api/git/commit", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					cwd: selectedSession.cwd,
-					message: commitMessage,
-				}),
+				body: JSON.stringify({ cwd: session.cwd, message: commitMessage }),
 			});
 			const result = await res.json();
 			if (result.success) {
 				setCommitMessage("");
-				setRefreshTick((v) => v + 1);
+				refresh();
 			}
 		} finally {
 			setIsCommitting(false);
 		}
-	}, [selectedSession?.cwd, commitMessage, isCommitting]);
+	}, [session?.cwd, commitMessage, isCommitting, refresh]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-surgent-bg">
-			<div className="flex min-h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
+			<header className="flex min-h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
 				<div className="min-w-0 flex-1 overflow-x-auto">
 					<AgentStrip
 						sessions={sessions}
-						agentStatuses={agentStatuses}
-						selectedPaneId={selectedSession?.paneId ?? null}
-						onSelectPane={setSelectedPaneId}
-						onClosePane={closePane}
+						statuses={agentStatuses}
+						selectedId={session?.paneId ?? null}
+						onSelect={setSelectedPaneId}
+						onClose={closePane}
 					/>
 				</div>
 				<div className="flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-					<DiffModeButton
+					<ToolbarButton
 						active={diffViewMode === "split"}
 						title="Split diff"
 						onClick={() => setDiffViewMode("split")}
 						icon={<IconLayoutGrid size={13} />}
 					/>
-					<DiffModeButton
+					<ToolbarButton
 						active={diffViewMode === "stacked"}
 						title="Vertical diff"
 						onClick={() => setDiffViewMode("stacked")}
 						icon={<IconLayoutRows size={13} />}
 					/>
-					<DiffModeButton
+					<ToolbarButton
 						active={diffViewMode === "hunks"}
 						title="Hunk view"
 						onClick={() => setDiffViewMode("hunks")}
 						icon={<IconGitBranch size={13} />}
 					/>
 				</div>
-			</div>
+				<button
+					type="button"
+					onClick={() => setZenMode((v) => !v)}
+					title={zenMode ? "Zen mode: ON" : "Zen mode: OFF"}
+					className={`flex shrink-0 items-center justify-center rounded-lg border border-surgent-border bg-surgent-surface h-7 w-7 transition-all ${
+						zenMode
+							? "bg-surgent-text/10 text-surgent-text"
+							: "text-surgent-text-3 hover:text-surgent-text-2"
+					}`}
+				>
+					<IconZen size={13} />
+				</button>
+			</header>
 
-			{!selectedSession ? (
-				<div className="flex flex-1 items-center justify-center px-6">
-					<div className="max-w-md border border-surgent-border bg-surgent-surface p-6 text-center">
-						<h2 className="text-[15px] font-semibold text-surgent-text">
-							No saved agent sessions
-						</h2>
-						<p className="mt-2 text-[12px] leading-5 text-surgent-text-3">
-							Open Claude or Codex in the terminal page, pick a project
-							directory, and it will appear here.
-						</p>
-					</div>
-				</div>
+			{!session ? (
+				<EmptyState />
 			) : (
 				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
 					<section className="min-h-0 min-w-0 border-r border-surgent-border">
 						<ClaudeChatView
-							key={selectedSession.paneId}
+							key={session.paneId}
 							ref={chatRef}
-							paneId={selectedSession.paneId}
-							cwd={selectedSession.cwd}
-							agentKind={selectedSession.agentKind}
+							paneId={session.paneId}
+							cwd={session.cwd}
+							agentKind={session.agentKind}
 							theme={theme}
-							onStatusChange={(paneId, status) => {
-								setAgentStatuses((current) => {
-									if (current.get(paneId) === status) return current;
-									return new Map(current).set(paneId, status);
+							onStatusChange={(id, status) => {
+								setAgentStatuses((cur) => {
+									if (cur.get(id) === status) return cur;
+									return new Map(cur).set(id, status);
 								});
 							}}
 						/>
@@ -501,90 +456,112 @@ export function ExperimentalPage() {
 							<div className="flex min-h-0 flex-1 overflow-hidden">
 								<div className="min-h-0 min-w-0 flex-1 overflow-hidden">
 									{diffLoading ? (
-										<CenteredState label="Loading diff..." />
+										<Placeholder label="Loading diff..." />
 									) : diff && request ? (
 										<GitDiffView
 											diff={diff}
 											filePath={request.file}
 											staged={request.staged}
+											scrollToChange={scrollToChange}
 											loading={false}
-											onClose={() => clearDiff()}
+											onClose={clearDiff}
 											hideHeader
 											hideToolbar
 											viewMode={diffViewMode}
 											onViewModeChange={setDiffViewMode}
 										/>
 									) : (
-										<CenteredState
+										<Placeholder
 											label={
-												selectedProject
-													? "Select a changed file"
-													: "No diff available"
+												project ? "Select a changed file" : "No diff available"
 											}
 										/>
 									)}
 								</div>
-								<div className="flex w-56 shrink-0 flex-col border-l border-surgent-border bg-surgent-bg">
-									<div className="flex-1 overflow-y-auto">
-										<div className="sticky top-0 z-10 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
-											<div className="truncate text-[11px] font-medium text-surgent-text">
-												{selectedProject
-													? selectedProject.branch
-													: "No repo data"}
+
+								{sidebarCollapsed ? (
+									<button
+										type="button"
+										onClick={() => setSidebarCollapsed(false)}
+										title="Show file sidebar"
+										className="shrink-0 flex items-center justify-center w-6 border-l border-surgent-border bg-surgent-bg text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/5 transition-all"
+									>
+										<IconPanelRight size={12} />
+									</button>
+								) : (
+									<div className="flex w-56 shrink-0 flex-col border-l border-surgent-border bg-surgent-bg">
+										<div className="flex-1 overflow-y-auto">
+											<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
+												<IconGitBranch
+													size={12}
+													className="shrink-0 text-surgent-text-3"
+												/>
+												<div className="flex-1 min-w-0 truncate text-[11px] font-medium text-surgent-text">
+													{project?.branch ?? "No repo data"}
+												</div>
+												<button
+													type="button"
+													onClick={() => setSidebarCollapsed(true)}
+													title="Hide file sidebar"
+													className="shrink-0 flex items-center justify-center rounded w-5 h-5 text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-all"
+												>
+													<IconPanelRight size={12} />
+												</button>
 											</div>
+
+											<FileGroup
+												title="Unstaged"
+												files={[...modified, ...untracked]}
+												color="text-surgent-text-2"
+												selected={selectedFile}
+												onSelect={(f) =>
+													session.cwd &&
+													selectFile(session.paneId, {
+														cwd: session.cwd,
+														file: f.path,
+														staged: f.staged,
+													})
+												}
+												actionLabel="Stage"
+												onAction={stageFile}
+												onActionAll={stageAll}
+											/>
+											<FileGroup
+												title="Staged"
+												files={staged}
+												color="text-git-added"
+												selected={selectedFile}
+												onSelect={(f) =>
+													session.cwd &&
+													selectFile(session.paneId, {
+														cwd: session.cwd,
+														file: f.path,
+														staged: f.staged,
+													})
+												}
+												actionLabel="Unstage"
+												onAction={unstageFile}
+												onActionAll={unstageAll}
+											/>
+
+											{project && !project.files.length && (
+												<div className="flex items-center justify-center py-6">
+													<p className="text-[10px] text-surgent-text-3/50">
+														Clean
+													</p>
+												</div>
+											)}
+											{!project && (
+												<div className="flex items-center justify-center py-6">
+													<p className="px-3 text-center text-[10px] text-surgent-text-3/50">
+														No repository
+													</p>
+												</div>
+											)}
 										</div>
-										<FileGroup
-											title="Unstaged"
-											files={[...modified, ...untracked]}
-											color="text-surgent-text-2"
-											selected={selectedFile}
-											onSelect={(file) => {
-												if (!selectedSession.cwd) return;
-												selectFile(selectedSession.paneId, {
-													cwd: selectedSession.cwd,
-													file: file.path,
-													staged: file.staged,
-												});
-											}}
-											actionLabel="Stage"
-											onAction={stageFile}
-											onActionAll={stageAll}
-										/>
-										<FileGroup
-											title="Staged"
-											files={staged}
-											color="text-git-added"
-											selected={selectedFile}
-											onSelect={(file) => {
-												if (!selectedSession.cwd) return;
-												selectFile(selectedSession.paneId, {
-													cwd: selectedSession.cwd,
-													file: file.path,
-													staged: file.staged,
-												});
-											}}
-											actionLabel="Unstage"
-											onAction={unstageFile}
-											onActionAll={unstageAll}
-										/>
-										{selectedProject && selectedProject.files.length === 0 && (
-											<div className="flex items-center justify-center py-6">
-												<p className="text-[10px] text-surgent-text-3/50">
-													Clean
-												</p>
-											</div>
-										)}
-										{!selectedProject && (
-											<div className="flex items-center justify-center py-6">
-												<p className="px-3 text-center text-[10px] text-surgent-text-3/50">
-													No repository
-												</p>
-											</div>
-										)}
-									</div>
-									{selectedProject && (
-										<div className="shrink-0 border-t border-surgent-border">
-											<div className="p-2">
+
+										{project && (
+											<div className="shrink-0 border-t border-surgent-border p-2">
 												<textarea
 													value={commitMessage}
 													onChange={(e) => setCommitMessage(e.target.value)}
@@ -603,19 +580,19 @@ export function ExperimentalPage() {
 													onClick={handleCommit}
 													disabled={
 														!commitMessage.trim() ||
-														staged.length === 0 ||
+														!staged.length ||
 														isCommitting
 													}
 													className="mt-1.5 w-full rounded bg-surgent-accent px-2 py-1 text-[10px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
 												>
 													{isCommitting
 														? "Committing..."
-														: `Commit ${staged.length > 0 ? `(${staged.length})` : ""}`}
+														: `Commit${staged.length ? ` (${staged.length})` : ""}`}
 												</button>
 											</div>
-										</div>
-									)}
-								</div>
+										)}
+									</div>
+								)}
 							</div>
 						</div>
 					</aside>
@@ -627,32 +604,32 @@ export function ExperimentalPage() {
 
 function AgentStrip({
 	sessions,
-	agentStatuses,
-	selectedPaneId,
-	onSelectPane,
-	onClosePane,
+	statuses,
+	selectedId,
+	onSelect,
+	onClose,
 }: {
-	sessions: ExperimentalSession[];
-	agentStatuses: Map<string, string>;
-	selectedPaneId: string | null;
-	onSelectPane: (id: string) => void;
-	onClosePane: (id: string) => void;
+	sessions: Session[];
+	statuses: Map<string, string>;
+	selectedId: string | null;
+	onSelect: (id: string) => void;
+	onClose: (id: string) => void;
 }) {
 	return (
 		<div className="flex items-center gap-1 overflow-x-auto py-1">
-			{sessions.map((session) => {
-				const isSelected = session.paneId === selectedPaneId;
-				const info = getStatusInfo(agentStatuses.get(session.paneId) ?? "idle");
+			{sessions.map((s) => {
+				const selected = s.paneId === selectedId;
+				const info = getStatusInfo(statuses.get(s.paneId) ?? "idle");
 				return (
 					<div
-						key={session.paneId}
-						className={`group flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 transition-colors cursor-pointer ${
-							isSelected
+						key={s.paneId}
+						className={`group flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 cursor-pointer transition-colors ${
+							selected
 								? "bg-surgent-surface-2 text-surgent-text"
 								: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
 						}`}
-						title={`${basename(session.cwd)} - ${getAgentDefinition(session.agentKind).label}`}
-						onClick={() => onSelectPane(session.paneId)}
+						title={`${basename(s.cwd)} - ${getAgentDefinition(s.agentKind).label}`}
+						onClick={() => onSelect(s.paneId)}
 					>
 						<StatusIcon
 							iconType={info.iconType}
@@ -660,30 +637,26 @@ function AgentStrip({
 							className={info.iconColor}
 						/>
 						<span className="max-w-[110px] truncate text-[10px] font-medium">
-							{basename(session.cwd)}
+							{basename(s.cwd)}
 						</span>
-						{session.messageCount > 0 && (
+						{s.messageCount > 0 && (
 							<span
-								className={`rounded-md px-1.5 py-0.5 text-[9px] tabular-nums ${
-									isSelected
-										? "bg-surgent-text/10 text-surgent-text"
-										: "bg-surgent-text/5 text-surgent-text-3"
-								}`}
+								className={`rounded-md px-1.5 py-0.5 text-[9px] tabular-nums ${selected ? "bg-surgent-text/10 text-surgent-text" : "bg-surgent-text/5 text-surgent-text-3"}`}
 							>
-								{session.messageCount}
+								{s.messageCount}
 							</span>
 						)}
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
-								onClosePane(session.paneId);
+								onClose(s.paneId);
 							}}
 							className="ml-0.5 w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-surgent-text/10 transition-opacity"
 							title="Close"
 						>
 							<svg
-								aria-hidden="true"
+								aria-hidden
 								width="8"
 								height="8"
 								viewBox="0 0 8 8"
@@ -702,7 +675,23 @@ function AgentStrip({
 	);
 }
 
-function CenteredState({ label }: { label: string }) {
+function EmptyState() {
+	return (
+		<div className="flex flex-1 items-center justify-center px-6">
+			<div className="max-w-md border border-surgent-border bg-surgent-surface p-6 text-center">
+				<h2 className="text-[15px] font-semibold text-surgent-text">
+					No saved agent sessions
+				</h2>
+				<p className="mt-2 text-[12px] leading-5 text-surgent-text-3">
+					Open Claude or Codex in the terminal page, pick a project directory,
+					and it will appear here.
+				</p>
+			</div>
+		</div>
+	);
+}
+
+function Placeholder({ label }: { label: string }) {
 	return (
 		<div className="flex h-full items-center justify-center px-6">
 			<p className="max-w-xs text-center text-[12px] leading-5 text-surgent-text-3">
@@ -726,12 +715,12 @@ function FileGroup({
 	files: GitFileEntry[];
 	color: string;
 	selected: SelectedFile | null;
-	onSelect: (file: GitFileEntry) => void;
+	onSelect: (f: GitFileEntry) => void;
 	actionLabel?: string;
 	onAction?: (path: string) => void;
 	onActionAll?: () => void;
 }) {
-	if (files.length === 0) return null;
+	if (!files.length) return null;
 	return (
 		<div>
 			<div className="sticky top-0 z-10 flex h-7 items-center justify-between border-b border-surgent-border/30 bg-surgent-bg px-2.5">
@@ -750,13 +739,13 @@ function FileGroup({
 					</button>
 				)}
 			</div>
-			{files.map((file) => {
+			{files.map((f) => {
 				const active =
-					selected?.path === file.path && selected?.staged === file.staged;
-				const name = file.path.split("/").pop() || file.path;
+					selected?.path === f.path && selected?.staged === f.staged;
+				const name = f.path.split("/").pop() || f.path;
 				return (
 					<div
-						key={`${file.staged ? "s" : "u"}-${file.path}`}
+						key={`${f.staged ? "s" : "u"}-${f.path}`}
 						className={`group flex h-[26px] items-center border-l-[2px] pr-1 ${
 							active
 								? "border-surgent-accent bg-surgent-accent/8"
@@ -765,14 +754,12 @@ function FileGroup({
 					>
 						<button
 							type="button"
-							onClick={() => onSelect(file)}
+							onClick={() => onSelect(f)}
 							className="flex-1 min-w-0 h-full flex items-center px-2.5 text-left"
-							title={file.path}
+							title={f.path}
 						>
 							<span
-								className={`truncate text-[10.5px] font-mono ${
-									active ? "text-surgent-text" : "text-surgent-text-2/80"
-								}`}
+								className={`truncate text-[10.5px] font-mono ${active ? "text-surgent-text" : "text-surgent-text-2/80"}`}
 							>
 								{name}
 							</span>
@@ -782,10 +769,10 @@ function FileGroup({
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
-									onAction(file.path);
+									onAction(f.path);
 								}}
 								className="shrink-0 opacity-0 group-hover:opacity-100 rounded px-1.5 py-0.5 text-[8px] text-surgent-text-3 hover:bg-surgent-surface-2 hover:text-surgent-text transition-all"
-								title={`${actionLabel} ${file.path}`}
+								title={`${actionLabel} ${f.path}`}
 							>
 								{actionLabel}
 							</button>
@@ -797,7 +784,7 @@ function FileGroup({
 	);
 }
 
-function DiffModeButton({
+function ToolbarButton({
 	active,
 	title,
 	icon,

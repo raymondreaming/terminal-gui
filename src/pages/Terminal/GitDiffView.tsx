@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MarkdownPreview } from "../../components/MarkdownPreview.tsx";
 import type { DiffLine, HunkDiff } from "../../hooks/useGitDiff.ts";
-import { tokenizeLine } from "../../lib/syntax-tokens.ts";
+import { type Token, tokenizeLine } from "../../lib/syntax-tokens.ts";
 
 export type DiffViewMode = "split" | "stacked" | "hunks";
 
@@ -15,6 +15,7 @@ interface GitDiffViewProps {
 	viewMode?: DiffViewMode;
 	onViewModeChange?: (viewMode: DiffViewMode) => void;
 	hideToolbar?: boolean;
+	scrollToChange?: number;
 }
 
 const TOKEN_CLASSES: Record<string, string> = {
@@ -29,104 +30,99 @@ const TOKEN_CLASSES: Record<string, string> = {
 };
 
 const LINE_H = 18;
-const OVERSCAN = 30;
+const OVERSCAN = 15;
 
-function SyntaxContent({
-	content,
-	ext,
-	disableTokenize,
-}: {
-	content: string;
-	ext: string;
-	disableTokenize: boolean;
-}) {
-	const tokens = useMemo(
-		() => (disableTokenize ? null : tokenizeLine(content, ext)),
-		[content, ext, disableTokenize]
-	);
-	if (!tokens) return content;
-	return (
-		<>
-			{/* Tokens are static per render and never reorder — index key is safe */}
-			{tokens.map((tok, i) => (
-				<span key={`${tok.type}-${i}`} className={TOKEN_CLASSES[tok.type]}>
-					{tok.text}
-				</span>
-			))}
-		</>
-	);
-}
-
-function DiffRow({
+const DiffRow = memo(function DiffRow({
 	line,
-	ext,
-	disableTokenize,
+	tokens,
 }: {
 	line: DiffLine;
 	ext: string;
-	disableTokenize: boolean;
+	tokens: Token[] | null;
 }) {
 	if (line.type === "hunk") {
-		return (
-			<div
-				className="diff-hatch border-y border-surgent-border/20"
-				style={{ height: 8 }}
-			/>
-		);
+		return <div className="diff-hatch border-y border-surgent-border/20 h-2" />;
 	}
 
 	if (line.type === "spacer") {
 		return (
 			<div
+				className="h-[18px] bg-surgent-surface/30"
 				style={{
-					height: LINE_H,
-					background: `repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(255,255,255,0.06) 6px, rgba(255,255,255,0.06) 7px), rgba(255,255,255,0.02)`,
+					backgroundImage:
+						"repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(255,255,255,0.04) 6px, rgba(255,255,255,0.04) 7px)",
 				}}
 			/>
 		);
 	}
 
-	let bg = "";
-	let numColor = "text-surgent-text-3/20";
-	let marker = "";
-	let markerColor = "";
-
-	if (line.type === "add") {
-		bg = "bg-[rgba(60,180,110,0.13)]";
-		numColor = "text-[rgba(60,180,110,0.5)]";
-		marker = "+";
-		markerColor = "text-[rgba(60,180,110,0.6)]";
-	} else if (line.type === "remove") {
-		bg = "bg-[rgba(210,80,80,0.13)]";
-		numColor = "text-[rgba(210,80,80,0.5)]";
-		marker = "-";
-		markerColor = "text-[rgba(210,80,80,0.6)]";
-	}
+	const isAdd = line.type === "add";
+	const isRemove = line.type === "remove";
 
 	return (
 		<div
-			className={`flex w-max min-w-full ${bg}`}
-			style={{ height: LINE_H, lineHeight: `${LINE_H}px` }}
+			className={`flex w-max min-w-full h-[18px] leading-[18px] ${
+				isAdd
+					? "bg-[rgba(60,180,110,0.13)]"
+					: isRemove
+						? "bg-[rgba(210,80,80,0.13)]"
+						: ""
+			}`}
 		>
 			<span
-				className={`shrink-0 w-10 text-right pr-1 text-[8px] font-mono select-none ${numColor}`}
+				className={`shrink-0 w-10 text-right pr-1 text-[8px] font-mono select-none ${
+					isAdd
+						? "text-[rgba(60,180,110,0.5)]"
+						: isRemove
+							? "text-[rgba(210,80,80,0.5)]"
+							: "text-surgent-text-3/20"
+				}`}
 			>
 				{line.number ?? ""}
 			</span>
 			<span
-				className={`shrink-0 w-3 text-center text-[8px] font-mono select-none ${markerColor}`}
+				className={`shrink-0 w-3 text-center text-[8px] font-mono select-none ${
+					isAdd
+						? "text-[rgba(60,180,110,0.6)]"
+						: isRemove
+							? "text-[rgba(210,80,80,0.6)]"
+							: ""
+				}`}
 			>
-				{marker}
+				{isAdd ? "+" : isRemove ? "-" : ""}
 			</span>
 			<span className="flex-1 min-w-max text-[10px] font-mono whitespace-pre text-surgent-text pr-3 pl-1">
-				<SyntaxContent
-					content={line.content}
-					ext={ext}
-					disableTokenize={disableTokenize}
-				/>
+				{tokens
+					? tokens.map((tok, i) => (
+							<span key={i} className={TOKEN_CLASSES[tok.type]}>
+								{tok.text}
+							</span>
+						))
+					: line.content}
 			</span>
 		</div>
 	);
+});
+
+const tokenCache = new Map<string, Token[]>();
+
+function getTokens(
+	content: string,
+	ext: string,
+	disable: boolean
+): Token[] | null {
+	if (disable || !content) return null;
+	const key = `${ext}:${content}`;
+	let tokens = tokenCache.get(key);
+	if (!tokens) {
+		tokens = tokenizeLine(content, ext);
+		tokenCache.set(key, tokens);
+		if (tokenCache.size > 3000) {
+			const first = tokenCache.keys().next().value;
+			if (first) tokenCache.delete(first);
+		}
+	}
+	return tokens;
 }
 
 function VirtualPanel({
@@ -136,6 +132,7 @@ function VirtualPanel({
 	onScroll,
 	disableTokenize,
 	showMinimap: _showMinimap = false,
+	externalScrollTop,
 }: {
 	lines: DiffLine[];
 	ext: string;
@@ -143,24 +140,46 @@ function VirtualPanel({
 	onScroll: (scrollTop: number, scrollLeft: number) => void;
 	disableTokenize: boolean;
 	showMinimap?: boolean;
+	externalScrollTop?: number;
 }) {
 	const [scrollTop, setScrollTop] = useState(0);
 	const [viewH, setViewH] = useState(600);
+	const rafRef = useRef<number>(0);
 
 	useEffect(() => {
 		const el = scrollRef.current;
 		if (!el) return;
 		setViewH(el.clientHeight);
-		const obs = new ResizeObserver((e) => setViewH(e[0]?.contentRect.height));
+		const obs = new ResizeObserver((e) =>
+			setViewH(e[0]?.contentRect.height ?? 600)
+		);
 		obs.observe(el);
 		return () => obs.disconnect();
 	}, [scrollRef]);
 
+	const lastAppliedScrollRef = useRef(-1);
+	useEffect(() => {
+		if (externalScrollTop === undefined || externalScrollTop < 0) return;
+		if (externalScrollTop === lastAppliedScrollRef.current) return;
+		lastAppliedScrollRef.current = externalScrollTop;
+		if (scrollRef.current) {
+			scrollRef.current.scrollTop = externalScrollTop;
+			setScrollTop(externalScrollTop);
+		}
+	}, [externalScrollTop, scrollRef]);
+
 	const handleScroll = useCallback(() => {
 		if (!scrollRef.current) return;
-		setScrollTop(scrollRef.current.scrollTop);
-		onScroll(scrollRef.current.scrollTop, scrollRef.current.scrollLeft);
+		cancelAnimationFrame(rafRef.current);
+		rafRef.current = requestAnimationFrame(() => {
+			if (!scrollRef.current) return;
+			const { scrollTop: st, scrollLeft: sl } = scrollRef.current;
+			setScrollTop(st);
+			onScroll(st, sl);
+		});
 	}, [scrollRef, onScroll]);
+
+	useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
 	const total = lines.length * LINE_H;
 	const start = Math.max(0, Math.floor(scrollTop / LINE_H) - OVERSCAN);
@@ -172,11 +191,33 @@ function VirtualPanel({
 	const scrollToLine = useCallback(
 		(lineIndex: number) => {
 			if (!scrollRef.current) return;
-			const targetScroll = lineIndex * LINE_H - viewH / 2;
-			scrollRef.current.scrollTop = Math.max(0, targetScroll);
+			scrollRef.current.scrollTop = Math.max(0, lineIndex * LINE_H - viewH / 2);
 		},
 		[scrollRef, viewH]
 	);
+
+	const visibleRows = useMemo(() => {
+		const rows: { line: DiffLine; tokens: Token[] | null; key: number }[] = [];
+		for (let i = start; i < end; i++) {
+			const line = lines[i];
+			if (!line) continue;
+			rows.push({
+				line,
+				tokens:
+					line.type === "spacer" || line.type === "hunk"
+						? null
+						: getTokens(line.content, ext, disableTokenize),
+				key: i,
+			});
+		}
+		return rows;
+	}, [lines, start, end, ext, disableTokenize]);
+
+	const minimapSegments = useMemo(() => {
+		if (!_showMinimap || lines.length === 0 || lines.length >= 3000)
+			return null;
+		return buildMinimapSegments(lines);
+	}, [lines, _showMinimap]);
 
 	return (
 		<div className="flex flex-1 min-h-0">
@@ -186,21 +227,22 @@ function VirtualPanel({
 				className="flex-1 overflow-auto"
 			>
 				<div style={{ height: total, position: "relative" }}>
-					<div style={{ transform: `translateY(${start * LINE_H}px)` }}>
-						{lines.slice(start, end).map((line, i) => (
-							<DiffRow
-								key={start + i}
-								line={line}
-								ext={ext}
-								disableTokenize={disableTokenize}
-							/>
+					<div
+						style={{
+							transform: `translateY(${start * LINE_H}px)`,
+							willChange: "transform",
+						}}
+					>
+						{visibleRows.map(({ line, tokens, key }) => (
+							<DiffRow key={key} line={line} ext={ext} tokens={tokens} />
 						))}
 					</div>
 				</div>
 			</div>
-			{false && _showMinimap && lines.length > 0 && (
+			{minimapSegments && (
 				<DiffMinimap
 					lines={lines}
+					segments={minimapSegments}
 					scrollTop={scrollTop}
 					viewHeight={viewH}
 					totalHeight={total}
@@ -211,14 +253,39 @@ function VirtualPanel({
 	);
 }
 
-function DiffMinimap({
+function buildMinimapSegments(
+	lines: DiffLine[]
+): { type: string; startLine: number; endLine: number }[] {
+	const segments: { type: string; startLine: number; endLine: number }[] = [];
+	let currentType = "";
+	let startLine = 0;
+
+	for (let i = 0; i < lines.length && segments.length < 100; i++) {
+		const t = lines[i]?.type;
+		const type = t === "add" || t === "remove" ? t : "";
+		if (type !== currentType) {
+			if (currentType)
+				segments.push({ type: currentType, startLine, endLine: i });
+			currentType = type;
+			startLine = i;
+		}
+	}
+	if (currentType && segments.length < 100) {
+		segments.push({ type: currentType, startLine, endLine: lines.length });
+	}
+	return segments;
+}
+
+const DiffMinimap = memo(function DiffMinimap({
 	lines,
+	segments,
 	scrollTop,
 	viewHeight,
 	totalHeight,
 	onScrollTo,
 }: {
 	lines: DiffLine[];
+	segments: { type: string; startLine: number; endLine: number }[];
 	scrollTop: number;
 	viewHeight: number;
 	totalHeight: number;
@@ -226,7 +293,6 @@ function DiffMinimap({
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [containerHeight, setContainerHeight] = useState(0);
-	const isDragging = useRef(false);
 
 	useEffect(() => {
 		const el = containerRef.current;
@@ -239,7 +305,6 @@ function DiffMinimap({
 		return () => obs.disconnect();
 	}, []);
 
-	// Guard against bad values
 	if (totalHeight <= 0 || lines.length === 0 || containerHeight <= 0) {
 		return (
 			<div
@@ -260,33 +325,6 @@ function DiffMinimap({
 	);
 	const lineHeight = containerHeight / lines.length;
 
-	// Build segments inline, limit to 100 max for performance
-	const segments: { type: string; top: number; height: number }[] = [];
-	let currentType = "";
-	let startLine = 0;
-	for (let i = 0; i < lines.length && segments.length < 100; i++) {
-		const t = lines[i].type;
-		const type = t === "add" || t === "remove" ? t : "";
-		if (type !== currentType) {
-			if (currentType) {
-				segments.push({
-					type: currentType,
-					top: startLine * lineHeight,
-					height: Math.max(2, (i - startLine) * lineHeight),
-				});
-			}
-			currentType = type;
-			startLine = i;
-		}
-	}
-	if (currentType && segments.length < 100) {
-		segments.push({
-			type: currentType,
-			top: startLine * lineHeight,
-			height: Math.max(2, (lines.length - startLine) * lineHeight),
-		});
-	}
-
 	const handleClick = (e: React.MouseEvent) => {
 		if (!containerRef.current) return;
 		const rect = containerRef.current.getBoundingClientRect();
@@ -305,7 +343,11 @@ function DiffMinimap({
 				<div
 					key={i}
 					className={`absolute right-0 w-[6px] ${seg.type === "add" ? "bg-git-added" : "bg-git-deleted"}`}
-					style={{ top: seg.top, height: seg.height, opacity: 0.7 }}
+					style={{
+						top: seg.startLine * lineHeight,
+						height: Math.max(2, (seg.endLine - seg.startLine) * lineHeight),
+						opacity: 0.7,
+					}}
 				/>
 			))}
 			<div
@@ -314,7 +356,7 @@ function DiffMinimap({
 			/>
 		</div>
 	);
-}
+});
 
 export const GitDiffView = memo(function GitDiffView({
 	diff,
@@ -326,6 +368,7 @@ export const GitDiffView = memo(function GitDiffView({
 	viewMode: controlledViewMode,
 	onViewModeChange,
 	hideToolbar = false,
+	scrollToChange,
 }: GitDiffViewProps) {
 	const leftRef = useRef<HTMLDivElement>(null);
 	const rightRef = useRef<HTMLDivElement>(null);
@@ -334,6 +377,34 @@ export const GitDiffView = memo(function GitDiffView({
 		useState<DiffViewMode>("split");
 	const viewMode = controlledViewMode ?? internalViewMode;
 	const setViewMode = onViewModeChange ?? setInternalViewMode;
+	const [externalScrollTop, setExternalScrollTop] = useState(-1);
+
+	useEffect(() => {
+		if (!scrollToChange) return;
+
+		let lastChangeIdx = -1;
+		for (let i = diff.newLines.length - 1; i >= 0; i--) {
+			if (diff.newLines[i]?.type === "add") {
+				lastChangeIdx = i;
+				break;
+			}
+		}
+		if (lastChangeIdx < 0) {
+			for (let i = diff.oldLines.length - 1; i >= 0; i--) {
+				if (diff.oldLines[i]?.type === "remove") {
+					lastChangeIdx = i;
+					break;
+				}
+			}
+		}
+
+		if (lastChangeIdx >= 0) {
+			const scrollPos = Math.max(0, (lastChangeIdx - 10) * LINE_H);
+			setExternalScrollTop(scrollPos);
+			const resetTimer = setTimeout(() => setExternalScrollTop(-1), 100);
+			return () => clearTimeout(resetTimer);
+		}
+	}, [scrollToChange, diff.newLines, diff.oldLines]);
 
 	const ext = useMemo(() => {
 		const p = filePath.split(".");
@@ -344,6 +415,7 @@ export const GitDiffView = memo(function GitDiffView({
 		() => buildStackedLines(diff.oldLines, diff.newLines, true),
 		[diff.oldLines, diff.newLines]
 	);
+
 	const statusMessage = useMemo(() => {
 		if (diff.oldLines.length !== 0 || diff.newLines.length !== 1) return null;
 		const line = diff.newLines[0];
@@ -351,6 +423,7 @@ export const GitDiffView = memo(function GitDiffView({
 		const text = line.content.trim();
 		return /too large|cannot read/i.test(text) ? text : null;
 	}, [diff.newLines, diff.oldLines.length]);
+
 	const disableTokenize = useMemo(() => {
 		const allLines = [...diff.oldLines, ...diff.newLines];
 		return (
@@ -467,10 +540,8 @@ export const GitDiffView = memo(function GitDiffView({
 									ext={ext}
 									scrollRef={leftRef}
 									disableTokenize={disableTokenize}
-									onScroll={(scrollTop, scrollLeft) =>
-										sync("left", scrollTop, scrollLeft)
-									}
-									showMinimap
+									onScroll={(st, sl) => sync("left", st, sl)}
+									externalScrollTop={externalScrollTop}
 								/>
 							)}
 						</div>
@@ -480,10 +551,9 @@ export const GitDiffView = memo(function GitDiffView({
 								ext={ext}
 								scrollRef={rightRef}
 								disableTokenize={disableTokenize}
-								onScroll={(scrollTop, scrollLeft) =>
-									sync("right", scrollTop, scrollLeft)
-								}
+								onScroll={(st, sl) => sync("right", st, sl)}
 								showMinimap
+								externalScrollTop={externalScrollTop}
 							/>
 						</div>
 					</>
@@ -500,10 +570,8 @@ export const GitDiffView = memo(function GitDiffView({
 									ext={ext}
 									scrollRef={leftRef}
 									disableTokenize={disableTokenize}
-									onScroll={(scrollTop, scrollLeft) =>
-										sync("left", scrollTop, scrollLeft)
-									}
-									showMinimap
+									onScroll={(st, sl) => sync("left", st, sl)}
+									externalScrollTop={externalScrollTop}
 								/>
 							)}
 						</div>
@@ -513,10 +581,9 @@ export const GitDiffView = memo(function GitDiffView({
 								ext={ext}
 								scrollRef={rightRef}
 								disableTokenize={disableTokenize}
-								onScroll={(scrollTop, scrollLeft) =>
-									sync("right", scrollTop, scrollLeft)
-								}
+								onScroll={(st, sl) => sync("right", st, sl)}
 								showMinimap
+								externalScrollTop={externalScrollTop}
 							/>
 						</div>
 					</div>
@@ -525,6 +592,7 @@ export const GitDiffView = memo(function GitDiffView({
 						lines={hunkLines}
 						ext={ext}
 						disableTokenize={disableTokenize}
+						externalScrollTop={externalScrollTop}
 					/>
 				)}
 			</div>
@@ -569,10 +637,12 @@ function SinglePanel({
 	lines,
 	ext,
 	disableTokenize,
+	externalScrollTop,
 }: {
 	lines: DiffLine[];
 	ext: string;
 	disableTokenize: boolean;
+	externalScrollTop?: number;
 }) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	return (
@@ -584,6 +654,7 @@ function SinglePanel({
 				disableTokenize={disableTokenize}
 				onScroll={() => {}}
 				showMinimap
+				externalScrollTop={externalScrollTop}
 			/>
 		</div>
 	);
@@ -677,7 +748,7 @@ function DiffHeader({
 				className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3/50 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
 			>
 				<svg
-					aria-hidden="true"
+					aria-hidden
 					width="9"
 					height="9"
 					viewBox="0 0 8 8"

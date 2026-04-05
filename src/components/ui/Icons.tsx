@@ -1,7 +1,9 @@
 import type React from "react";
 
+// Props for icon components
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 
+// Create a single-path icon component
 function icon(d: string, viewBox = "0 0 24 24") {
 	return function Icon({ size = 16, ...props }: IconProps) {
 		return (
@@ -24,6 +26,7 @@ function icon(d: string, viewBox = "0 0 24 24") {
 	};
 }
 
+// Create a multi-path icon component
 function iconMulti(paths: string[], viewBox = "0 0 24 24") {
 	return function Icon({ size = 16, ...props }: IconProps) {
 		return (
@@ -207,6 +210,9 @@ export const IconPanelLeft = iconMulti([
 	"M9 3v18",
 ]);
 
+// Panel right icon for collapsing right sidebar
+export const IconPanelRight = iconMulti(["M3 3h18v18H3V3z", "M15 3v18"]);
+
 export const IconExternalLink = iconMulti([
 	"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
 	"M15 3h6v6",
@@ -231,6 +237,13 @@ export const IconLoader = iconMulti([
 	"M18 12h4",
 	"M4.93 19.07l2.83-2.83",
 	"M16.24 7.76l2.83-2.83",
+]);
+
+// Zen mode icon - auto-follow file changes (eye with sparkle)
+export const IconZen = iconMulti([
+	"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z",
+	"M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+	"M17 2l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2",
 ]);
 
 export type { IconProps };

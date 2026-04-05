@@ -12,6 +12,10 @@ import {
 	unstageAll,
 	unstageFile,
 } from "../services/git.ts";
+import {
+	watchDirectory,
+	unwatchDirectory,
+} from "../../features/file-watcher/server.ts";
 
 interface DiffLine {
 	number: number | null;
@@ -28,10 +32,7 @@ interface HunkDiff {
 	imagePath?: string;
 }
 
-const MAX_RENDER_DIFF_CHARS = 80_000;
-const MAX_RENDER_DIFF_LINES = 1_500;
 const MAX_UNTRACKED_FILE_BYTES = 120_000;
-const MAX_RENDER_LINE_LENGTH = 4_000;
 
 const IMAGE_EXTENSIONS = new Set([
 	".png",
@@ -65,7 +66,6 @@ async function getHunkDiff(
 ): Promise<HunkDiff> {
 	const fullPath = resolve(cwd, filePath);
 
-	// Check if it's an image file first
 	if (isImageFile(filePath)) {
 		return {
 			oldLines: [],
@@ -77,29 +77,36 @@ async function getHunkDiff(
 		};
 	}
 
-	// Get the current file content from disk
 	let currentContent = "";
-	try {
-		const f = Bun.file(fullPath);
-		if (f.size > MAX_UNTRACKED_FILE_BYTES) {
-			return tooLargeDiff("File too large to render safely", true);
+	let readAttempts = 0;
+	const maxAttempts = 3;
+	while (readAttempts < maxAttempts) {
+		try {
+			const f = Bun.file(fullPath);
+			if (f.size > MAX_UNTRACKED_FILE_BYTES) {
+				return tooLargeDiff("File too large to render safely", true);
+			}
+			currentContent = await f.text();
+			if (currentContent.includes("\0")) {
+				return { oldLines: [], newLines: [], isBinary: true, isNew: false };
+			}
+			break;
+		} catch {
+			readAttempts++;
+			if (readAttempts >= maxAttempts) {
+				return {
+					oldLines: [],
+					newLines: [
+						{ number: 1, content: "Cannot read file", type: "context" },
+					],
+					isBinary: false,
+					isNew: true,
+				};
+			}
+			await new Promise((r) => setTimeout(r, 100));
 		}
-		currentContent = await f.text();
-		if (currentContent.includes("\0")) {
-			return { oldLines: [], newLines: [], isBinary: true, isNew: false };
-		}
-	} catch {
-		return {
-			oldLines: [],
-			newLines: [{ number: 1, content: "Cannot read file", type: "context" }],
-			isBinary: false,
-			isNew: true,
-		};
 	}
 
-	// Get the old version from git
-	// For staged: compare index to HEAD (git show HEAD:file)
-	// For unstaged: compare working tree to index (git show :file)
 	let oldContent = "";
 	let isNew = false;
 	try {
@@ -116,14 +123,12 @@ async function getHunkDiff(
 		if (exitCode === 0) {
 			oldContent = text;
 		} else {
-			// File doesn't exist in git yet - it's new
 			isNew = true;
 		}
 	} catch {
 		isNew = true;
 	}
 
-	// If it's a new file, show all lines as additions
 	if (isNew) {
 		const lines = currentContent.split("\n");
 		return {
@@ -138,18 +143,14 @@ async function getHunkDiff(
 		};
 	}
 
-	// Build aligned view by reading both files and parsing minimal diff
 	const oldFileLines = oldContent.split("\n");
 	const newFileLines = currentContent.split("\n");
 
-	// Get diff with NO context (-U0) to just get the change ranges
 	interface DiffHunk {
 		oldStart: number;
 		oldCount: number;
 		newStart: number;
 		newCount: number;
-		oldLines: string[];
-		newLines: string[];
 	}
 	const hunks: DiffHunk[] = [];
 
@@ -160,81 +161,92 @@ async function getHunkDiff(
 		const proc = Bun.spawn(args, { cwd, stdout: "pipe", stderr: "pipe" });
 		const diffText = await new Response(proc.stdout).text();
 
-		let currentHunk: DiffHunk | null = null;
 		for (const line of diffText.split("\n")) {
 			if (line.startsWith("@@")) {
-				if (currentHunk) hunks.push(currentHunk);
 				const m = line.match(/@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
 				if (m) {
-					currentHunk = {
+					hunks.push({
 						oldStart: Number.parseInt(m[1]!, 10),
 						oldCount: m[2] ? Number.parseInt(m[2], 10) : 1,
 						newStart: Number.parseInt(m[3]!, 10),
 						newCount: m[4] ? Number.parseInt(m[4], 10) : 1,
-						oldLines: [],
-						newLines: [],
-					};
-				}
-			} else if (currentHunk) {
-				if (line.startsWith("-") && !line.startsWith("---")) {
-					currentHunk.oldLines.push(line.slice(1));
-				} else if (line.startsWith("+") && !line.startsWith("+++")) {
-					currentHunk.newLines.push(line.slice(1));
+					});
 				}
 			}
 		}
-		if (currentHunk) hunks.push(currentHunk);
 	} catch {}
 
-	// Build aligned output by merging hunks with file content
-	const oldLines: DiffLine[] = [];
-	const newLines: DiffLine[] = [];
-
-	let oldIdx = 0;
-	let newIdx = 0;
+	const removedRanges: Array<{ start: number; end: number }> = [];
+	const addedRanges: Array<{ start: number; end: number }> = [];
 
 	for (const hunk of hunks) {
-		// Add context lines before this hunk
-		while (oldIdx < hunk.oldStart - 1 && newIdx < hunk.newStart - 1) {
-			oldLines.push({
-				number: oldIdx + 1,
-				content: oldFileLines[oldIdx] ?? "",
-				type: "context",
+		if (hunk.oldCount > 0) {
+			removedRanges.push({
+				start: hunk.oldStart,
+				end: hunk.oldStart + hunk.oldCount - 1,
 			});
-			newLines.push({
-				number: newIdx + 1,
-				content: newFileLines[newIdx] ?? "",
-				type: "context",
+		}
+		if (hunk.newCount > 0) {
+			addedRanges.push({
+				start: hunk.newStart,
+				end: hunk.newStart + hunk.newCount - 1,
 			});
-			oldIdx++;
-			newIdx++;
-		}
-
-		// Add removed lines with spacers on new side
-		for (const content of hunk.oldLines) {
-			oldLines.push({ number: oldIdx + 1, content, type: "remove" });
-			newLines.push({ number: null, content: "", type: "spacer" });
-			oldIdx++;
-		}
-
-		// Add added lines with spacers on old side
-		for (const content of hunk.newLines) {
-			oldLines.push({ number: null, content: "", type: "spacer" });
-			newLines.push({ number: newIdx + 1, content, type: "add" });
-			newIdx++;
 		}
 	}
 
-	// Add remaining context lines after last hunk
+	const isRemoved = (n: number) =>
+		removedRanges.some((r) => n >= r.start && n <= r.end);
+	const isAdded = (n: number) =>
+		addedRanges.some((r) => n >= r.start && n <= r.end);
+
+	const oldLines: DiffLine[] = [];
+	const newLines: DiffLine[] = [];
+	let oldIdx = 0;
+	let newIdx = 0;
+
 	while (oldIdx < oldFileLines.length || newIdx < newFileLines.length) {
-		if (oldIdx < oldFileLines.length && newIdx < newFileLines.length) {
+		const oldLineNum = oldIdx + 1;
+		const newLineNum = newIdx + 1;
+		const oldIsRemoved = oldIdx < oldFileLines.length && isRemoved(oldLineNum);
+		const newIsAdded = newIdx < newFileLines.length && isAdded(newLineNum);
+
+		if (oldIsRemoved && newIsAdded) {
 			oldLines.push({
-				number: oldIdx + 1,
+				number: oldLineNum,
+				content: oldFileLines[oldIdx] ?? "",
+				type: "remove",
+			});
+			newLines.push({
+				number: newLineNum,
+				content: newFileLines[newIdx] ?? "",
+				type: "add",
+			});
+			oldIdx++;
+			newIdx++;
+		} else if (oldIsRemoved) {
+			oldLines.push({
+				number: oldLineNum,
+				content: oldFileLines[oldIdx] ?? "",
+				type: "remove",
+			});
+			newLines.push({ number: null, content: "", type: "spacer" });
+			oldIdx++;
+		} else if (newIsAdded) {
+			oldLines.push({ number: null, content: "", type: "spacer" });
+			newLines.push({
+				number: newLineNum,
+				content: newFileLines[newIdx] ?? "",
+				type: "add",
+			});
+			newIdx++;
+		} else if (oldIdx < oldFileLines.length && newIdx < newFileLines.length) {
+			oldLines.push({
+				number: oldLineNum,
 				content: oldFileLines[oldIdx] ?? "",
 				type: "context",
 			});
 			newLines.push({
-				number: newIdx + 1,
+				number: newLineNum,
 				content: newFileLines[newIdx] ?? "",
 				type: "context",
 			});
@@ -242,18 +254,18 @@ async function getHunkDiff(
 			newIdx++;
 		} else if (oldIdx < oldFileLines.length) {
 			oldLines.push({
-				number: oldIdx + 1,
+				number: oldLineNum,
 				content: oldFileLines[oldIdx] ?? "",
-				type: "context",
+				type: "remove",
 			});
 			newLines.push({ number: null, content: "", type: "spacer" });
 			oldIdx++;
 		} else {
 			oldLines.push({ number: null, content: "", type: "spacer" });
 			newLines.push({
-				number: newIdx + 1,
+				number: newLineNum,
 				content: newFileLines[newIdx] ?? "",
-				type: "context",
+				type: "add",
 			});
 			newIdx++;
 		}
@@ -315,7 +327,6 @@ export function gitRoutes() {
 				const file = url.searchParams.get("file");
 				const staged = url.searchParams.get("staged") === "true";
 				if (!cwd || !file) return badRequest("Missing cwd or file parameter");
-				// Simple approach: just read the file from disk + get diff markers
 				const result = await getHunkDiff(cwd, file, staged);
 				return Response.json(result);
 			}),
@@ -331,7 +342,6 @@ export function gitRoutes() {
 
 				const fullPath = resolve(cwd, file);
 
-				// Check if image
 				if (isImageFile(file)) {
 					return Response.json({
 						isImage: true,
@@ -340,22 +350,18 @@ export function gitRoutes() {
 					});
 				}
 
-				// Read file content
 				let content: string;
 				try {
 					const f = Bun.file(fullPath);
-					if (f.size > 500_000) {
+					if (f.size > 500_000)
 						return Response.json({ error: "File too large", lines: [] });
-					}
 					content = await f.text();
-					if (content.includes("\0")) {
+					if (content.includes("\0"))
 						return Response.json({ error: "Binary file", lines: [] });
-					}
 				} catch {
 					return Response.json({ error: "Cannot read file", lines: [] });
 				}
 
-				// Get changed line numbers from git diff
 				const addedLines = new Set<number>();
 				try {
 					const args = staged
@@ -374,14 +380,12 @@ export function gitRoutes() {
 						if (line.startsWith("+") && !line.startsWith("+++")) {
 							addedLines.add(lineNum++);
 						} else if (line.startsWith("-") && !line.startsWith("---")) {
-							// Deleted line, don't increment
 						} else if (!line.startsWith("\\")) {
 							lineNum++;
 						}
 					}
 				} catch {}
 
-				// Build response
 				const fileLines = content.split("\n");
 				const lines = fileLines.map((text, i) => ({
 					number: i + 1,
@@ -443,6 +447,24 @@ export function gitRoutes() {
 				if (!body.message) return badRequest("Missing message parameter");
 				const result = await commit(body.cwd, body.message);
 				return Response.json(result);
+			}),
+		},
+
+		"/api/git/watch": {
+			POST: tryRoute(async (req) => {
+				const body = (await req.json()) as { cwd: string };
+				if (!body.cwd) return badRequest("Missing cwd parameter");
+				watchDirectory(body.cwd);
+				return Response.json({ ok: true });
+			}),
+		},
+
+		"/api/git/unwatch": {
+			POST: tryRoute(async (req) => {
+				const body = (await req.json()) as { cwd: string };
+				if (!body.cwd) return badRequest("Missing cwd parameter");
+				unwatchDirectory(body.cwd);
+				return Response.json({ ok: true });
 			}),
 		},
 	};

@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 
+// Single line in a diff view
 export interface DiffLine {
 	number: number | null;
 	content: string;
 	type: "add" | "remove" | "context" | "spacer" | "hunk";
 }
 
+// Full diff result with aligned old/new lines
 export interface HunkDiff {
 	oldLines: DiffLine[];
 	newLines: DiffLine[];
@@ -15,14 +17,17 @@ export interface HunkDiff {
 	imagePath?: string;
 }
 
+// Request parameters for loading a diff
 export interface DiffRequest {
 	cwd: string;
 	file: string;
 	staged: boolean;
 }
 
+// Counter to track and cancel stale requests
 let requestCounter = 0;
 
+// Hook for loading and managing git diff state
 export function useGitDiff() {
 	const [loading, setLoading] = useState(false);
 	const [diff, setDiff] = useState<HunkDiff | null>(null);
@@ -56,6 +61,7 @@ export function useGitDiff() {
 			});
 	}, []);
 
+	// Clear current diff state
 	const clear = useCallback(() => {
 		activeId.current = ++requestCounter;
 		setDiff(null);
