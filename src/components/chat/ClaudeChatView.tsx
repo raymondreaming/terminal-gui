@@ -963,14 +963,19 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					// Local history from localStorage is more valuable than empty server state
 					if (serverMessages.length === 0) return;
 
+					// Check if we should skip this sync (server has stale/fewer messages)
+					const currentMessages = messagesRef.current;
+					const shouldSkipSync =
+						serverMessages.length < currentMessages.length && !msg.isStreaming;
+
+					if (shouldSkipSync) {
+						// Server lost state (restart) - don't update anything, keep local state
+						return;
+					}
+
 					// Preserve local user message display text instead of server's expanded version
 					// Match by position since IDs differ between client and server
 					setMessages((prev) => {
-						// Don't wipe local history if server has fewer messages
-						// This happens after server restart - keep local history
-						if (serverMessages.length < prev.length && !msg.isStreaming) {
-							return prev;
-						}
 						const localUserMsgs = prev.filter((m) => m.role === "user");
 						const serverUserMsgs = serverMessages.filter(
 							(m) => m.role === "user"
@@ -1019,10 +1024,15 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						);
 						if (lastTool) currentToolRef.current = lastTool.id;
 					} else {
-						setLoadingState({
-							isLoading: false,
-							status: "idle",
-							startTime: null,
+						// Only set to idle if we're not already in a loading state
+						// (prevents flicker when reconnect sync comes after user sends new message)
+						setLoadingState((prev) => {
+							if (prev.isLoading) return prev; // Don't interrupt active loading
+							return {
+								isLoading: false,
+								status: "idle",
+								startTime: null,
+							};
 						});
 						currentAssistantRef.current = null;
 						currentToolRef.current = null;

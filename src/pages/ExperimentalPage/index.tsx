@@ -39,6 +39,7 @@ import {
 	useActivityFeed,
 } from "../../features/activity-feed/index.ts";
 import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
+import { wsClient } from "../../lib/websocket.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { StatusIcon } from "../Terminal/StatusIcon.tsx";
 
@@ -115,10 +116,14 @@ export function ExperimentalPage() {
 	const [commitMessage, setCommitMessage] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
 	const [scrollToChange, setScrollToChange] = useState(0);
-	const [zenMode, setZenMode] = useState(true);
+	const [zenMode, setZenMode] = useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	const [activityExpanded, setActivityExpanded] = useState(false);
+	const [activityHeight, setActivityHeight] = useState(150);
 	const chatRef = useRef<ClaudeChatHandle>(null);
+	const activityDragRef = useRef<{
+		startY: number;
+		startHeight: number;
+	} | null>(null);
 
 	const terminalState = useMemo(() => loadTerminalState(), []);
 	const allSessions = useMemo(
@@ -148,6 +153,11 @@ export function ExperimentalPage() {
 	} = useGitDiff();
 
 	const refresh = useCallback(() => setTick((v) => v + 1), []);
+
+	// Ensure WebSocket is connected
+	useEffect(() => {
+		wsClient.connect();
+	}, []);
 
 	useEffect(() => {
 		const id = setInterval(refresh, 5000);
@@ -319,6 +329,14 @@ export function ExperimentalPage() {
 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
+			// Skip if user is in an input field or textarea
+			const target = e.target as HTMLElement;
+			const isEditable =
+				target.tagName === "INPUT" ||
+				target.tagName === "TEXTAREA" ||
+				target.isContentEditable;
+			if (isEditable) return;
+
 			if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
 				e.preventDefault();
 				cycleSession(e.key === "ArrowLeft" ? -1 : 1);
@@ -397,6 +415,36 @@ export function ExperimentalPage() {
 		}
 	}, [session?.cwd, commitMessage, isCommitting, refresh]);
 
+	const handleActivityDragStart = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			activityDragRef.current = {
+				startY: e.clientY,
+				startHeight: activityHeight,
+			};
+
+			const handleMouseMove = (e: MouseEvent) => {
+				if (!activityDragRef.current) return;
+				const delta = activityDragRef.current.startY - e.clientY;
+				const newHeight = Math.min(
+					300,
+					Math.max(100, activityDragRef.current.startHeight + delta)
+				);
+				setActivityHeight(newHeight);
+			};
+
+			const handleMouseUp = () => {
+				activityDragRef.current = null;
+				document.removeEventListener("mousemove", handleMouseMove);
+				document.removeEventListener("mouseup", handleMouseUp);
+			};
+
+			document.addEventListener("mousemove", handleMouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
+		},
+		[activityHeight]
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-surgent-bg">
 			<header className="flex min-h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
@@ -467,27 +515,7 @@ export function ExperimentalPage() {
 								</>
 							)}
 							<span className="flex-1" />
-							<button
-								type="button"
-								onClick={() => setActivityExpanded((v) => !v)}
-								className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
-									activityExpanded
-										? "bg-surgent-accent/15 text-surgent-accent"
-										: "hover:bg-surgent-text/5"
-								}`}
-								title={activityExpanded ? "Hide activity" : "Show activity"}
-							>
-								<ActivityIndicator events={activityEvents} />
-								<svg
-									className={`w-2.5 h-2.5 text-surgent-text-3 transition-transform ${activityExpanded ? "rotate-180" : ""}`}
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-								>
-									<path d="M6 9l6 6 6-6" />
-								</svg>
-							</button>
+							<ActivityIndicator events={activityEvents} />
 							<button
 								type="button"
 								onClick={() => closePane(session.paneId)}
@@ -508,30 +536,6 @@ export function ExperimentalPage() {
 								</svg>
 							</button>
 						</div>
-						{activityExpanded && (
-							<div className="shrink-0 h-32 border-b border-surgent-border bg-surgent-bg/50">
-								<div className="flex h-full flex-col">
-									<div className="flex items-center justify-between px-2 py-1 border-b border-surgent-border/50">
-										<span className="text-[9px] font-medium uppercase tracking-wider text-surgent-text-3">
-											Activity
-										</span>
-										{activityEvents.length > 0 && (
-											<button
-												type="button"
-												onClick={clearActivityEvents}
-												className="text-[9px] text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
-											>
-												Clear
-											</button>
-										)}
-									</div>
-									<ActivityFeed
-										events={activityEvents}
-										className="flex-1 min-h-0"
-									/>
-								</div>
-							</div>
-						)}
 						<div className="flex-1 min-h-0">
 							<ClaudeChatView
 								key={session.paneId}
@@ -589,7 +593,8 @@ export function ExperimentalPage() {
 									</button>
 								) : (
 									<div className="flex w-56 shrink-0 flex-col border-l border-surgent-border bg-surgent-bg">
-										<div className="flex-1 overflow-y-auto">
+										{/* Git Files Section */}
+										<div className="flex-1 min-h-0 overflow-y-auto">
 											<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
 												<IconGitBranch
 													size={12}
@@ -659,6 +664,7 @@ export function ExperimentalPage() {
 											)}
 										</div>
 
+										{/* Commit Section */}
 										{project && (
 											<div className="shrink-0 border-t border-surgent-border p-2">
 												<textarea
@@ -690,6 +696,38 @@ export function ExperimentalPage() {
 												</button>
 											</div>
 										)}
+
+										{/* Activity Feed Section - Resizable at bottom */}
+										<div
+											className="shrink-0 border-t border-surgent-border flex flex-col"
+											style={{ height: activityHeight }}
+										>
+											{/* Drag handle */}
+											<div
+												className="h-1.5 cursor-ns-resize bg-transparent hover:bg-surgent-accent/30 transition-colors flex items-center justify-center"
+												onMouseDown={handleActivityDragStart}
+											>
+												<div className="w-8 h-0.5 rounded-full bg-surgent-border" />
+											</div>
+											<div className="flex items-center justify-between px-2.5 py-1 border-b border-surgent-border/50 bg-surgent-bg">
+												<span className="text-[9px] font-medium uppercase tracking-wider text-surgent-text-3">
+													Activity
+												</span>
+												{activityEvents.length > 0 && (
+													<button
+														type="button"
+														onClick={clearActivityEvents}
+														className="text-[9px] text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
+													>
+														Clear
+													</button>
+												)}
+											</div>
+											<ActivityFeed
+												events={activityEvents}
+												className="flex-1 min-h-0"
+											/>
+										</div>
 									</div>
 								)}
 							</div>
@@ -845,20 +883,18 @@ function FileGroup({
 				return (
 					<div
 						key={`${f.staged ? "s" : "u"}-${f.path}`}
-						className={`group flex h-[26px] items-center border-l-[2px] pr-1 ${
-							active
-								? "border-surgent-accent bg-surgent-accent/8"
-								: "border-transparent hover:bg-surgent-text/[0.03]"
+						className={`group flex h-[26px] items-center px-1 ${
+							active ? "bg-surgent-text/10" : "hover:bg-surgent-text/5"
 						}`}
 					>
 						<button
 							type="button"
 							onClick={() => onSelect(f)}
-							className="flex-1 min-w-0 h-full flex items-center px-2.5 text-left"
+							className="flex-1 min-w-0 h-full flex items-center px-1.5 text-left"
 							title={f.path}
 						>
 							<span
-								className={`truncate text-[10.5px] font-mono ${active ? "text-surgent-text" : "text-surgent-text-2/80"}`}
+								className={`truncate text-[10.5px] font-mono transition-colors ${active ? "text-surgent-text" : "text-surgent-text-3 group-hover:text-surgent-text-2"}`}
 							>
 								{name}
 							</span>
@@ -870,7 +906,7 @@ function FileGroup({
 									e.stopPropagation();
 									onAction(f.path);
 								}}
-								className="shrink-0 opacity-0 group-hover:opacity-100 rounded px-1.5 py-0.5 text-[8px] text-surgent-text-3 hover:bg-surgent-surface-2 hover:text-surgent-text transition-all"
+								className="shrink-0 opacity-0 group-hover:opacity-100 rounded px-1.5 py-0.5 text-[8px] text-surgent-text-3 hover:bg-surgent-text/10 hover:text-surgent-text transition-all"
 								title={`${actionLabel} ${f.path}`}
 							>
 								{actionLabel}
