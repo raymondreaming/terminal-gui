@@ -96,6 +96,13 @@ select,
 	transition: all 0.15s ease;
 }
 
+/* Ensure placeholder is visible even with transparent text (for highlight overlays) */
+textarea::placeholder {
+	color: var(--color-surgent-text-3);
+	-webkit-text-fill-color: var(--color-surgent-text-3);
+	opacity: 1;
+}
+
 *:focus,
 *:focus-visible,
 *:focus-within {

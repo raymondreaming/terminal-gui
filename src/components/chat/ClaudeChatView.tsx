@@ -1396,29 +1396,53 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 		}
 
 		// Smart scroll anchoring — only auto-scroll if user is near the bottom
+		// Uses sticky logic: once user scrolls up, stay detached until they scroll back to bottom
 		const userScrolledAway = useRef(false);
+		const isAutoScrolling = useRef(false);
+		const lastScrollTop = useRef(0);
 
 		useEffect(() => {
 			const el = scrollRef.current;
 			if (!el) return;
 
 			const handleScroll = () => {
+				// Skip if this scroll was triggered by auto-scroll
+				if (isAutoScrolling.current) return;
+
 				const { scrollTop, scrollHeight, clientHeight } = el;
 				const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-				// User is "at bottom" if within 100px - give some tolerance
-				userScrolledAway.current = distanceFromBottom > 100;
+
+				// Detect scroll direction
+				const scrolledUp = scrollTop < lastScrollTop.current;
+				lastScrollTop.current = scrollTop;
+
+				// If user scrolled up, detach from auto-scroll
+				if (scrolledUp && distanceFromBottom > 50) {
+					userScrolledAway.current = true;
+				}
+				// If user scrolled to bottom (within 20px), re-attach
+				else if (distanceFromBottom < 20) {
+					userScrolledAway.current = false;
+				}
 			};
 
 			el.addEventListener("scroll", handleScroll, { passive: true });
 			return () => el.removeEventListener("scroll", handleScroll);
 		}, []);
 
-		// Auto-scroll to bottom when messages change (if user is near bottom)
+		// Auto-scroll to bottom when messages change (if user hasn't scrolled away)
+		// Only auto-scroll if there's an active streaming message
 		useEffect(() => {
 			const el = scrollRef.current;
-			if (el && !userScrolledAway.current) {
+			const hasActiveStream = messages.some((m) => m.isStreaming);
+			if (el && !userScrolledAway.current && hasActiveStream) {
+				isAutoScrolling.current = true;
 				requestAnimationFrame(() => {
 					el.scrollTop = el.scrollHeight;
+					// Reset flag after a short delay to allow the scroll event to fire
+					requestAnimationFrame(() => {
+						isAutoScrolling.current = false;
+					});
 				});
 			}
 		}, [messages]);

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { memo, useEffect, useRef } from "react";
 import type { ActivityEvent, ActivityType } from "./useActivityFeed.ts";
 
 interface ActivityFeedProps {
@@ -261,13 +261,28 @@ function getEventLabel(event: ActivityEvent): string {
 	}
 }
 
-export function ActivityFeed({ events, className = "" }: ActivityFeedProps) {
+export const ActivityFeed = memo(function ActivityFeed({
+	events,
+	className = "",
+}: ActivityFeedProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const lastEventCountRef = useRef(0);
+	const isNearBottomRef = useRef(true);
 
-	// Auto-scroll to bottom when new events arrive
+	// Track if user is near bottom
+	const handleScroll = () => {
+		if (!containerRef.current) return;
+		const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+		isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 30;
+	};
+
+	// Auto-scroll only if user is near bottom
 	useEffect(() => {
-		if (events.length > lastEventCountRef.current && containerRef.current) {
+		if (
+			events.length > lastEventCountRef.current &&
+			containerRef.current &&
+			isNearBottomRef.current
+		) {
 			containerRef.current.scrollTop = containerRef.current.scrollHeight;
 		}
 		lastEventCountRef.current = events.length;
@@ -286,6 +301,7 @@ export function ActivityFeed({ events, className = "" }: ActivityFeedProps) {
 	return (
 		<div
 			ref={containerRef}
+			onScroll={handleScroll}
 			className={`overflow-y-auto overflow-x-hidden ${className}`}
 		>
 			<div className="flex flex-col">
@@ -326,10 +342,10 @@ export function ActivityFeed({ events, className = "" }: ActivityFeedProps) {
 			</div>
 		</div>
 	);
-}
+});
 
 // Compact inline version for embedding in headers
-export function ActivityIndicator({
+export const ActivityIndicator = memo(function ActivityIndicator({
 	events,
 	className = "",
 }: {
@@ -364,4 +380,4 @@ export function ActivityIndicator({
 			</span>
 		</div>
 	);
-}
+});

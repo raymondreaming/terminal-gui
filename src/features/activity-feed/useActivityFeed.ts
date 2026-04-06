@@ -87,6 +87,19 @@ export function useActivityFeed({
 			id?: string;
 			changedFileCount?: number;
 		}) => {
+			// Early exit for message types we don't care about
+			const msgType = msg.type;
+			if (
+				msgType !== "chat:event" &&
+				msgType !== "chat:status" &&
+				msgType !== "chat:done" &&
+				msgType !== "chat:error" &&
+				msgType !== "file:changed" &&
+				msgType !== "checkpoint:finalized"
+			) {
+				return;
+			}
+
 			const currentPaneId = paneIdRef.current;
 			const currentCwd = cwdRef.current;
 
@@ -96,12 +109,15 @@ export function useActivityFeed({
 			// Only handle messages for our pane (if paneId is present in message)
 			if (msg.paneId && msg.paneId !== currentPaneId) return;
 
-			// Handle chat events
-			if (msg.type === "chat:event" && msg.event) {
-				const event = msg.event;
+			// Handle chat events - only content_block_start and content_block_stop
+			if (msgType === "chat:event" && msg.event) {
+				const eventType = msg.event.type;
 
-				if (event.type === "content_block_start") {
-					const block = event.content_block;
+				// Skip delta events entirely - they're too frequent
+				if (eventType === "content_block_delta") return;
+
+				if (eventType === "content_block_start") {
+					const block = msg.event.content_block;
 					if (block?.type === "text") {
 						if (lastStatusRef.current !== "responding") {
 							lastStatusRef.current = "responding";
@@ -115,7 +131,7 @@ export function useActivityFeed({
 							message: `Running ${block.name}`,
 						});
 					}
-				} else if (event.type === "content_block_stop") {
+				} else if (eventType === "content_block_stop") {
 					if (currentToolRef.current) {
 						addEvent({
 							type: "tool_end",
@@ -125,10 +141,11 @@ export function useActivityFeed({
 						currentToolRef.current = null;
 					}
 				}
+				return;
 			}
 
 			// Handle status changes
-			if (msg.type === "chat:status" && msg.status) {
+			if (msgType === "chat:status" && msg.status) {
 				const status = msg.status;
 				if (status === "thinking" && lastStatusRef.current !== "thinking") {
 					lastStatusRef.current = "thinking";
@@ -136,30 +153,34 @@ export function useActivityFeed({
 				} else if (status === "idle" && lastStatusRef.current !== "idle") {
 					lastStatusRef.current = "idle";
 				}
+				return;
 			}
 
 			// Handle completion - just reset state, no need to add event (toolbar shows this)
-			if (msg.type === "chat:done") {
+			if (msgType === "chat:done") {
 				lastStatusRef.current = "idle";
 				currentToolRef.current = null;
+				return;
 			}
 
 			// Handle errors
-			if (msg.type === "chat:error") {
+			if (msgType === "chat:error") {
 				addEvent({ type: "error", message: "An error occurred" });
+				return;
 			}
 
 			// Handle file changes (from file watcher)
-			if (msg.type === "file:changed" && msg.cwd === currentCwd && msg.file) {
+			if (msgType === "file:changed" && msg.cwd === currentCwd && msg.file) {
 				addEvent({
 					type: "file_changed",
 					fileName: msg.file,
 					message: `File changed: ${msg.file}`,
 				});
+				return;
 			}
 
 			// Handle checkpoints
-			if (msg.type === "checkpoint:finalized" && msg.id) {
+			if (msgType === "checkpoint:finalized" && msg.id) {
 				addEvent({
 					type: "checkpoint",
 					checkpointId: msg.id,
