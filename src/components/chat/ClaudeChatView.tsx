@@ -82,9 +82,7 @@ interface CheckpointInfo {
 	afterMessageId: string | null;
 }
 
-type RenderItem =
-	| { type: "message"; message: ChatMessage }
-	| { type: "tool-group"; messages: ChatMessage[] };
+type RenderItem = { type: "message"; message: ChatMessage };
 
 const MAX_MESSAGES = 100;
 const MAX_TOTAL_CHARS = 200000;
@@ -110,8 +108,8 @@ function trimMessages(msgs: ChatMessage[]): ChatMessage[] {
 	return trimmed;
 }
 
-function isGroupedToolMessage(msg: ChatMessage): boolean {
-	// Edit and AskUserQuestion render separately, not in Tool Activity group
+// Tools shown in activity bar, not rendered inline (except Edit and AskUserQuestion)
+function isActivityBarTool(msg: ChatMessage): boolean {
 	return (
 		msg.role === "tool" &&
 		msg.toolName !== "AskUserQuestion" &&
@@ -120,26 +118,10 @@ function isGroupedToolMessage(msg: ChatMessage): boolean {
 }
 
 function buildRenderItems(messages: ChatMessage[]): RenderItem[] {
-	const items: RenderItem[] = [];
-	let currentToolGroup: ChatMessage[] = [];
-
-	const flushToolGroup = () => {
-		if (currentToolGroup.length === 0) return;
-		items.push({ type: "tool-group", messages: currentToolGroup });
-		currentToolGroup = [];
-	};
-
-	for (const message of messages) {
-		if (isGroupedToolMessage(message)) {
-			currentToolGroup.push(message);
-			continue;
-		}
-		flushToolGroup();
-		items.push({ type: "message", message });
-	}
-
-	flushToolGroup();
-	return items;
+	// Filter out tools that are shown in activity bar, only keep messages to render
+	return messages
+		.filter((msg) => !isActivityBarTool(msg))
+		.map((message) => ({ type: "message" as const, message }));
 }
 
 function loadMessages(paneId: string): ChatMessage[] {
@@ -1983,7 +1965,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			>
 				<div
 					ref={scrollRef}
-					className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none"
+					className="relative flex-1 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none"
 					style={theme ? { backgroundColor: bgColor } : undefined}
 				>
 					<VirtualizedMessages
@@ -2001,15 +1983,13 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					/>
 				</div>
 
-				{/* Status indicator bar - always rendered to avoid mount/unmount glitches */}
-				<StatusBar
-					status={status}
-					elapsedTime={elapsedTime}
-					queuedCount={queuedMessages.length}
+				{/* Status bar with activity pill and stop button */}
+				<ChatStatusBar
+					messages={messages}
 					isLoading={isLoading}
+					status={status}
 					onStop={stopGeneration}
 					theme={theme}
-					cursorColor={cursorColor}
 					borderColor={borderColor}
 					bgColor={bgColor}
 					fgDim={fgDim}
@@ -2655,18 +2635,7 @@ function VirtualizedMessages({
 						Ready
 					</p>
 				)}
-				{renderItems.map((item, idx) => {
-					if (item.type === "tool-group") {
-						return (
-							<ToolActivityGroup
-								key={`tool-group-${item.messages[0]?.id ?? idx}`}
-								messages={item.messages}
-								expandedTools={expandedTools}
-								onToggle={toggleTool}
-								theme={bubbleTheme}
-							/>
-						);
-					}
+				{renderItems.map((item) => {
 					const msg = item.message;
 					return (
 						<React.Fragment key={msg.id}>
@@ -2779,19 +2748,7 @@ function VirtualizedLongMessages({
 					className="space-y-2"
 					style={{ transform: `translateY(${startIdx * EST_MSG_HEIGHT}px)` }}
 				>
-					{renderItems.slice(startIdx, endIdx).map((item, i) => {
-						const idx = startIdx + i;
-						if (item.type === "tool-group") {
-							return (
-								<ToolActivityGroup
-									key={`tool-group-${item.messages[0]?.id ?? idx}`}
-									messages={item.messages}
-									expandedTools={expandedTools}
-									onToggle={toggleTool}
-									theme={bubbleTheme}
-								/>
-							);
-						}
+					{renderItems.slice(startIdx, endIdx).map((item) => {
 						const msg = item.message;
 						return (
 							<React.Fragment key={msg.id}>
@@ -3031,8 +2988,8 @@ const Bubble = React.memo(function Bubble({
 			);
 		}
 
-		// Edit tool renders as a standalone diff viewer
-		if (msg.toolName === "Edit" && msg.content && !msg.isStreaming) {
+		// Edit tool renders as a standalone diff viewer (even while streaming if we can parse it)
+		if (msg.toolName === "Edit" && msg.content) {
 			try {
 				const parsed = JSON.parse(msg.content);
 				if (
@@ -3050,7 +3007,7 @@ const Bubble = React.memo(function Bubble({
 					);
 				}
 			} catch {
-				// Fall through to normal tool rendering
+				// JSON not complete yet during streaming - fall through to normal tool rendering
 			}
 		}
 
@@ -3261,171 +3218,252 @@ const StatusBar = React.memo(function StatusBar({
 	);
 });
 
-const ToolActivityGroup = React.memo(function ToolActivityGroup({
+// Bottom toolbar showing status, activity pill, and stop button
+const ChatStatusBar = React.memo(function ChatStatusBar({
 	messages,
-	expandedTools,
-	onToggle,
+	isLoading,
+	status,
+	onStop,
 	theme,
+	borderColor,
+	bgColor,
+	fgDim,
 }: {
 	messages: ChatMessage[];
-	expandedTools: Set<string>;
-	onToggle: (id: string) => void;
-	theme?: BubbleTheme;
+	isLoading: boolean;
+	status: string;
+	onStop: () => void;
+	theme?: { bg: string; fg: string; cursor: string };
+	borderColor?: string;
+	bgColor: string;
+	fgDim: string;
 }) {
-	const activeCount = messages.filter((msg) => msg.isStreaming).length;
+	const [isHovered, setIsHovered] = useState(false);
+	const listRef = useRef<HTMLDivElement>(null);
+
+	// Extract tool activity from messages
+	const toolActivities = useMemo(() => {
+		const activities: {
+			id: string;
+			toolName: string;
+			isStreaming: boolean;
+			summary: string;
+		}[] = [];
+
+		for (const msg of messages) {
+			if (msg.role === "tool" && msg.toolName) {
+				let summary = "";
+				try {
+					if (msg.content) {
+						const parsed = JSON.parse(msg.content);
+						if (parsed.file_path) {
+							summary = parsed.file_path.split("/").pop() || parsed.file_path;
+						} else if (parsed.command) {
+							const cmd = parsed.command.slice(0, 40);
+							summary = `${cmd}${parsed.command.length > 40 ? "..." : ""}`;
+						} else if (parsed.pattern) {
+							summary = `/${parsed.pattern.slice(0, 30)}/`;
+						} else if (parsed.query) {
+							summary = parsed.query.slice(0, 40);
+						} else if (parsed.url) {
+							try {
+								const url = new URL(parsed.url);
+								summary = url.hostname;
+							} catch {
+								summary = parsed.url.slice(0, 40);
+							}
+						} else if (parsed.skill) {
+							summary = `/${parsed.skill}`;
+						} else if (parsed.prompt) {
+							summary = parsed.prompt.slice(0, 40);
+						}
+					}
+				} catch {}
+				activities.push({
+					id: msg.id,
+					toolName: msg.toolName,
+					isStreaming: msg.isStreaming ?? false,
+					summary: summary || msg.toolName,
+				});
+			}
+		}
+		return activities;
+	}, [messages]);
+
+	// Auto-scroll to bottom when expanded
+	useEffect(() => {
+		if (isHovered && listRef.current) {
+			listRef.current.scrollTop = listRef.current.scrollHeight;
+		}
+	}, [toolActivities.length, isHovered]);
+
+	if (!isLoading) return null;
+
+	const latestActivity = toolActivities[toolActivities.length - 1];
+
+	const getToolIcon = (toolName: string) => {
+		const baseClass = "w-3 h-3 shrink-0";
+		switch (toolName.toLowerCase()) {
+			case "read":
+				return (
+					<svg
+						className={baseClass}
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+					>
+						<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+						<circle cx="12" cy="12" r="3" />
+					</svg>
+				);
+			case "edit":
+				return (
+					<svg
+						className={baseClass}
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+					>
+						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+					</svg>
+				);
+			case "write":
+				return (
+					<svg
+						className={baseClass}
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+					>
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+						<polyline points="14 2 14 8 20 8" />
+						<line x1="12" y1="18" x2="12" y2="12" />
+						<line x1="9" y1="15" x2="15" y2="15" />
+					</svg>
+				);
+			case "bash":
+				return (
+					<svg
+						className={baseClass}
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+					>
+						<polyline points="4 17 10 11 4 5" />
+						<line x1="12" y1="19" x2="20" y2="19" />
+					</svg>
+				);
+			case "grep":
+			case "glob":
+				return (
+					<svg
+						className={baseClass}
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+					>
+						<circle cx="11" cy="11" r="8" />
+						<line x1="21" y1="21" x2="16.65" y2="16.65" />
+					</svg>
+				);
+			default:
+				return (
+					<svg
+						className={baseClass}
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+					>
+						<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+					</svg>
+				);
+		}
+	};
 
 	return (
-		<div
-			className="w-full overflow-hidden rounded-xl border"
-			style={{
-				borderColor: theme?.border ?? "rgba(255,255,255,0.08)",
-				backgroundColor: theme?.bg ?? "transparent",
-			}}
-		>
-			<div
-				className="flex items-center justify-between gap-3 px-3 py-2"
-				style={{
-					borderBottom: `1px solid ${theme?.border ?? "rgba(255,255,255,0.08)"}`,
-					backgroundColor: theme?.surface ?? "rgba(255,255,255,0.02)",
-				}}
-			>
+		<div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 bg-surgent-surface-2">
+			{/* Left side: Activity pill with hover dropdown */}
+			{toolActivities.length > 0 ? (
 				<div
-					className="text-[10px] font-medium"
-					style={{ color: theme?.fg ?? "var(--color-surgent-text)" }}
+					className="relative"
+					onMouseEnter={() => setIsHovered(true)}
+					onMouseLeave={() => setIsHovered(false)}
 				>
-					Tool Activity
-				</div>
-				<div className="shrink-0 flex items-center gap-2">
-					{activeCount > 0 && (
-						<span
-							className="inline-flex items-center gap-1 text-[9px] font-medium"
-							style={{ color: theme?.cursor ?? "var(--color-surgent-accent)" }}
-						>
-							<span
-								className="h-1.5 w-1.5 rounded-full animate-pulse"
-								style={{
-									backgroundColor:
-										theme?.cursor ?? "var(--color-surgent-accent)",
-								}}
-							/>
-							Running
+					{/* The pill */}
+					<div className="flex items-center gap-1.5 h-6 px-2.5 rounded-md text-xs font-medium cursor-default bg-white/[0.08] text-white/80 hover:bg-white/[0.12] transition-all">
+						{latestActivity && (
+							<span className="text-white/50">
+								{getToolIcon(latestActivity.toolName)}
+							</span>
+						)}
+						<span className="max-w-[150px] truncate">
+							{latestActivity?.summary || "Working..."}
 						</span>
-					)}
-					<span
-						className="rounded-full px-2 py-0.5 text-[9px] font-medium tabular-nums"
-						style={{
-							backgroundColor: theme?.bg ?? "rgba(255,255,255,0.04)",
-							color: theme?.fgDim ?? "var(--color-surgent-text-3)",
-							border: `1px solid ${theme?.border ?? "rgba(255,255,255,0.08)"}`,
-						}}
-					>
-						{messages.length} steps
-					</span>
-				</div>
-			</div>
-			<div className="overflow-x-auto">
-				{/* All tools render in accordion */}
-				{messages.map((msg, index) => {
-					const expanded = expandedTools.has(msg.id);
-					return (
-						<table
-							key={msg.id}
-							className="w-full border-collapse text-[10px]"
-							style={{
-								borderBottom:
-									index < messages.length - 1 || expanded
-										? `1px solid ${theme?.border ?? "rgba(255,255,255,0.06)"}`
-										: "none",
-							}}
-						>
-							<tbody>
-								<tr
-									className="cursor-pointer"
-									onClick={() => onToggle(msg.id)}
-									style={{
-										backgroundColor: expanded
-											? (theme?.surface ?? "rgba(255,255,255,0.02)")
-											: "transparent",
-									}}
-								>
-									<td className="w-6 px-2 py-1.5 align-top">
-										<svg
-											aria-hidden="true"
-											width="7"
-											height="7"
-											viewBox="0 0 8 8"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="1.5"
-											className={`transition-transform ${expanded ? "" : "-rotate-90"}`}
-											style={{
-												color: theme?.fgDim ?? "var(--color-surgent-text-3)",
-											}}
-										>
-											<path d="M2 2.5L4 5.5L6 2.5" />
-										</svg>
-									</td>
-									<td
-										className="px-2 py-1.5 align-top"
-										style={{
-											color: theme?.fg ?? "var(--color-surgent-text)",
-										}}
+						{toolActivities.length > 1 && (
+							<span className="text-[9px] tabular-nums text-white/40">
+								+{toolActivities.length - 1}
+							</span>
+						)}
+					</div>
+
+					{/* Dropdown (appears above) */}
+					{isHovered && (
+						<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 min-w-[240px] max-w-[320px] rounded-lg overflow-hidden bg-surgent-surface-2 shadow-lg border border-white/[0.08]">
+							<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-white/[0.06] text-white/50">
+								<span>Activity</span>
+								<span className="tabular-nums">{toolActivities.length}</span>
+							</div>
+							<div
+								ref={listRef}
+								className="overflow-y-auto"
+								style={{ maxHeight: "200px" }}
+							>
+								{toolActivities.map((activity, idx) => (
+									<div
+										key={activity.id}
+										className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] ${
+											idx < toolActivities.length - 1
+												? "border-b border-white/[0.04]"
+												: ""
+										}`}
 									>
-										<div className="font-medium">{msg.toolName}</div>
-									</td>
-									<td
-										className="w-16 px-2 py-1.5 align-top text-right"
-										style={{
-											color: theme?.fgDim ?? "var(--color-surgent-text-3)",
-										}}
-									>
-										{msg.isStreaming ? (
-											<span
-												className="inline-flex items-center gap-1"
-												style={{
-													color: theme?.cursor ?? "var(--color-surgent-accent)",
-												}}
-											>
-												<span
-													className="h-1.5 w-1.5 rounded-full animate-pulse"
-													style={{
-														backgroundColor:
-															theme?.cursor ?? "var(--color-surgent-accent)",
-													}}
-												/>
-												Live
-											</span>
-										) : (
-											"Done"
+										<span className="shrink-0 text-white/40">
+											{getToolIcon(activity.toolName)}
+										</span>
+										<span className="flex-1 truncate text-white/70">
+											{activity.summary}
+										</span>
+										{activity.isStreaming && (
+											<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-white/40" />
 										)}
-									</td>
-								</tr>
-								{expanded && msg.content && (
-									<tr>
-										<td colSpan={3} className="px-2 pb-2 pt-0">
-											<pre
-												className="mt-1 max-h-32 overflow-auto rounded-lg border px-3 py-2 font-mono text-[9px] leading-relaxed whitespace-pre-wrap break-all"
-												style={{
-													backgroundColor:
-														theme?.surface ?? "rgba(255,255,255,0.03)",
-													borderColor:
-														theme?.border ?? "rgba(255,255,255,0.08)",
-													color: theme?.fgDim ?? "var(--color-surgent-text-3)",
-												}}
-											>
-												<ToolOutputHighlight
-													content={msg.content}
-													theme={theme}
-												/>
-											</pre>
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					);
-				})}
-			</div>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+			) : (
+				<div className="flex items-center gap-2">
+					<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-white/40" />
+					<span className="text-[10px] text-white/60">Working...</span>
+				</div>
+			)}
+
+			{/* Right side: Stop button */}
+			<button
+				type="button"
+				onClick={onStop}
+				className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium transition-all bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white/80"
+			>
+				Stop
+			</button>
 		</div>
 	);
 });
@@ -3986,6 +4024,153 @@ const SYNTAX_TOKEN_CLASSES: Record<string, string> = {
 	default: "",
 };
 
+// Compute diff hunks between old and new strings
+// Returns array of hunks, each containing lines with type: 'context' | 'removed' | 'added'
+function computeDiffHunks(
+	oldStr: string,
+	newStr: string,
+	contextLines = 2
+): {
+	type: "context" | "removed" | "added";
+	text: string;
+	oldLineNum?: number;
+	newLineNum?: number;
+}[][] {
+	const oldLines = oldStr.split("\n");
+	const newLines = newStr.split("\n");
+
+	// Simple LCS-based diff
+	const lcs: number[][] = [];
+	for (let i = 0; i <= oldLines.length; i++) {
+		lcs[i] = [];
+		for (let j = 0; j <= newLines.length; j++) {
+			if (i === 0 || j === 0) {
+				lcs[i][j] = 0;
+			} else if (oldLines[i - 1] === newLines[j - 1]) {
+				lcs[i][j] = lcs[i - 1]![j - 1]! + 1;
+			} else {
+				lcs[i][j] = Math.max(lcs[i - 1]![j]!, lcs[i]![j - 1]!);
+			}
+		}
+	}
+
+	// Backtrack to get diff operations
+	const ops: {
+		type: "equal" | "delete" | "insert";
+		oldIdx?: number;
+		newIdx?: number;
+	}[] = [];
+	let i = oldLines.length;
+	let j = newLines.length;
+	while (i > 0 || j > 0) {
+		if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
+			ops.unshift({ type: "equal", oldIdx: i - 1, newIdx: j - 1 });
+			i--;
+			j--;
+		} else if (j > 0 && (i === 0 || lcs[i]![j - 1]! >= lcs[i - 1]![j]!)) {
+			ops.unshift({ type: "insert", newIdx: j - 1 });
+			j--;
+		} else {
+			ops.unshift({ type: "delete", oldIdx: i - 1 });
+			i--;
+		}
+	}
+
+	// Convert to diff lines
+	const diffLines: {
+		type: "context" | "removed" | "added";
+		text: string;
+		oldLineNum?: number;
+		newLineNum?: number;
+		opIdx: number;
+	}[] = [];
+	for (let idx = 0; idx < ops.length; idx++) {
+		const op = ops[idx]!;
+		if (op.type === "equal") {
+			diffLines.push({
+				type: "context",
+				text: oldLines[op.oldIdx!]!,
+				oldLineNum: op.oldIdx! + 1,
+				newLineNum: op.newIdx! + 1,
+				opIdx: idx,
+			});
+		} else if (op.type === "delete") {
+			diffLines.push({
+				type: "removed",
+				text: oldLines[op.oldIdx!]!,
+				oldLineNum: op.oldIdx! + 1,
+				opIdx: idx,
+			});
+		} else {
+			diffLines.push({
+				type: "added",
+				text: newLines[op.newIdx!]!,
+				newLineNum: op.newIdx! + 1,
+				opIdx: idx,
+			});
+		}
+	}
+
+	// Group into hunks with context
+	const hunks: {
+		type: "context" | "removed" | "added";
+		text: string;
+		oldLineNum?: number;
+		newLineNum?: number;
+	}[][] = [];
+	let currentHunk: (typeof hunks)[0] = [];
+	let lastChangeIdx = -999;
+
+	for (let idx = 0; idx < diffLines.length; idx++) {
+		const line = diffLines[idx]!;
+		const isChange = line.type !== "context";
+
+		if (isChange) {
+			// Add context lines before this change
+			const contextStart = Math.max(
+				lastChangeIdx + contextLines + 1,
+				idx - contextLines
+			);
+			for (let c = contextStart; c < idx; c++) {
+				const contextLine = diffLines[c];
+				if (contextLine && contextLine.type === "context") {
+					currentHunk.push({
+						type: contextLine.type,
+						text: contextLine.text,
+						oldLineNum: contextLine.oldLineNum,
+						newLineNum: contextLine.newLineNum,
+					});
+				}
+			}
+			currentHunk.push({
+				type: line.type,
+				text: line.text,
+				oldLineNum: line.oldLineNum,
+				newLineNum: line.newLineNum,
+			});
+			lastChangeIdx = idx;
+		} else if (idx - lastChangeIdx <= contextLines && lastChangeIdx >= 0) {
+			// Context line within range after a change
+			currentHunk.push({
+				type: line.type,
+				text: line.text,
+				oldLineNum: line.oldLineNum,
+				newLineNum: line.newLineNum,
+			});
+		} else if (currentHunk.length > 0 && idx - lastChangeIdx > contextLines) {
+			// End of hunk
+			hunks.push(currentHunk);
+			currentHunk = [];
+		}
+	}
+
+	if (currentHunk.length > 0) {
+		hunks.push(currentHunk);
+	}
+
+	return hunks;
+}
+
 function MiniDiffViewer({
 	oldStr,
 	newStr,
@@ -4000,9 +4185,11 @@ function MiniDiffViewer({
 	const fileName = filePath.split("/").pop() || filePath;
 	const ext = filePath.split(".").pop() || "";
 
-	// Split strings into lines for diff display
-	const oldLines = oldStr.split("\n");
-	const newLines = newStr.split("\n");
+	// Compute hunks with minimal context (just 1 line)
+	const hunks = useMemo(
+		() => computeDiffHunks(oldStr, newStr, 1),
+		[oldStr, newStr]
+	);
 
 	// Tokenize lines for syntax highlighting
 	const renderTokenizedLine = (line: string, tokens: Token[]) => {
@@ -4014,60 +4201,102 @@ function MiniDiffViewer({
 		));
 	};
 
+	// Colors
+	const removedBg = "rgba(248,81,73,0.15)";
+	const removedBorder = "rgba(248,81,73,0.4)";
+	const addedBg = "rgba(46,160,67,0.15)";
+	const addedBorder = "rgba(46,160,67,0.4)";
+
 	return (
 		<div
-			className="rounded-lg border overflow-hidden text-[9px] font-mono"
+			className="rounded-lg border overflow-hidden text-[10px] font-mono"
 			style={{
-				backgroundColor: theme?.surface ?? "rgba(255,255,255,0.02)",
-				borderColor: theme?.border ?? "rgba(255,255,255,0.08)",
+				backgroundColor: theme?.surface ?? "var(--color-surgent-surface)",
+				borderColor: theme?.border ?? "var(--color-surgent-border)",
 			}}
 		>
 			{/* File path header */}
 			<div
-				className="px-2 py-1 text-[8px] truncate"
+				className="flex items-center gap-2 px-2.5 py-1.5 text-[10px] font-medium"
 				style={{
-					color: theme?.fgDim ?? "var(--color-surgent-text-3)",
-					borderBottom: `1px solid ${theme?.border ?? "rgba(255,255,255,0.06)"}`,
+					color: theme?.fg ?? "var(--color-surgent-text-2)",
+					backgroundColor: theme?.bg ?? "var(--color-surgent-surface-2)",
+					borderBottom: `1px solid ${theme?.border ?? "var(--color-surgent-border)"}`,
 				}}
 			>
+				<svg
+					className="w-3 h-3 opacity-50"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+				>
+					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+					<polyline points="14 2 14 8 20 8" />
+				</svg>
 				{fileName}
 			</div>
-			{/* Diff content */}
-			<div className="max-h-48 overflow-auto">
-				{/* Removed lines */}
-				{oldLines.map((line, i) => {
-					const tokens = tokenizeLine(line, ext);
-					return (
-						<div
-							key={`old-${i}`}
-							className="flex leading-[16px] bg-[rgba(210,80,80,0.13)]"
-						>
-							<span className="shrink-0 w-5 text-right pr-1 select-none text-[rgba(210,80,80,0.6)]">
-								-
-							</span>
-							<span className="flex-1 whitespace-pre pr-2 overflow-hidden">
-								{renderTokenizedLine(line, tokens)}
-							</span>
-						</div>
-					);
-				})}
-				{/* Added lines */}
-				{newLines.map((line, i) => {
-					const tokens = tokenizeLine(line, ext);
-					return (
-						<div
-							key={`new-${i}`}
-							className="flex leading-[16px] bg-[rgba(60,180,110,0.13)]"
-						>
-							<span className="shrink-0 w-5 text-right pr-1 select-none text-[rgba(60,180,110,0.6)]">
-								+
-							</span>
-							<span className="flex-1 whitespace-pre pr-2 overflow-hidden">
-								{renderTokenizedLine(line, tokens)}
-							</span>
-						</div>
-					);
-				})}
+			{/* Diff content with hunks */}
+			<div className="max-h-60 overflow-auto">
+				{hunks.map((hunk, hunkIdx) => (
+					<div key={hunkIdx}>
+						{/* Hunk separator (except first) */}
+						{hunkIdx > 0 && (
+							<div
+								className="px-2.5 py-1 text-[9px] select-none text-center"
+								style={{
+									color: theme?.fgDim ?? "var(--color-surgent-text-3)",
+									backgroundColor:
+										theme?.surface ?? "var(--color-surgent-surface-2)",
+								}}
+							>
+								•••
+							</div>
+						)}
+						{/* Hunk lines - skip context lines, only show changes */}
+						{hunk
+							.filter((line) => line.type !== "context")
+							.map((line, lineIdx) => {
+								const tokens = tokenizeLine(line.text, ext);
+								const isRemoved = line.type === "removed";
+								const isAdded = line.type === "added";
+
+								return (
+									<div
+										key={`${hunkIdx}-${lineIdx}`}
+										className="flex leading-[18px]"
+										style={{
+											backgroundColor: isRemoved
+												? removedBg
+												: isAdded
+													? addedBg
+													: "transparent",
+											borderLeft: `3px solid ${isRemoved ? removedBorder : isAdded ? addedBorder : "transparent"}`,
+										}}
+									>
+										<span
+											className="shrink-0 w-6 text-center select-none font-bold"
+											style={{
+												color: isRemoved
+													? "rgba(248,81,73,0.8)"
+													: "rgba(46,160,67,0.8)",
+											}}
+										>
+											{isRemoved ? "−" : "+"}
+										</span>
+										<span
+											className="flex-1 whitespace-pre pr-2 overflow-hidden"
+											style={{
+												color: theme?.fg ?? "var(--color-surgent-text)",
+											}}
+										>
+											{renderTokenizedLine(line.text, tokens)}
+										</span>
+									</div>
+								);
+							})}
+					</div>
+				))}
 			</div>
 		</div>
 	);
