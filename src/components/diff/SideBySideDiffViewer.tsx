@@ -54,11 +54,11 @@ const DEFAULT_THEME = {
 	lineBg: "var(--color-surgent-surface)",
 	addedBg: "rgba(46, 160, 67, 0.15)",
 	removedBg: "rgba(248, 81, 73, 0.15)",
-	lineNumColor: "var(--color-surgent-text-3)",
+	lineNumColor: "var(--color-surgent-text-2)",
 	textColor: "var(--color-surgent-text)",
 };
 
-const LINE_HEIGHT = 18;
+const LINE_HEIGHT = 12;
 const LINE_NUM_WIDTH = 48;
 const OVERSCAN = 10;
 
@@ -161,7 +161,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 			{/* Line number */}
 			{showLineNumbers && (
 				<div
-					className="shrink-0 px-2 text-right text-[10px] select-none"
+					className="shrink-0 px-1.5 text-right text-[9px] select-none"
 					style={{
 						width: LINE_NUM_WIDTH,
 						color: theme.lineNumColor,
@@ -173,7 +173,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 			)}
 			{/* +/- indicator */}
 			<div
-				className="shrink-0 w-4 text-center text-[10px] font-mono select-none"
+				className="shrink-0 w-3 text-center text-[9px] font-mono select-none"
 				style={{
 					lineHeight: `${LINE_HEIGHT}px`,
 					color: isRemoved
@@ -187,7 +187,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 			</div>
 			{/* Content */}
 			<div
-				className={`flex-1 pr-2 text-[11px] font-mono overflow-hidden whitespace-pre ${
+				className={`flex-1 pr-1 text-[10px] font-mono overflow-hidden whitespace-pre ${
 					onLineClick ? "cursor-pointer" : ""
 				}`}
 				style={{

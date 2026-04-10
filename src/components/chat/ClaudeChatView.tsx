@@ -56,10 +56,41 @@ interface ClaudeChatViewProps {
 	onStatusChange?: (paneId: string, status: string) => void;
 }
 
+export interface ToolActivity {
+	id: string;
+	toolName: string;
+	isStreaming: boolean;
+	summary: string;
+}
+
+export interface QueuedMessageInfo {
+	id: string;
+	text: string;
+	displayText: string;
+	images?: string[];
+}
+
+export interface AttachedImageInfo {
+	name: string;
+	path: string;
+	previewUrl: string;
+}
+
 export interface ClaudeChatHandle {
 	sendMessage: (text: string) => void;
+	sendMessageWithImages: (text: string, images?: string[]) => void;
 	getStatus: () => string;
 	focusInput: (atEnd?: boolean) => void;
+	getToolActivities: () => ToolActivity[];
+	getQueuedCount: () => number;
+	getQueuedMessages: () => QueuedMessageInfo[];
+	removeQueuedMessage: (id: string) => void;
+	updateQueuedMessage: (id: string, text: string) => void;
+	stopGeneration: () => void;
+	isLoading: () => boolean;
+	getAttachedImages: () => AttachedImageInfo[];
+	attachImageFile: (file: File) => Promise<void>;
+	removeAttachedImage: (path: string) => void;
 }
 
 interface ChatMessage {
@@ -949,6 +980,60 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			[paneId, cwd, agentKind, setLoadingState]
 		);
 
+		// Extract tool activities from messages (same logic as ChatStatusBar)
+		const extractToolActivities = useCallback((): ToolActivity[] => {
+			const activities: ToolActivity[] = [];
+			for (const msg of messagesRef.current) {
+				if (msg.role === "tool" && msg.toolName) {
+					let summary = "";
+					try {
+						if (msg.content) {
+							const parsed = JSON.parse(msg.content);
+							if (parsed.file_path) {
+								summary = parsed.file_path.split("/").pop() || parsed.file_path;
+							} else if (parsed.command) {
+								const cmd = parsed.command.slice(0, 40);
+								summary = `${cmd}${parsed.command.length > 40 ? "..." : ""}`;
+							} else if (parsed.pattern) {
+								summary = `/${parsed.pattern.slice(0, 30)}/`;
+							} else if (parsed.query) {
+								summary = parsed.query.slice(0, 40);
+							} else if (parsed.url) {
+								try {
+									const url = new URL(parsed.url);
+									summary = url.hostname;
+								} catch {
+									summary = parsed.url.slice(0, 40);
+								}
+							} else if (parsed.skill) {
+								summary = `/${parsed.skill}`;
+							} else if (parsed.prompt) {
+								summary = parsed.prompt.slice(0, 40);
+							}
+						}
+					} catch {}
+					activities.push({
+						id: msg.id,
+						toolName: msg.toolName,
+						isStreaming: msg.isStreaming ?? false,
+						summary: summary || msg.toolName,
+					});
+				}
+			}
+			return activities;
+		}, []);
+
+		const stopGeneration = useCallback(() => {
+			wsClient.send({ type: "chat:stop", paneId });
+			setLoadingState({ isLoading: false, status: "idle", startTime: null });
+			setMessages((prev) =>
+				trimMessages([
+					...prev,
+					{ id: nextId(), role: "system", content: "Generation stopped" },
+				])
+			);
+		}, [paneId, setLoadingState, setMessages]);
+
 		useImperativeHandle(
 			ref,
 			() => ({
@@ -958,6 +1043,17 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						queueMessage(text.trim(), text.trim());
 					} else {
 						appendLocalMessages([{ role: "user", content: text.trim() }]);
+						sendToServer(text.trim());
+					}
+				},
+				sendMessageWithImages: (text: string, images?: string[]) => {
+					if (!text.trim()) return;
+					if (isLoading) {
+						queueMessage(text.trim(), text.trim(), images);
+					} else {
+						appendLocalMessages([
+							{ role: "user", content: text.trim(), images },
+						]);
 						sendToServer(text.trim());
 					}
 				},
@@ -972,8 +1068,48 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						}
 					}
 				},
+				getToolActivities: extractToolActivities,
+				getQueuedCount: () => queuedMessages.length,
+				getQueuedMessages: () =>
+					queuedMessages.map((q) => ({
+						id: q.id,
+						text: q.text,
+						displayText: q.displayText,
+						images: q.images,
+					})),
+				removeQueuedMessage: (id: string) => {
+					queueRef.current = queueRef.current.filter((q) => q.id !== id);
+					setQueuedMessages([...queueRef.current]);
+				},
+				updateQueuedMessage: (id: string, text: string) => {
+					const item = queueRef.current.find((q) => q.id === id);
+					if (item) {
+						item.text = text;
+						item.displayText = text;
+						setQueuedMessages([...queueRef.current]);
+					}
+				},
+				stopGeneration,
+				isLoading: () => isLoading,
+				getAttachedImages: () => [...attachedImages],
+				attachImageFile: async (file: File) => {
+					await attachImage(file);
+				},
+				removeAttachedImage: (path: string) => {
+					removeAttachedImage(path);
+				},
 			}),
-			[appendLocalMessages, isLoading, queueMessage, status, sendToServer]
+			[
+				appendLocalMessages,
+				isLoading,
+				queueMessage,
+				status,
+				sendToServer,
+				extractToolActivities,
+				queuedMessages,
+				stopGeneration,
+				attachedImages,
+			]
 		);
 
 		useEffect(() => {
@@ -1548,17 +1684,6 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 				highlightOverlayRef.current.style.transform = `translateY(-${ta.scrollTop}px)`;
 			}
 		}, [input]);
-
-		const stopGeneration = useCallback(() => {
-			wsClient.send({ type: "chat:stop", paneId });
-			setLoadingState({ isLoading: false, status: "idle", startTime: null });
-			setMessages((prev) =>
-				trimMessages([
-					...prev,
-					{ id: nextId(), role: "system", content: "Generation stopped" },
-				])
-			);
-		}, [paneId, setLoadingState, setMessages]);
 
 		const revertCheckpoint = useCallback(
 			(checkpointId: string) => {

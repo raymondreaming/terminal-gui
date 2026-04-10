@@ -1,14 +1,8 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useShikiSnippet } from "../hooks/useShikiHighlighter";
 
-// Syntax highlighting colors (github-dark-default)
+// Diff background colors
 const colors = {
-	keyword: "#ff7b72",
-	text: "#c9d1d9",
-	string: "#a5d6ff",
-	type: "#ffa657",
-	function: "#d2a8ff",
-	tag: "#7ee787",
-	attribute: "#79c0ff",
 	added: "rgba(46, 160, 67, 0.15)",
 	removed: "rgba(248, 81, 73, 0.15)",
 };
@@ -278,70 +272,12 @@ const diffRows = [
 	},
 ];
 
-// Simple syntax highlighter for TSX
-function highlightLine(line: string): React.ReactNode {
-	if (!line.trim()) return " ";
-
-	const parts: React.ReactNode[] = [];
-	let remaining = line;
-	let key = 0;
-
-	const patterns: [RegExp, string][] = [
-		[
-			/^(\s*)(import|export|from|const|let|var|function|return|interface|type|if|else|=>)(?=\s|$|[({])/,
-			"keyword",
-		],
-		[
-			/^(\s*)(import|export|from|const|let|var|function|return|interface|type|if|else)(?=\s)/,
-			"keyword",
-		],
-		[/"[^"]*"|'[^']*'/, "string"],
-		[/<\/?[a-z][a-zA-Z]*/, "tag"],
-		[/[A-Z][a-zA-Z]*(?=\s*[<(/>])/, "type"],
-		[/[a-z][a-zA-Z]*(?=\s*\()/, "function"],
-		[/\b(className|key|onClick|onChange|onClose|initialTab)\b/, "attribute"],
-	];
-
-	// Simple approach: colorize known tokens
-	const tokens = line.split(/(\s+|[{}()[\]<>.,;:?!=&|]+|"[^"]*"|'[^']*')/);
-
-	for (const token of tokens) {
-		if (!token) continue;
-
-		let color = colors.text;
-
-		if (
-			/^(import|export|from|const|let|var|function|return|interface|type|if|else|=>|===|!==|&&|\|\||:|\?)$/.test(
-				token
-			)
-		) {
-			color = colors.keyword;
-		} else if (/^["'].*["']$/.test(token)) {
-			color = colors.string;
-		} else if (/^[A-Z][a-zA-Z]*$/.test(token)) {
-			color = colors.type;
-		} else if (
-			/^(className|key|onClick|onChange|onClose|initialTab|void|string|number|boolean)$/.test(
-				token
-			)
-		) {
-			color = colors.attribute;
-		} else if (
-			/^(useState|useSettings|setActiveTab|renderTabContent|map)$/.test(token)
-		) {
-			color = colors.function;
-		} else if (/^(div|button|h2|span)$/.test(token)) {
-			color = colors.tag;
-		}
-
-		parts.push(
-			<span key={key++} style={{ color }}>
-				{token}
-			</span>
-		);
-	}
-
-	return parts;
+// Escape HTML for plain text fallback
+function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
 }
 
 // File sidebar data
@@ -357,7 +293,7 @@ const stagedFiles = [
 	{ name: "useTheme.ts", status: "added" },
 ];
 
-// Chat messages for Terminal page
+// Chat messages for Terminal page - rich variety of content
 const terminalChats = [
 	{
 		project: "terminal-gui",
@@ -376,7 +312,11 @@ const terminalChats = [
 			{
 				role: "assistant",
 				content:
-					"The component renders all lines at once which causes lag on large diffs. I recommend using virtualization.",
+					"The component renders all lines at once which causes lag on large diffs. I found several issues:",
+				codeBlock: {
+					lang: "tsx",
+					code: "// Current: renders ALL lines\n{lines.map((line, i) => (\n  <DiffLine key={i} {...line} />\n))}",
+				},
 			},
 			{
 				role: "user",
@@ -385,11 +325,15 @@ const terminalChats = [
 			{
 				role: "assistant",
 				content:
-					"I'll refactor to use react-window. Reading the current implementation first.",
-				tool: {
-					name: "Read",
-					file: "src/components/diff/SideBySideDiffViewer.tsx",
-				},
+					"I'll use react-window for virtualization. This will only render visible lines.",
+				tool: { name: "Edit", file: "SideBySideDiffViewer.tsx" },
+				inlineDiff: true,
+			},
+			{
+				role: "assistant",
+				content:
+					"Done. The diff viewer now uses virtualization. Performance improved significantly:",
+				stats: { before: "~2100ms", after: "~45ms", improvement: "98%" },
 			},
 		],
 		activity: {
@@ -406,8 +350,13 @@ const terminalChats = [
 			{ role: "user", content: "what rate limiting options do we have?" },
 			{
 				role: "assistant",
-				content:
-					"Common approaches include fixed window, sliding window, token bucket, and leaky bucket algorithms. Sliding window is most accurate.",
+				content: "Common approaches include:",
+				list: [
+					"Fixed window - Simple but can allow burst traffic at window boundaries",
+					"Sliding window - More accurate, prevents burst abuse",
+					"Token bucket - Allows controlled bursts",
+					"Leaky bucket - Smooths out traffic",
+				],
 			},
 			{
 				role: "user",
@@ -415,14 +364,22 @@ const terminalChats = [
 			},
 			{
 				role: "assistant",
-				content:
-					"I'll implement rate limiting with a sliding window algorithm.",
+				content: "I'll implement sliding window rate limiting.",
 				tool: { name: "Edit", file: "src/middleware/rateLimit.ts" },
+				inlineDiff: "rateLimit",
 			},
 			{
 				role: "assistant",
-				content: "Done. Created rate limiter with 100 req/min default:",
-				files: ["+ src/middleware/rateLimit.ts", "~ src/routes/api.ts"],
+				content: "Created the middleware. Now applying it to routes:",
+				tool: { name: "Edit", file: "src/routes/api.ts" },
+			},
+			{
+				role: "assistant",
+				content: "Rate limiting is now active. Configuration:",
+				codeBlock: {
+					lang: "ts",
+					code: "rateLimit({\n  windowMs: 60 * 1000,\n  max: 100,\n  message: 'Too many requests'\n})",
+				},
 			},
 		],
 		activity: {
@@ -436,24 +393,35 @@ const terminalChats = [
 		project: "docs-site",
 		status: "running",
 		messages: [
+			{ role: "user", content: "setup typedoc for the project" },
 			{
-				role: "user",
-				content: "what tools can generate docs from typescript?",
+				role: "assistant",
+				content: "Installing TypeDoc and configuring it for your project.",
+				tool: {
+					name: "Bash",
+					command: "bun add -D typedoc typedoc-plugin-markdown",
+				},
 			},
 			{
 				role: "assistant",
-				content:
-					"TypeDoc is the standard choice. It extracts JSDoc comments and type information to generate HTML documentation.",
+				content: "Creating configuration file:",
+				tool: { name: "Edit", file: "typedoc.json" },
 			},
+			{ role: "user", content: "generate the docs now" },
 			{
-				role: "user",
-				content: "generate API documentation from the TypeScript types",
+				role: "assistant",
+				content: "Running documentation generation...",
+				tool: { name: "Bash", command: "npx typedoc --out docs src/index.ts" },
 			},
 			{
 				role: "assistant",
-				content:
-					"I'll generate documentation using TypeDoc. Running the command now...",
-				tool: { name: "Bash", command: "npx typedoc --out docs src/types" },
+				content: "Documentation generated successfully:",
+				files: [
+					"+ docs/index.html",
+					"+ docs/modules.html",
+					"+ docs/classes/",
+					"+ docs/interfaces/",
+				],
 			},
 		],
 		activity: {
@@ -464,6 +432,91 @@ const terminalChats = [
 		},
 	},
 ];
+
+// Inline diff data for chat
+const inlineDiffLines = [
+	{ num: 16, content: "      <h2>Settings</h2>", type: "removed" },
+	{
+		num: 17,
+		content: '      <div className="flex justify-between items-center">',
+		type: "added",
+	},
+	{ num: 18, content: "        <h2>Settings</h2>", type: "added" },
+	{ num: 19, content: "        <DarkModeToggle />", type: "added" },
+	{ num: 20, content: "      </div>", type: "added" },
+];
+
+// Rate limiter inline diff
+const rateLimitDiffLines = [
+	{
+		num: 1,
+		content: "import { RateLimiter } from './rateLimit';",
+		type: "added",
+	},
+	{ num: 2, content: "", type: "normal" },
+	{
+		num: 8,
+		content: "app.use(rateLimiter({ windowMs: 60000 }));",
+		type: "added",
+	},
+	{ num: 9, content: "app.use(rateLimiter({ max: 100 }));", type: "added" },
+];
+
+// Inline diff block with Shiki highlighting
+function InlineDiffBlock({
+	lines,
+	filePath,
+}: {
+	lines: typeof inlineDiffLines;
+	filePath: string;
+}) {
+	const lineContents = useMemo(() => lines.map((l) => l.content), [lines]);
+	const { highlighted } = useShikiSnippet(lineContents, filePath);
+
+	return (
+		<div className="max-h-60 overflow-auto">
+			{lines.map((line, idx) => (
+				<div
+					key={idx}
+					className="flex leading-[12px]"
+					style={{
+						backgroundColor:
+							line.type === "added"
+								? "rgba(46,160,67,0.12)"
+								: line.type === "removed"
+									? "rgba(248,81,73,0.12)"
+									: "transparent",
+						borderLeft: `2px solid ${line.type === "added" ? "rgba(46,160,67,0.5)" : line.type === "removed" ? "rgba(248,81,73,0.5)" : "transparent"}`,
+					}}
+				>
+					<span
+						className="shrink-0 w-4 text-center select-none text-[8px]"
+						style={{
+							color:
+								line.type === "added"
+									? "rgba(46,160,67,0.7)"
+									: line.type === "removed"
+										? "rgba(248,81,73,0.7)"
+										: "transparent",
+						}}
+					>
+						{line.type === "added" ? "+" : line.type === "removed" ? "−" : " "}
+					</span>
+					{highlighted.get(idx) ? (
+						<span
+							className="flex-1 whitespace-pre pr-1 overflow-hidden text-[8px]"
+							dangerouslySetInnerHTML={{ __html: highlighted.get(idx)! }}
+						/>
+					) : (
+						<span className="flex-1 whitespace-pre pr-1 overflow-hidden text-[8px] text-surgent-text">
+							{line.content}
+						</span>
+					)}
+				</div>
+			))}
+		</div>
+	);
+}
 
 // Experimental page chat
 const experimentalChat = {
@@ -487,6 +540,7 @@ const experimentalChat = {
 			role: "assistant",
 			content: "Adding the toggle with theme persistence:",
 			tool: { name: "Edit", file: "SettingsPanel.tsx" },
+			inlineDiff: true,
 		},
 	],
 	activity: {
@@ -626,14 +680,62 @@ const BashIcon = () => (
 	</svg>
 );
 
+// Typing animation hook
+function useTypingAnimation(
+	messages: (typeof terminalChats)[0]["messages"],
+	delay = 800
+) {
+	const [visibleCount, setVisibleCount] = useState(0);
+	const [isTyping, setIsTyping] = useState(false);
+
+	useEffect(() => {
+		if (visibleCount >= messages.length) return;
+
+		const timer = setTimeout(
+			() => {
+				setIsTyping(true);
+				setTimeout(
+					() => {
+						setVisibleCount((c) => c + 1);
+						setIsTyping(false);
+					},
+					300 + Math.random() * 400
+				);
+			},
+			delay + Math.random() * 600
+		);
+
+		return () => clearTimeout(timer);
+	}, [visibleCount, messages.length, delay]);
+
+	return { visibleCount, isTyping };
+}
+
 // Chat Panel Component
 function ChatPanel({
 	chat,
 	showClose = true,
+	animate = false,
 }: {
 	chat: (typeof terminalChats)[0];
 	showClose?: boolean;
+	animate?: boolean;
 }) {
+	const { visibleCount, isTyping } = useTypingAnimation(
+		chat.messages,
+		animate ? 1200 : 0
+	);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const displayMessages = animate
+		? chat.messages.slice(0, visibleCount)
+		: chat.messages;
+
+	useEffect(() => {
+		if (containerRef.current) {
+			containerRef.current.scrollTop = containerRef.current.scrollHeight;
+		}
+	}, [visibleCount]);
+
 	const getStatusColor = () => {
 		if (chat.status === "active") return "bg-surgent-success animate-pulse";
 		if (chat.status === "running") return "bg-surgent-warning animate-pulse";
@@ -648,7 +750,6 @@ function ChatPanel({
 	};
 
 	const getActivityColor = () => {
-		if (chat.activity.type === "Edit") return "text-surgent-success";
 		if (chat.activity.type === "Bash")
 			return "text-surgent-warning animate-pulse";
 		return "text-surgent-text-3";
@@ -689,9 +790,13 @@ function ChatPanel({
 			</div>
 
 			{/* Messages */}
-			<div className="flex-1 overflow-y-auto p-3 space-y-3">
-				{chat.messages.map((msg, i) => (
-					<div key={i}>
+			<div ref={containerRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+				{displayMessages.map((msg, i) => (
+					<div
+						key={i}
+						className="animate-fade-in"
+						style={{ animationDuration: "0.3s" }}
+					>
 						{msg.role === "user" ? (
 							<p className="text-[11px] text-surgent-text leading-relaxed">
 								{msg.content}
@@ -701,25 +806,122 @@ function ChatPanel({
 								<p className="text-[11px] text-surgent-text-2 leading-relaxed">
 									{msg.content}
 								</p>
-								{msg.tool && (
-									<div className="rounded-lg border border-surgent-border bg-surgent-surface p-2">
-										<div className="flex items-center gap-2">
-											{msg.tool.name === "Read" && <ReadIcon />}
-											{msg.tool.name === "Edit" && <EditIcon />}
-											{msg.tool.name === "Bash" && <BashIcon />}
-											<span
-												className={`text-[9px] font-medium ${msg.tool.name === "Edit" ? "text-surgent-success" : msg.tool.name === "Bash" ? "text-surgent-warning" : "text-surgent-text-3"}`}
-											>
-												{msg.tool.name}
-											</span>
-											<span className="text-[9px] text-surgent-text-2 font-mono">
-												{msg.tool.file || msg.tool.command}
-											</span>
+
+								{/* Code block */}
+								{msg.codeBlock && (
+									<div className="rounded-lg border border-surgent-border bg-black overflow-hidden">
+										<div className="px-2 py-1 text-[8px] text-surgent-text-3 bg-surgent-surface-2 border-b border-surgent-border font-mono">
+											{msg.codeBlock.lang}
 										</div>
+										<pre className="p-2 text-[9px] font-mono overflow-x-auto">
+											<code style={{ color: colors.text }}>
+												{msg.codeBlock.code}
+											</code>
+										</pre>
 									</div>
 								)}
+
+								{/* List items */}
+								{msg.list && (
+									<ul className="space-y-1 text-[10px] text-surgent-text-2">
+										{msg.list.map((item, j) => (
+											<li key={j} className="flex gap-2">
+												<span className="text-surgent-text-3 shrink-0">•</span>
+												<span className="leading-relaxed">{item}</span>
+											</li>
+										))}
+									</ul>
+								)}
+
+								{/* Stats */}
+								{msg.stats && (
+									<div className="flex gap-4 text-[10px] font-mono">
+										<span className="text-surgent-text-3">
+											Before:{" "}
+											<span className="text-surgent-text-2">
+												{msg.stats.before}
+											</span>
+										</span>
+										<span className="text-surgent-text-3">
+											After:{" "}
+											<span className="text-surgent-text-2">
+												{msg.stats.after}
+											</span>
+										</span>
+										<span style={{ color: "rgba(46,160,67,0.8)" }}>
+											↓{msg.stats.improvement}
+										</span>
+									</div>
+								)}
+
+								{/* Tool call */}
+								{msg.tool && (
+									<div
+										className="rounded-lg border overflow-hidden text-[10px] font-mono"
+										style={{
+											backgroundColor: "var(--color-surgent-surface)",
+											borderColor: "var(--color-surgent-border)",
+										}}
+									>
+										<div
+											className="flex items-center gap-1.5 px-2 py-1 text-[9px] font-medium"
+											style={{
+												color: "var(--color-surgent-text-2)",
+												backgroundColor: "var(--color-surgent-surface-2)",
+												borderBottom: msg.inlineDiff
+													? "1px solid var(--color-surgent-border)"
+													: "none",
+											}}
+										>
+											<svg
+												className={`w-2.5 h-2.5 opacity-40 transition-transform duration-150 ${msg.inlineDiff ? "rotate-90" : ""}`}
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+											>
+												<polyline points="9 18 15 12 9 6" />
+											</svg>
+											<svg
+												className="w-2.5 h-2.5 opacity-40"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+											>
+												<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+												<polyline points="14 2 14 8 20 8" />
+											</svg>
+											<span className="flex-1 truncate opacity-80">
+												{msg.tool.file?.split("/").pop() || msg.tool.command}
+											</span>
+											{msg.inlineDiff && (
+												<span className="flex items-center gap-1 text-[8px]">
+													<span style={{ color: "rgba(46,160,67,0.8)" }}>
+														+4
+													</span>
+													<span style={{ color: "rgba(248,81,73,0.8)" }}>
+														−1
+													</span>
+												</span>
+											)}
+										</div>
+										{msg.inlineDiff && (
+											<InlineDiffBlock
+												lines={
+													msg.inlineDiff === "rateLimit"
+														? rateLimitDiffLines
+														: inlineDiffLines
+												}
+												filePath={msg.tool?.file || "file.tsx"}
+											/>
+										)}
+									</div>
+								)}
+
+								{/* Files list */}
 								{msg.files && (
-									<div className="space-y-1 text-[10px] font-mono">
+									<div className="space-y-0.5 text-[10px] font-mono">
 										{msg.files.map((f, j) => (
 											<p
 												key={j}
@@ -738,6 +940,24 @@ function ChatPanel({
 						)}
 					</div>
 				))}
+
+				{/* Typing indicator */}
+				{animate && isTyping && (
+					<div className="flex gap-1 py-2">
+						<span
+							className="w-1.5 h-1.5 rounded-full bg-surgent-text-3 animate-bounce"
+							style={{ animationDelay: "0ms" }}
+						></span>
+						<span
+							className="w-1.5 h-1.5 rounded-full bg-surgent-text-3 animate-bounce"
+							style={{ animationDelay: "150ms" }}
+						></span>
+						<span
+							className="w-1.5 h-1.5 rounded-full bg-surgent-text-3 animate-bounce"
+							style={{ animationDelay: "300ms" }}
+						></span>
+					</div>
+				)}
 			</div>
 
 			{/* Activity Bar */}
@@ -784,10 +1004,12 @@ function DiffLine({
 	lineNum,
 	content,
 	type,
+	highlightedHtml,
 }: {
 	lineNum: number | null;
 	content: string;
 	type: string;
+	highlightedHtml?: string;
 }) {
 	const bg =
 		type === "added"
@@ -806,12 +1028,20 @@ function DiffLine({
 			>
 				{lineNum ?? ""}
 			</span>
-			<span
-				className="flex-1 pr-2 whitespace-pre font-mono overflow-hidden"
-				style={{ lineHeight: "18px", fontSize: "11px" }}
-			>
-				{type !== "empty" ? highlightLine(content) : ""}
-			</span>
+			{type !== "empty" && highlightedHtml ? (
+				<span
+					className="flex-1 pr-2 whitespace-pre font-mono overflow-hidden"
+					style={{ lineHeight: "18px", fontSize: "11px" }}
+					dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+				/>
+			) : (
+				<span
+					className="flex-1 pr-2 whitespace-pre font-mono overflow-hidden text-surgent-text"
+					style={{ lineHeight: "18px", fontSize: "11px" }}
+				>
+					{type !== "empty" ? content : ""}
+				</span>
+			)}
 		</div>
 	);
 }
@@ -929,6 +1159,60 @@ function FileSidebar({
 					</div>
 				))}
 			</div>
+		</div>
+	);
+}
+
+// Shiki-powered Diff Viewer Component
+function ShikiDiffViewer({ filePath }: { filePath: string }) {
+	// Collect all unique lines from diffRows for highlighting
+	const allLines = useMemo(() => {
+		const lines: string[] = [];
+		for (const row of diffRows) {
+			if (row.left.content) lines.push(row.left.content);
+			if (row.right.content) lines.push(row.right.content);
+		}
+		return [...new Set(lines)];
+	}, []);
+
+	const { highlighted, isReady } = useShikiSnippet(allLines, filePath);
+
+	// Create a map from content -> highlighted HTML
+	const highlightMap = useMemo(() => {
+		const map = new Map<string, string>();
+		allLines.forEach((line, idx) => {
+			const html = highlighted.get(idx);
+			if (html) map.set(line, html);
+		});
+		return map;
+	}, [allLines, highlighted]);
+
+	return (
+		<div className="flex-1 min-h-0 min-w-0 overflow-auto bg-black">
+			{diffRows.map((row, i) => (
+				<div key={i} className="flex">
+					{/* Left Pane - Before */}
+					<div className="flex-1 min-w-0">
+						<DiffLine
+							lineNum={row.left.num}
+							content={row.left.content}
+							type={row.left.type}
+							highlightedHtml={highlightMap.get(row.left.content)}
+						/>
+					</div>
+					{/* Divider */}
+					<div className="w-px shrink-0 bg-surgent-border"></div>
+					{/* Right Pane - After */}
+					<div className="flex-1 min-w-0">
+						<DiffLine
+							lineNum={row.right.num}
+							content={row.right.content}
+							type={row.right.type}
+							highlightedHtml={highlightMap.get(row.right.content)}
+						/>
+					</div>
+				</div>
+			))}
 		</div>
 	);
 }
@@ -1193,7 +1477,7 @@ export function Inferay() {
 											className={`shrink-0 h-full overflow-hidden flex flex-col ${i < terminalChats.length - 1 ? "border-r border-surgent-border" : ""}`}
 											style={{ width: 420 }}
 										>
-											<ChatPanel chat={chat} />
+											<ChatPanel chat={chat} animate={i === 0} />
 										</div>
 									))}
 								</div>
@@ -1317,31 +1601,8 @@ export function Inferay() {
 
 								{/* Diff Viewer + File Sidebar */}
 								<aside className="flex-1 min-h-0 min-w-0 bg-black flex">
-									{/* Diff Viewer */}
-									<div className="flex-1 min-h-0 min-w-0 overflow-auto bg-black">
-										{diffRows.map((row, i) => (
-											<div key={i} className="flex">
-												{/* Left Pane - Before */}
-												<div className="flex-1 min-w-0">
-													<DiffLine
-														lineNum={row.left.num}
-														content={row.left.content}
-														type={row.left.type}
-													/>
-												</div>
-												{/* Divider */}
-												<div className="w-px shrink-0 bg-surgent-border"></div>
-												{/* Right Pane - After */}
-												<div className="flex-1 min-w-0">
-													<DiffLine
-														lineNum={row.right.num}
-														content={row.right.content}
-														type={row.right.type}
-													/>
-												</div>
-											</div>
-										))}
-									</div>
+									{/* Diff Viewer with Shiki highlighting */}
+									<ShikiDiffViewer filePath={selectedFile} />
 
 									{/* File Sidebar */}
 									<FileSidebar
@@ -1357,14 +1618,20 @@ export function Inferay() {
 											{/* Status bar */}
 											<div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-surgent-border/50 rounded-t-xl">
 												<div className="flex items-center gap-2 min-w-0 flex-1">
-													<span className="text-surgent-success animate-pulse">
+													<span className="text-surgent-text-3 animate-pulse">
 														<EditIcon />
 													</span>
 													<span className="text-[11px] text-surgent-text truncate">
 														Editing {selectedFile}
 													</span>
-													<span className="shrink-0 text-[9px] text-surgent-accent bg-surgent-accent/10 px-1.5 py-0.5 rounded-full tabular-nums">
-														+2
+													<span
+														className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full tabular-nums"
+														style={{
+															color: "rgba(46,160,67,0.8)",
+															backgroundColor: "rgba(46,160,67,0.15)",
+														}}
+													>
+														+4 −1
 													</span>
 												</div>
 												<button className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3 border border-surgent-border">
