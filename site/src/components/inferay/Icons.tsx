@@ -267,6 +267,20 @@ export const Icons = {
 			<line x1="5" y1="12" x2="19" y2="12" />
 		</svg>
 	),
+	ArrowDown: ({ className }: { className?: string }) => (
+		<svg
+			width="12"
+			height="12"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			className={className}
+		>
+			<line x1="12" y1="5" x2="12" y2="19" />
+			<polyline points="19 12 12 19 5 12" />
+		</svg>
+	),
 	Pause: () => (
 		<svg
 			width="10"
@@ -278,6 +292,47 @@ export const Icons = {
 		>
 			<rect x="6" y="4" width="4" height="16" rx="1" />
 			<rect x="14" y="4" width="4" height="16" rx="1" />
+		</svg>
+	),
+	Play: () => (
+		<svg
+			width="10"
+			height="10"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			stroke="none"
+		>
+			<polygon points="5 3 19 12 5 21 5 3" />
+		</svg>
+	),
+	Move: () => (
+		<svg
+			width="10"
+			height="10"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+		>
+			<polyline points="5 9 2 12 5 15" />
+			<polyline points="9 5 12 2 15 5" />
+			<polyline points="15 19 12 22 9 19" />
+			<polyline points="19 9 22 12 19 15" />
+			<line x1="2" y1="12" x2="22" y2="12" />
+			<line x1="12" y1="2" x2="12" y2="22" />
+		</svg>
+	),
+	Stack: () => (
+		<svg
+			width="14"
+			height="14"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.5"
+		>
+			<rect x="4" y="4" width="16" height="6" rx="1" />
+			<rect x="4" y="14" width="16" height="6" rx="1" />
 		</svg>
 	),
 	Context: () => (
@@ -493,41 +548,58 @@ export const Icons = {
 			<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
 		</svg>
 	),
-	Command: () => (
+	Image: () => (
 		<svg
-			width="12"
-			height="12"
+			width="14"
+			height="14"
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth="1.5"
 		>
-			<path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" />
+			<rect x="3" y="3" width="18" height="18" rx="2" />
+			<circle cx="8.5" cy="8.5" r="1.5" />
+			<polyline points="21 15 16 10 5 21" />
 		</svg>
 	),
-	Clock: () => (
+	Chat: () => (
 		<svg
-			width="12"
-			height="12"
+			width="14"
+			height="14"
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth="1.5"
 		>
-			<circle cx="12" cy="12" r="10" />
-			<polyline points="12 6 12 12 16 14" />
+			<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 		</svg>
 	),
-	Zap: () => (
+	Workflow: () => (
 		<svg
-			width="12"
-			height="12"
+			width="14"
+			height="14"
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth="1.5"
 		>
-			<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+			<rect x="3" y="3" width="6" height="6" rx="1" />
+			<rect x="15" y="3" width="6" height="6" rx="1" />
+			<rect x="9" y="15" width="6" height="6" rx="1" />
+			<path d="M9 6h6M6 9v6l6 3M18 9v3l-6 6" />
+		</svg>
+	),
+	Profile: () => (
+		<svg
+			width="14"
+			height="14"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.5"
+		>
+			<circle cx="12" cy="8" r="4" />
+			<path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
 		</svg>
 	),
 };

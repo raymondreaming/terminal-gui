@@ -17,3 +17,7 @@ export { TimelineView } from "./TimelineView";
 export { TerminalPanel } from "./TerminalPanel";
 export { PromptLibrary } from "./PromptLibrary";
 export { Workspaces } from "./Workspaces";
+export { ImageStudio } from "./ImageStudio";
+export { Settings, Profile } from "./Settings";
+export { WorkflowBuilder } from "./WorkflowBuilder";
+export { Repositories } from "./Repositories";

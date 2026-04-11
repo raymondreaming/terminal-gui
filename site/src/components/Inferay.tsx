@@ -17,12 +17,25 @@ import { TimelineView } from "./inferay/TimelineView";
 import { TerminalPanel } from "./inferay/TerminalPanel";
 import { PromptLibrary } from "./inferay/PromptLibrary";
 import { Workspaces } from "./inferay/Workspaces";
+import { ImageStudio } from "./inferay/ImageStudio";
+import { Profile } from "./inferay/Settings";
+import { WorkflowBuilder } from "./inferay/WorkflowBuilder";
+import { Repositories } from "./inferay/Repositories";
 
 // ============ MAIN COMPONENT ============
 
 export function Inferay() {
 	const [view, setView] = useState<
-		"code" | "chat" | "graph" | "timeline" | "prompts" | "workspaces"
+		| "code"
+		| "chat"
+		| "graph"
+		| "timeline"
+		| "prompts"
+		| "workspaces"
+		| "images"
+		| "workflow"
+		| "profile"
+		| "repositories"
 	>("chat");
 	const hasSwitched = useRef(false);
 
@@ -126,21 +139,10 @@ export function Inferay() {
 									className="h-5 w-5 rounded-md"
 								/>
 							</div>
-							<nav className="flex-1 py-2 flex flex-col items-center gap-0.5">
-								<button
-									onClick={() => setView("chat")}
-									className={`w-6 h-6 flex items-center justify-center rounded-md border transition-colors ${
-										view === "chat"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
-									}`}
-									title="Chat"
-								>
-									<Icons.Terminal />
-								</button>
+							<nav className="flex-1 py-2 flex flex-col items-center gap-2">
 								<button
 									onClick={() => setView("prompts")}
-									className={`w-6 h-6 flex items-center justify-center rounded-md border transition-colors ${
+									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "prompts"
 											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
 											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
@@ -150,18 +152,61 @@ export function Inferay() {
 									<Icons.File />
 								</button>
 								<button
-									className="w-6 h-6 flex items-center justify-center rounded-md border border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
-									title="Git"
+									onClick={() => setView("workspaces")}
+									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
+										view === "workspaces"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
+									title="Workspaces"
+								>
+									<Icons.Layers />
+								</button>
+								<button
+									onClick={() => setView("images")}
+									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
+										view === "images"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
+									title="Image Studio"
+								>
+									<Icons.Image />
+								</button>
+								<button
+									onClick={() => setView("workflow")}
+									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
+										view === "workflow"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
+									title="Workflow Builder"
+								>
+									<Icons.Workflow />
+								</button>
+								<button
+									onClick={() => setView("repositories")}
+									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
+										view === "repositories"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
+									title="Repositories"
 								>
 									<Icons.Git />
 								</button>
 							</nav>
-							<div className="py-2 flex flex-col items-center gap-0.5">
+							<div className="py-2 flex flex-col items-center gap-2">
 								<button
-									className="w-6 h-6 flex items-center justify-center rounded-md border border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
-									title="Settings"
+									onClick={() => setView("profile")}
+									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
+										view === "profile"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
+									title="Profile"
 								>
-									<Icons.Settings />
+									<Icons.Profile />
 								</button>
 							</div>
 						</aside>
@@ -171,7 +216,7 @@ export function Inferay() {
 							{/* Header */}
 							<div className="flex items-center gap-1.5 border-b border-surgent-border px-2 h-8">
 								{/* View tabs */}
-								<div className="flex items-center gap-0.5">
+								<div className="flex items-center gap-1.5">
 									{[
 										{ id: "code", label: "Editor", icon: <Icons.Code /> },
 										{ id: "chat", label: "Chat", icon: <Icons.Terminal /> },
@@ -309,6 +354,16 @@ export function Inferay() {
 									<TimelineView />
 								) : view === "prompts" ? (
 									<PromptLibrary />
+								) : view === "workspaces" ? (
+									<Workspaces />
+								) : view === "images" ? (
+									<ImageStudio />
+								) : view === "workflow" ? (
+									<WorkflowBuilder />
+								) : view === "profile" ? (
+									<Profile />
+								) : view === "repositories" ? (
+									<Repositories />
 								) : null}
 							</div>
 

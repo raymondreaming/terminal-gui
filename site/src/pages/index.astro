@@ -235,23 +235,31 @@ import Inferay from "../components/Inferay";
 					<div class="relative max-w-md mx-auto">
 						<!-- Glow behind form -->
 						<div class="absolute -inset-6 bg-white/5 rounded-3xl blur-2xl"></div>
-						<form class="relative flex items-center gap-0">
-							<input
-								type="email"
-								placeholder="Enter your email"
-								required
-								class="flex-1 h-13 px-5 rounded-l-xl bg-black/50 backdrop-blur-md border border-white/25 border-r-0 text-white text-[15px] placeholder:text-white/50 outline-none focus:border-white/50 focus:bg-black/60 transition-all"
-								style="height: 52px;"
-							/>
-							<button
-								type="submit"
-								class="px-7 rounded-r-xl bg-white text-black font-semibold text-[15px] hover:bg-white/95 hover:shadow-xl hover:shadow-white/25 transition-all whitespace-nowrap"
-								style="height: 52px;"
-							>
-								Join waitlist
-							</button>
-						</form>
+						<div class="relative" style="height: 52px;">
+							<form id="waitlist-form" class="absolute inset-0 flex items-center gap-0">
+								<input
+									type="email"
+									placeholder="Enter your email"
+									required
+									class="flex-1 h-full px-5 rounded-l-xl bg-black/50 backdrop-blur-md border border-white/25 border-r-0 text-white text-[15px] placeholder:text-white/50 outline-none focus:border-white/50 focus:bg-black/60 transition-all"
+								/>
+								<button
+									type="submit"
+									class="h-full px-7 rounded-r-xl bg-white text-black font-semibold text-[15px] hover:bg-white/95 hover:shadow-xl hover:shadow-white/25 transition-all whitespace-nowrap"
+								>
+									Join waitlist
+								</button>
+							</form>
+							<p id="waitlist-success" class="hidden absolute inset-0 flex items-center justify-center text-[14px] text-green-400 font-medium">You're on the list. We'll be in touch soon.</p>
+						</div>
 					</div>
+					<script>
+						document.getElementById('waitlist-form')?.addEventListener('submit', function(e) {
+							e.preventDefault();
+							this.style.display = 'none';
+							document.getElementById('waitlist-success')?.classList.remove('hidden');
+						});
+					</script>
 				</div>
 
 				<!-- Inferay UI -->
