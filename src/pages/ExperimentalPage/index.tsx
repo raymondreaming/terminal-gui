@@ -8,6 +8,9 @@ import {
 } from "react";
 import {
 	type ClaudeChatHandle,
+	type ToolActivity,
+	type QueuedMessageInfo,
+	type AttachedImageInfo,
 	ClaudeChatView,
 	clearChatMessages,
 } from "../../components/chat/ClaudeChatView.tsx";
@@ -538,7 +541,198 @@ export function ExperimentalPage() {
 
 			{!session ? (
 				<EmptyState />
+			) : zenMode ? (
+				/* ===== ZEN MODE LAYOUT ===== */
+				<div className="relative flex min-h-0 flex-1">
+					{/* Hidden ClaudeChatView - keeps state alive but not visible */}
+					<div className="hidden">
+						<ClaudeChatView
+							key={session.paneId}
+							ref={chatRef}
+							paneId={session.paneId}
+							cwd={session.cwd}
+							agentKind={session.agentKind}
+							theme={theme}
+							onStatusChange={(id, status) => {
+								setAgentStatuses((cur) => {
+									if (cur.get(id) === status) return cur;
+									return new Map(cur).set(id, status);
+								});
+							}}
+						/>
+					</div>
+
+					{/* Main content - Diff/Graph takes most space */}
+					<div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+						{mainViewMode === "diff" ? (
+							diffLoading ? (
+								<Placeholder label="Loading diff..." />
+							) : diff && request ? (
+								<GitDiffView
+									diff={diff}
+									filePath={request.file}
+									staged={request.staged}
+									scrollToChange={scrollToChange}
+									loading={false}
+									onClose={clearDiff}
+									hideHeader
+									hideToolbar
+									viewMode={diffViewMode}
+									onViewModeChange={setDiffViewMode}
+								/>
+							) : (
+								<Placeholder
+									label={
+										project ? "Select a changed file" : "No diff available"
+									}
+								/>
+							)
+						) : graphLoading ? (
+							<div className="flex items-center justify-center h-full">
+								<p className="text-[11px] text-surgent-text-3">
+									Loading graph...
+								</p>
+							</div>
+						) : (
+							<CommitGraph
+								commits={graphCommits}
+								selectedHash={selectedCommitHash ?? undefined}
+								onSelect={setSelectedCommitHash}
+								className="h-full"
+								wipFiles={files}
+								branch={project?.branch}
+							/>
+						)}
+					</div>
+
+					{/* Right sidebar - file tree */}
+					{!sidebarCollapsed && (
+						<div
+							className="flex shrink-0 flex-row border-l border-surgent-border bg-surgent-bg"
+							style={{ width: sidebarWidth }}
+						>
+							<div
+								className="w-1 cursor-ew-resize bg-transparent hover:bg-surgent-accent/30 transition-colors shrink-0"
+								onMouseDown={handleSidebarDragStart}
+							/>
+							<div className="flex flex-1 flex-col min-w-0">
+								{/* Sidebar Header */}
+								<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
+									<IconGitBranch
+										size={12}
+										className="shrink-0 text-surgent-text-3"
+									/>
+									<span className="flex-1 truncate text-[11px] font-medium text-surgent-text">
+										{project?.branch ?? "No repo"}
+									</span>
+									<button
+										type="button"
+										onClick={() => setSidebarCollapsed(true)}
+										title="Hide sidebar"
+										className="shrink-0 flex items-center justify-center rounded w-5 h-5 text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-all"
+									>
+										<IconPanelRight size={12} />
+									</button>
+								</div>
+
+								{/* Files View */}
+								<div className="flex-1 min-h-0 overflow-y-auto">
+									<div className="sticky top-0 z-20 flex items-center justify-end gap-1 px-2 py-1 border-b border-surgent-border/30 bg-surgent-bg">
+										<div className="flex items-center rounded border border-surgent-border bg-surgent-surface overflow-hidden">
+											<button
+												type="button"
+												onClick={() => setFileViewMode("path")}
+												title="Path view"
+												className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
+													fileViewMode === "path"
+														? "bg-surgent-text/10 text-surgent-text"
+														: "text-surgent-text-3 hover:text-surgent-text-2"
+												}`}
+											>
+												Path
+											</button>
+											<button
+												type="button"
+												onClick={() => setFileViewMode("tree")}
+												title="Tree view"
+												className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
+													fileViewMode === "tree"
+														? "bg-surgent-text/10 text-surgent-text"
+														: "text-surgent-text-3 hover:text-surgent-text-2"
+												}`}
+											>
+												Tree
+											</button>
+										</div>
+									</div>
+									<FileGroup
+										title="Unstaged"
+										files={[...modified, ...untracked]}
+										color="text-surgent-text-2"
+										selected={selectedFile}
+										onSelect={(f) =>
+											session.cwd &&
+											selectFile(session.paneId, {
+												cwd: session.cwd,
+												file: f.path,
+												staged: f.staged,
+											})
+										}
+										actionLabel="Stage"
+										onAction={stageFile}
+										onActionAll={stageAll}
+										viewMode={fileViewMode}
+									/>
+									<FileGroup
+										title="Staged"
+										files={staged}
+										color="text-git-added"
+										selected={selectedFile}
+										onSelect={(f) =>
+											session.cwd &&
+											selectFile(session.paneId, {
+												cwd: session.cwd,
+												file: f.path,
+												staged: f.staged,
+											})
+										}
+										actionLabel="Unstage"
+										onAction={unstageFile}
+										onActionAll={unstageAll}
+										viewMode={fileViewMode}
+									/>
+									{project && !project.files.length && (
+										<div className="flex items-center justify-center py-6">
+											<p className="text-[10px] text-surgent-text-3/50">
+												Clean
+											</p>
+										</div>
+									)}
+								</div>
+							</div>
+						</div>
+					)}
+
+					{sidebarCollapsed && (
+						<button
+							type="button"
+							onClick={() => setSidebarCollapsed(false)}
+							title="Show file sidebar"
+							className="shrink-0 flex items-center justify-center w-6 border-l border-surgent-border bg-surgent-bg text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/5 transition-all"
+						>
+							<IconPanelRight size={12} />
+						</button>
+					)}
+
+					{/* Floating input at bottom center */}
+					<ZenModeInput
+						chatRef={chatRef}
+						agentKind={session.agentKind}
+						onExitZen={() => setZenMode(false)}
+					/>
+				</div>
 			) : (
+				/* ===== NORMAL MODE LAYOUT ===== */
 				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
 					<section className="flex min-h-0 min-w-0 flex-col border-r border-surgent-border">
 						<div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-surgent-border bg-surgent-text/[0.02]">
@@ -1129,65 +1323,588 @@ function CommitDetailsPanel({
 	);
 }
 
+// Get tool icon for zen mode display
+function getZenToolIcon(toolName: string, isAnimated = false): React.ReactNode {
+	const baseClass = "w-3 h-3 shrink-0";
+	const animateClass = isAnimated ? "animate-pulse" : "";
+	const tool = toolName.toLowerCase();
+
+	if (tool === "read") {
+		return (
+			<svg
+				className={`${baseClass} ${animateClass}`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+			>
+				<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+				<circle cx="12" cy="12" r="3" />
+			</svg>
+		);
+	}
+	if (tool === "edit" || tool === "patch") {
+		return (
+			<svg
+				className={`${baseClass} ${animateClass}`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+			>
+				<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+				<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+			</svg>
+		);
+	}
+	if (tool === "write") {
+		return (
+			<svg
+				className={`${baseClass} ${animateClass}`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+			>
+				<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+				<polyline points="14 2 14 8 20 8" />
+				<line x1="12" y1="18" x2="12" y2="12" />
+				<line x1="9" y1="15" x2="15" y2="15" />
+			</svg>
+		);
+	}
+	if (tool === "bash" || tool === "exec") {
+		return (
+			<svg
+				className={`${baseClass} ${animateClass}`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+			>
+				<polyline points="4 17 10 11 4 5" />
+				<line x1="12" y1="19" x2="20" y2="19" />
+			</svg>
+		);
+	}
+	if (tool === "grep" || tool === "glob") {
+		return (
+			<svg
+				className={`${baseClass} ${animateClass}`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+			>
+				<circle cx="11" cy="11" r="8" />
+				<line x1="21" y1="21" x2="16.65" y2="16.65" />
+			</svg>
+		);
+	}
+	if (tool === "task") {
+		return (
+			<svg
+				className={`${baseClass} ${animateClass}`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+			>
+				<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+				<circle cx="9" cy="7" r="4" />
+				<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+				<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+			</svg>
+		);
+	}
+	// Default tool icon
+	return (
+		<svg
+			className={`${baseClass} ${animateClass}`}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+		>
+			<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+		</svg>
+	);
+}
+
+// Floating input for Zen mode
+function ZenModeInput({
+	chatRef,
+	agentKind,
+	onExitZen,
+}: {
+	chatRef: React.RefObject<ClaudeChatHandle | null>;
+	agentKind: "claude" | "codex";
+	onExitZen: () => void;
+}) {
+	const [input, setInput] = useState("");
+	const [isActivityHovered, setIsActivityHovered] = useState(false);
+	const [toolActivities, setToolActivities] = useState<ToolActivity[]>([]);
+	const [queuedMessages, setQueuedMessages] = useState<QueuedMessageInfo[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [attachedImages, setAttachedImages] = useState<AttachedImageInfo[]>([]);
+	const [editingQueueId, setEditingQueueId] = useState<string | null>(null);
+	const [editingQueueText, setEditingQueueText] = useState("");
+	const inputRef = useRef<HTMLInputElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	// Poll all shared state from chatRef (activities, queue, loading, images)
+	useEffect(() => {
+		const interval = setInterval(() => {
+			if (chatRef.current) {
+				setToolActivities(chatRef.current.getToolActivities());
+				setQueuedMessages(chatRef.current.getQueuedMessages());
+				setIsLoading(chatRef.current.isLoading());
+				setAttachedImages(chatRef.current.getAttachedImages());
+			}
+		}, 100);
+		return () => clearInterval(interval);
+	}, [chatRef]);
+
+	const handleSubmit = useCallback(() => {
+		if (!input.trim() || !chatRef.current) return;
+		const imagePaths = attachedImages.map((img) => img.path);
+		if (imagePaths.length > 0) {
+			chatRef.current.sendMessageWithImages(input.trim(), imagePaths);
+		} else {
+			chatRef.current.sendMessage(input.trim());
+		}
+		setInput("");
+	}, [input, chatRef, attachedImages]);
+
+	const handleStop = useCallback(() => {
+		chatRef.current?.stopGeneration();
+	}, [chatRef]);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			if (e.key === "Enter" && !e.shiftKey) {
+				e.preventDefault();
+				handleSubmit();
+			} else if (e.key === "Escape") {
+				onExitZen();
+			}
+		},
+		[handleSubmit, onExitZen]
+	);
+
+	// Focus input on mount
+	useEffect(() => {
+		inputRef.current?.focus();
+	}, []);
+
+	// Get latest tool activity for display
+	const latestActivity = toolActivities[toolActivities.length - 1];
+	const activityCount = toolActivities.length;
+
+	return (
+		<div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4">
+			<div className="relative flex flex-col rounded-xl border border-surgent-border bg-surgent-surface/95 backdrop-blur-sm shadow-2xl overflow-visible">
+				{/* Main status bar - shows when loading */}
+				{isLoading && (
+					<div
+						className="relative flex items-center justify-between gap-3 px-3 py-2 border-b border-surgent-border/50 rounded-t-xl"
+						onMouseEnter={() => setIsActivityHovered(true)}
+						onMouseLeave={() => setIsActivityHovered(false)}
+					>
+						{/* Activity dropdown - appears on hover above status bar */}
+						{isActivityHovered && activityCount > 0 && (
+							<div className="absolute bottom-full left-0 right-0 mb-1 rounded-lg overflow-hidden bg-surgent-surface shadow-lg border border-surgent-border z-50">
+								<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-surgent-border text-surgent-text-3">
+									<span>Activity</span>
+									<span className="tabular-nums">{activityCount}</span>
+								</div>
+								<div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
+									{toolActivities.map((activity, idx) => (
+										<div
+											key={activity.id}
+											className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] ${
+												idx < toolActivities.length - 1
+													? "border-b border-surgent-border/50"
+													: ""
+											}`}
+										>
+											<span className="shrink-0 text-surgent-text-3">
+												{getZenToolIcon(activity.toolName, false)}
+											</span>
+											<span className="flex-1 truncate text-surgent-text-2">
+												{activity.summary}
+											</span>
+											{activity.isStreaming && (
+												<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-surgent-accent animate-pulse" />
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+
+						{/* Left side: Activity indicator */}
+						{latestActivity ? (
+							<div className="flex items-center gap-2 min-w-0 flex-1">
+								<span className="shrink-0 text-surgent-accent">
+									{getZenToolIcon(
+										latestActivity.toolName,
+										latestActivity.isStreaming
+									)}
+								</span>
+								<span className="text-[11px] text-surgent-text truncate">
+									{latestActivity.summary}
+								</span>
+								{activityCount > 1 && (
+									<span className="shrink-0 text-[9px] text-surgent-accent bg-surgent-accent/10 px-1.5 py-0.5 rounded-full tabular-nums">
+										+{activityCount - 1}
+									</span>
+								)}
+							</div>
+						) : (
+							<div className="flex items-center gap-2">
+								<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-surgent-accent" />
+								<span className="text-[11px] text-surgent-text-2">
+									Working...
+								</span>
+							</div>
+						)}
+
+						{/* Right side: Stop button */}
+						<button
+							type="button"
+							onClick={handleStop}
+							className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3 border border-surgent-border"
+						>
+							<svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+								<rect x="6" y="6" width="12" height="12" rx="1" />
+							</svg>
+							Stop
+						</button>
+					</div>
+				)}
+
+				{/* Queued messages panel */}
+				{queuedMessages.length > 0 && (
+					<div
+						className="border-b border-surgent-border/50 overflow-y-auto"
+						style={{ maxHeight: "120px" }}
+					>
+						<div className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase text-surgent-text-3 border-b border-surgent-border/30">
+							Queued messages
+						</div>
+						{queuedMessages.map((qm, idx) => (
+							<div
+								key={qm.id}
+								className="group flex items-start gap-2 px-3 py-1.5 hover:bg-surgent-text/5 transition-colors"
+								style={{
+									borderBottom:
+										idx < queuedMessages.length - 1
+											? "1px solid rgba(255,255,255,0.04)"
+											: undefined,
+								}}
+							>
+								<span className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums text-surgent-text-3">
+									{idx + 1}
+								</span>
+								{editingQueueId === qm.id ? (
+									<div className="flex-1 flex items-center gap-1">
+										<input
+											type="text"
+											autoFocus
+											value={editingQueueText}
+											onChange={(e) => setEditingQueueText(e.target.value)}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") {
+													const trimmed = editingQueueText.trim();
+													if (trimmed && chatRef.current) {
+														chatRef.current.updateQueuedMessage(qm.id, trimmed);
+													}
+													setEditingQueueId(null);
+												} else if (e.key === "Escape") {
+													setEditingQueueId(null);
+												}
+											}}
+											className="flex-1 bg-surgent-surface-2 text-[11px] outline-none border-none px-1 py-0.5 rounded text-surgent-text"
+										/>
+										<button
+											type="button"
+											onClick={() => {
+												const trimmed = editingQueueText.trim();
+												if (trimmed && chatRef.current) {
+													chatRef.current.updateQueuedMessage(qm.id, trimmed);
+												}
+												setEditingQueueId(null);
+											}}
+											className="shrink-0 p-0.5 rounded text-surgent-accent"
+											title="Save"
+										>
+											<svg
+												className="w-3 h-3"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+											>
+												<polyline points="20 6 9 17 4 12" />
+											</svg>
+										</button>
+										<button
+											type="button"
+											onClick={() => setEditingQueueId(null)}
+											className="shrink-0 p-0.5 rounded text-surgent-text-3"
+											title="Cancel"
+										>
+											<svg
+												className="w-3 h-3"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+											>
+												<line x1="18" y1="6" x2="6" y2="18" />
+												<line x1="6" y1="6" x2="18" y2="18" />
+											</svg>
+										</button>
+									</div>
+								) : (
+									<>
+										<span className="flex-1 text-[11px] truncate text-surgent-text">
+											{qm.displayText}
+										</span>
+										<div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+											<button
+												type="button"
+												onClick={() => {
+													setEditingQueueId(qm.id);
+													setEditingQueueText(qm.text);
+												}}
+												className="p-0.5 rounded transition-colors hover:bg-white/10 text-surgent-text-3"
+												title="Edit"
+											>
+												<svg
+													className="w-3 h-3"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="2"
+												>
+													<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+													<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+												</svg>
+											</button>
+											<button
+												type="button"
+												onClick={() =>
+													chatRef.current?.removeQueuedMessage(qm.id)
+												}
+												className="p-0.5 rounded transition-colors hover:bg-red-500/20 text-red-400"
+												title="Remove from queue"
+											>
+												<svg
+													className="w-3 h-3"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="2"
+												>
+													<polyline points="3 6 5 6 21 6" />
+													<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+												</svg>
+											</button>
+										</div>
+									</>
+								)}
+							</div>
+						))}
+					</div>
+				)}
+
+				{/* Attached images preview - shared with ClaudeChatView */}
+				{attachedImages.length > 0 && (
+					<div className="flex items-center gap-2 px-3 py-2 border-b border-surgent-border/50">
+						{attachedImages.map((img) => (
+							<div key={img.path} className="relative group">
+								<img
+									src={img.previewUrl}
+									alt={img.name}
+									className="h-10 w-10 rounded-md object-cover border border-surgent-border"
+								/>
+								<button
+									type="button"
+									onClick={() => chatRef.current?.removeAttachedImage(img.path)}
+									className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+								>
+									×
+								</button>
+							</div>
+						))}
+					</div>
+				)}
+
+				{/* Hidden file input - uploads through ClaudeChatView */}
+				<input
+					type="file"
+					ref={fileInputRef}
+					accept="image/*"
+					multiple
+					className="hidden"
+					onChange={async (e) => {
+						for (const file of Array.from(e.target.files || [])) {
+							if (file.type.startsWith("image/") && chatRef.current) {
+								await chatRef.current.attachImageFile(file);
+							}
+						}
+						e.target.value = "";
+					}}
+				/>
+
+				{/* Input row */}
+				<div className="flex items-center gap-2 px-3 py-2">
+					{/* Add image button */}
+					<button
+						type="button"
+						onClick={() => fileInputRef.current?.click()}
+						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-colors"
+						title="Attach image"
+					>
+						<svg
+							className="w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<line x1="12" y1="5" x2="12" y2="19" />
+							<line x1="5" y1="12" x2="19" y2="12" />
+						</svg>
+					</button>
+
+					{/* Agent icon */}
+					<span className="shrink-0 text-surgent-accent">
+						{getAgentIcon(agentKind, 14)}
+					</span>
+
+					{/* Input */}
+					<input
+						ref={inputRef}
+						type="text"
+						value={input}
+						onChange={(e) => setInput(e.target.value)}
+						onKeyDown={handleKeyDown}
+						placeholder={
+							isLoading
+								? "Type to queue next message..."
+								: "Message... (Esc to exit)"
+						}
+						className="flex-1 bg-transparent text-[13px] text-surgent-text outline-none placeholder:text-surgent-text-3"
+					/>
+
+					{/* Queued count badge */}
+					{queuedMessages.length > 0 && (
+						<span className="shrink-0 text-[10px] text-surgent-accent bg-surgent-accent/10 px-1.5 py-0.5 rounded tabular-nums">
+							+{queuedMessages.length}
+						</span>
+					)}
+
+					{/* Send button */}
+					<button
+						type="button"
+						onClick={handleSubmit}
+						disabled={!input.trim()}
+						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-surgent-accent/20 text-surgent-accent hover:bg-surgent-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+					>
+						<svg
+							className="w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<line x1="22" y1="2" x2="11" y2="13" />
+							<polygon points="22 2 15 22 11 13 2 9 22 2" />
+						</svg>
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 // File status icon component
 function FileStatusIcon({ status }: { status: string }) {
 	// M = modified, A = added, D = deleted, R = renamed, ? = untracked
-	const getStatusConfig = () => {
-		switch (status) {
-			case "M":
-				return {
-					icon: "M",
-					color: "text-amber-400",
-					bg: "bg-amber-400/15",
-					title: "Modified",
-				};
-			case "A":
-				return {
-					icon: "+",
-					color: "text-git-added",
-					bg: "bg-git-added/15",
-					title: "Added",
-				};
-			case "D":
-				return {
-					icon: "−",
-					color: "text-git-deleted",
-					bg: "bg-git-deleted/15",
-					title: "Deleted",
-				};
-			case "R":
-				return {
-					icon: "R",
-					color: "text-blue-400",
-					bg: "bg-blue-400/15",
-					title: "Renamed",
-				};
-			case "?":
-				return {
-					icon: "?",
-					color: "text-surgent-text-3",
-					bg: "bg-surgent-text/10",
-					title: "Untracked",
-				};
-			default:
-				return {
-					icon: "•",
-					color: "text-surgent-text-3",
-					bg: "bg-surgent-text/10",
-					title: status,
-				};
-		}
-	};
-
-	const config = getStatusConfig();
-	return (
-		<span
-			className={`shrink-0 flex items-center justify-center w-4 h-4 rounded text-[8px] font-bold ${config.color} ${config.bg}`}
-			title={config.title}
-		>
-			{config.icon}
-		</span>
-	);
+	switch (status) {
+		case "M":
+			return (
+				<span
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-amber-400 bg-amber-400/15"
+					title="Modified"
+				>
+					<svg
+						className="w-2.5 h-2.5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					>
+						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+					</svg>
+				</span>
+			);
+		case "A":
+			return (
+				<span
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-git-added bg-git-added/15 text-[8px] font-bold"
+					title="Added"
+				>
+					+
+				</span>
+			);
+		case "D":
+			return (
+				<span
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-git-deleted bg-git-deleted/15 text-[8px] font-bold"
+					title="Deleted"
+				>
+					−
+				</span>
+			);
+		case "R":
+			return (
+				<span
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-blue-400 bg-blue-400/15 text-[8px] font-bold"
+					title="Renamed"
+				>
+					R
+				</span>
+			);
+		case "?":
+			return (
+				<span
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-surgent-text-3 bg-surgent-text/10 text-[8px] font-bold"
+					title="Untracked"
+				>
+					?
+				</span>
+			);
+		default:
+			return (
+				<span
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-surgent-text-3 bg-surgent-text/10 text-[8px] font-bold"
+					title={status}
+				>
+					•
+				</span>
+			);
+	}
 }
 
 // Build tree structure from flat file list

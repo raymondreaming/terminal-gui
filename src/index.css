@@ -145,6 +145,11 @@ textarea::placeholder {
 	);
 }
 
+/* Diff row hover - uses CSS custom property set inline */
+.diff-row:hover {
+	background-color: var(--hover-bg, inherit) !important;
+}
+
 .inset-separator {
 	position: relative;
 }

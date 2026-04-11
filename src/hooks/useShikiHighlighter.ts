@@ -53,7 +53,7 @@ const EXTENSION_TO_LANG: Record<string, BundledLanguage> = {
 	zig: "zig",
 };
 
-// Singleton highlighter instance
+// Singleton highlighter instance — eagerly created at module load
 let highlighterInstance: Highlighter | null = null;
 let highlighterPromise: Promise<Highlighter> | null = null;
 const loadedLanguages = new Set<string>();
@@ -70,6 +70,9 @@ async function getHighlighter(): Promise<Highlighter> {
 	highlighterInstance = await highlighterPromise;
 	return highlighterInstance;
 }
+
+// Kick off creation immediately so it's warm by the time the first diff opens
+getHighlighter().catch(() => {});
 
 function getLanguageFromPath(filePath: string): BundledLanguage | null {
 	const ext = filePath.split(".").pop()?.toLowerCase();
@@ -112,6 +115,7 @@ export function useShikiHighlighter({
 	enabled = true,
 }: UseShikiHighlighterOptions): ShikiHighlighterAPI {
 	const [isReady, setIsReady] = useState(false);
+	const [, setHighlightVersion] = useState(0); // Force re-render when highlighting completes
 	const cacheRef = useRef<Map<number, string>>(new Map());
 	const highlighterRef = useRef<Highlighter | null>(null);
 	const langRef = useRef<BundledLanguage | null>(null);
@@ -119,7 +123,13 @@ export function useShikiHighlighter({
 	// Detect language from file path
 	const language = getLanguageFromPath(filePath);
 
-	// Initialize highlighter
+	// Store visible range in ref so we can use it in init
+	const visibleRangeRef = useRef(visibleRange);
+	visibleRangeRef.current = visibleRange;
+	const linesRef = useRef(lines);
+	linesRef.current = lines;
+
+	// Initialize highlighter and highlight initial visible lines immediately
 	useEffect(() => {
 		if (!enabled || !language) {
 			setIsReady(true); // Ready but won't highlight
@@ -139,9 +149,30 @@ export function useShikiHighlighter({
 					loadedLanguages.add(language!);
 				}
 
+				if (cancelled) return;
+
 				highlighterRef.current = hl;
 				langRef.current = language;
+
+				// Immediately highlight visible lines before setting ready
+				const [start, end] = visibleRangeRef.current;
+				const currentLines = linesRef.current;
+				for (let i = start; i <= end && i < currentLines.length; i++) {
+					const line = currentLines[i];
+					if (!line) continue;
+					try {
+						const html = hl.codeToHtml(line, { lang: language!, theme });
+						const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
+						const innerHtml = match?.[1] ?? escapeHtml(line);
+						const cleaned = unwrapLineSpan(innerHtml);
+						cacheRef.current.set(i, cleaned || escapeHtml(line));
+					} catch {
+						cacheRef.current.set(i, escapeHtml(line));
+					}
+				}
+
 				setIsReady(true);
+				setHighlightVersion((v) => v + 1); // Force re-render with highlighted content
 			} catch (err) {
 				console.warn("Failed to initialize Shiki highlighter:", err);
 				setIsReady(true); // Continue without highlighting
@@ -153,7 +184,7 @@ export function useShikiHighlighter({
 		return () => {
 			cancelled = true;
 		};
-	}, [enabled, language]);
+	}, [enabled, language, theme]);
 
 	// Highlight visible lines when range changes
 	useEffect(() => {
@@ -162,6 +193,8 @@ export function useShikiHighlighter({
 		const [start, end] = visibleRange;
 		const hl = highlighterRef.current;
 		const lang = langRef.current;
+
+		let newLinesHighlighted = false;
 
 		// Highlight lines that aren't cached yet
 		for (let i = start; i <= end && i < lines.length; i++) {
@@ -181,15 +214,19 @@ export function useShikiHighlighter({
 				const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
 				const innerHtml = match?.[1] ?? escapeHtml(line);
 
-				// Remove the span wrapper around the whole line if present
-				const cleaned = innerHtml
-					.replace(/<span class="line">([\s\S]*?)<\/span>/, "$1")
-					.trim();
+				const cleaned = unwrapLineSpan(innerHtml);
 
 				cacheRef.current.set(i, cleaned || escapeHtml(line));
+				newLinesHighlighted = true;
 			} catch {
 				cacheRef.current.set(i, escapeHtml(line));
+				newLinesHighlighted = true;
 			}
+		}
+
+		// Force re-render if new lines were highlighted
+		if (newLinesHighlighted) {
+			setHighlightVersion((v) => v + 1);
 		}
 	}, [isReady, visibleRange, lines, theme]);
 
@@ -214,6 +251,18 @@ export function useShikiHighlighter({
 		isReady,
 		language,
 	};
+}
+
+const LINE_SPAN_PREFIX = '<span class="line">';
+const SPAN_CLOSE = "</span>";
+
+/** Strip the outer `<span class="line">…</span>` wrapper Shiki adds. */
+function unwrapLineSpan(html: string): string {
+	const trimmed = html.trim();
+	if (trimmed.startsWith(LINE_SPAN_PREFIX) && trimmed.endsWith(SPAN_CLOSE)) {
+		return trimmed.slice(LINE_SPAN_PREFIX.length, -SPAN_CLOSE.length);
+	}
+	return trimmed;
 }
 
 function escapeHtml(text: string): string {
@@ -287,12 +336,9 @@ export function useShikiSnippet(
 							theme: "github-dark-default",
 						});
 
-						// Extract inner content
 						const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
 						const innerHtml = match?.[1] ?? escapeHtml(line);
-						const cleaned = innerHtml
-							.replace(/<span class="line">([\s\S]*?)<\/span>/, "$1")
-							.trim();
+						const cleaned = unwrapLineSpan(innerHtml);
 
 						result.set(i, cleaned || escapeHtml(line));
 					} catch {

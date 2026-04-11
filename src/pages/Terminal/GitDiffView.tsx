@@ -30,8 +30,43 @@ const TOKEN_CLASSES: Record<string, string> = {
 	default: "",
 };
 
-const LINE_H = 18;
-const OVERSCAN = 15;
+// ============================================================
+// DIFF VIEW CONFIG - All measurements in one place
+// ============================================================
+const DIFF_CONFIG = {
+	// Line dimensions
+	lineHeight: 15, // Height of each line in pixels
+
+	// Font sizes
+	lineNumFontSize: 9, // Line number font size
+	signFontSize: 9, // +/- sign font size
+	contentFontSize: 10, // Code content font size
+
+	// Column widths
+	lineNumWidth: 36, // Line number column width
+	signWidth: 12, // +/- sign column width
+
+	// Colors
+	lineNumColor: "#6b7280", // Gray for line numbers
+	addLineNumColor: "rgba(60,180,110,0.7)",
+	removeLineNumColor: "rgba(210,80,80,0.7)",
+	addSignColor: "rgba(46,160,67,0.9)",
+	removeSignColor: "rgba(248,81,73,0.9)",
+
+	// Backgrounds
+	addBg: "rgba(60,180,110,0.13)",
+	addBgHover: "rgba(60,180,110,0.2)",
+	addBgHighlight: "rgba(60,180,110,0.25)",
+	removeBg: "rgba(210,80,80,0.13)",
+	removeBgHover: "rgba(210,80,80,0.2)",
+	removeBgHighlight: "rgba(210,80,80,0.25)",
+
+	// Virtual scroll
+	overscan: 15, // Extra rows to render above/below viewport
+};
+
+const LINE_H = DIFF_CONFIG.lineHeight;
+const OVERSCAN = DIFF_CONFIG.overscan;
 
 const DiffRow = memo(function DiffRow({
 	line,
@@ -39,6 +74,7 @@ const DiffRow = memo(function DiffRow({
 	highlightedHtml,
 	onCopy,
 	isHighlighted,
+	minWidth,
 }: {
 	line: DiffLine;
 	ext: string;
@@ -46,16 +82,18 @@ const DiffRow = memo(function DiffRow({
 	highlightedHtml?: string;
 	onCopy?: (content: string) => void;
 	isHighlighted?: boolean;
+	minWidth?: number;
 }) {
-	const [isHovered, setIsHovered] = useState(false);
-
 	if (line.type === "hunk") {
 		return (
 			<div
-				className="h-1.5 my-0.5"
 				style={{
+					height: 6,
+					marginTop: 2,
+					marginBottom: 2,
 					backgroundColor: "var(--color-surgent-border)",
 					opacity: 0.15,
+					minWidth: minWidth || "100%",
 				}}
 			/>
 		);
@@ -64,10 +102,12 @@ const DiffRow = memo(function DiffRow({
 	if (line.type === "spacer") {
 		return (
 			<div
-				className="h-[18px] bg-surgent-surface/20"
 				style={{
+					height: LINE_H,
+					backgroundColor: "rgba(255,255,255,0.02)",
 					backgroundImage:
 						"repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 9px)",
+					minWidth: minWidth || "100%",
 				}}
 			/>
 		);
@@ -75,26 +115,29 @@ const DiffRow = memo(function DiffRow({
 
 	const isAdd = line.type === "add";
 	const isRemove = line.type === "remove";
-	const isChanged = isAdd || isRemove;
 
-	// Calculate background color with hover/highlight states
+	// Calculate base background color (hover handled via CSS)
 	const getBgColor = () => {
 		if (isHighlighted) {
 			return isAdd
-				? "rgba(60,180,110,0.25)"
+				? DIFF_CONFIG.addBgHighlight
 				: isRemove
-					? "rgba(210,80,80,0.25)"
+					? DIFF_CONFIG.removeBgHighlight
 					: "rgba(255,255,255,0.08)";
 		}
-		if (isHovered && isChanged) {
-			return isAdd ? "rgba(60,180,110,0.2)" : "rgba(210,80,80,0.2)";
-		}
 		return isAdd
-			? "rgba(60,180,110,0.13)"
+			? DIFF_CONFIG.addBg
 			: isRemove
-				? "rgba(210,80,80,0.13)"
+				? DIFF_CONFIG.removeBg
 				: "transparent";
 	};
+
+	// CSS variable for hover color
+	const hoverBg = isAdd
+		? DIFF_CONFIG.addBgHover
+		: isRemove
+			? DIFF_CONFIG.removeBgHover
+			: undefined;
 
 	const handleCopy = (e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -125,36 +168,54 @@ const DiffRow = memo(function DiffRow({
 
 	return (
 		<div
-			className="group relative flex w-max min-w-full h-[18px] leading-[18px]"
-			style={{ backgroundColor: getBgColor() }}
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
+			className="group relative flex diff-row"
+			style={{
+				height: LINE_H,
+				lineHeight: `${LINE_H}px`,
+				backgroundColor: getBgColor(),
+				minWidth: minWidth || "100%",
+				// @ts-expect-error CSS custom property for hover
+				"--hover-bg": hoverBg,
+			}}
 		>
+			{/* Line number */}
 			<span
-				className={`shrink-0 w-10 text-right pr-1 text-[8px] font-mono select-none ${
-					isAdd
-						? "text-[rgba(60,180,110,0.5)]"
+				className="shrink-0 text-right font-mono select-none"
+				style={{
+					width: DIFF_CONFIG.lineNumWidth,
+					paddingRight: 4,
+					fontSize: DIFF_CONFIG.lineNumFontSize,
+					color: isAdd
+						? DIFF_CONFIG.addLineNumColor
 						: isRemove
-							? "text-[rgba(210,80,80,0.5)]"
-							: "text-surgent-text-3/20"
-				}`}
+							? DIFF_CONFIG.removeLineNumColor
+							: DIFF_CONFIG.lineNumColor,
+				}}
 			>
 				{line.number ?? ""}
 			</span>
+			{/* +/- sign */}
 			<span
-				className={`shrink-0 w-3 text-center text-[8px] font-mono select-none ${
-					isAdd
-						? "text-[rgba(60,180,110,0.6)]"
+				className="shrink-0 text-center font-mono select-none"
+				style={{
+					width: DIFF_CONFIG.signWidth,
+					fontSize: DIFF_CONFIG.signFontSize,
+					color: isAdd
+						? DIFF_CONFIG.addSignColor
 						: isRemove
-							? "text-[rgba(210,80,80,0.6)]"
-							: ""
-				}`}
+							? DIFF_CONFIG.removeSignColor
+							: undefined,
+				}}
 			>
 				{isAdd ? "+" : isRemove ? "-" : ""}
 			</span>
+			{/* Content */}
 			<span
-				className="flex-1 min-w-max text-[10px] font-mono whitespace-pre pr-3 pl-1"
+				className="flex-1 min-w-max font-mono whitespace-pre"
 				style={{
+					fontSize: DIFF_CONFIG.contentFontSize,
+					paddingRight: 12,
+					paddingLeft: 4,
 					color: highlightedHtml ? undefined : "var(--color-surgent-text)",
 				}}
 			>
@@ -271,6 +332,22 @@ function VirtualPanel({
 	useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
 	const total = lines.length * LINE_H;
+
+	// Calculate approximate max content width based on longest line
+	const maxLineLength = useMemo(() => {
+		let max = 0;
+		for (const line of lines) {
+			if (line.content && line.content.length > max) {
+				max = line.content.length;
+			}
+		}
+		return max;
+	}, [lines]);
+
+	// Approximate width: line num + sign + content (char width ~7px at 10px font)
+	const minContentWidth =
+		DIFF_CONFIG.lineNumWidth + DIFF_CONFIG.signWidth + maxLineLength * 7 + 20;
+
 	const start = Math.max(0, Math.floor(scrollTop / LINE_H) - OVERSCAN);
 	const end = Math.min(
 		lines.length,
@@ -355,11 +432,18 @@ function VirtualPanel({
 				onScroll={handleScroll}
 				className="flex-1 overflow-auto"
 			>
-				<div style={{ height: total, position: "relative" }}>
+				<div
+					style={{
+						height: total,
+						position: "relative",
+						minWidth: minContentWidth,
+					}}
+				>
 					<div
 						style={{
 							transform: `translateY(${start * LINE_H}px)`,
 							willChange: "transform",
+							minWidth: minContentWidth,
 						}}
 					>
 						{visibleRows.map(
@@ -372,6 +456,7 @@ function VirtualPanel({
 									highlightedHtml={highlightedHtml}
 									onCopy={onCopyLine}
 									isHighlighted={isHighlighted}
+									minWidth={minContentWidth}
 								/>
 							)
 						)}
