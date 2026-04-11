@@ -1,5 +1,6 @@
 import { resolve } from "path";
 import { tryRoute } from "../lib/route-helpers.ts";
+import { atomicWriteJson } from "../lib/atomic-write.ts";
 
 const PROMPTS_FILE = resolve(import.meta.dir, "../../data/prompts.json");
 
@@ -25,7 +26,7 @@ async function loadPrompts(): Promise<Prompt[]> {
 }
 
 async function savePrompts(prompts: Prompt[]): Promise<void> {
-	await Bun.write(PROMPTS_FILE, JSON.stringify(prompts, null, 2));
+	await atomicWriteJson(PROMPTS_FILE, prompts, 2);
 }
 
 export function promptRoutes() {

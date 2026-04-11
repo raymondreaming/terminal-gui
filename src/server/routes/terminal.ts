@@ -5,6 +5,7 @@ import { readdir, stat } from "fs/promises";
 import type { AgentKind } from "../../lib/agents.ts";
 import { resolveInteractiveAgentCommand } from "../agents/terminal-command.ts";
 import { ChatService } from "../services/claude-chat.ts";
+import { PidTracker } from "../services/pid-tracker.ts";
 import {
 	tryRoute,
 	badRequest,
@@ -141,10 +142,12 @@ export const TerminalService = {
 				decoder,
 			};
 			sessions.set(paneId, session);
+			if (proc.pid) PidTracker.trackPid(proc.pid);
 
 			proc.exited.then((code) => {
 				const s = sessions.get(paneId);
 				if (s) {
+					if (s.proc.pid) PidTracker.untrackPid(s.proc.pid);
 					sendToClient(s, { type: "terminal:exit", paneId, exitCode: code });
 					terminal.close();
 					sessions.delete(paneId);
@@ -187,7 +190,10 @@ export const TerminalService = {
 		const session = sessions.get(paneId);
 		if (!session) return { ok: true };
 		try {
-			if (session.proc.pid) killProcessTree(session.proc.pid);
+			if (session.proc.pid) {
+				killProcessTree(session.proc.pid);
+				PidTracker.untrackPid(session.proc.pid);
+			}
 			session.terminal.close();
 		} catch {}
 		sessions.delete(paneId);
@@ -219,7 +225,10 @@ export const TerminalService = {
 	destroyAll() {
 		for (const [paneId, session] of sessions) {
 			try {
-				if (session.proc.pid) killProcessTree(session.proc.pid);
+				if (session.proc.pid) {
+					killProcessTree(session.proc.pid);
+					PidTracker.untrackPid(session.proc.pid);
+				}
 			} catch {}
 			try {
 				session.terminal.close();

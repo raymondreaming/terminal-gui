@@ -81,14 +81,13 @@ export const websocketHandler = {
 
 			// Chat protocol
 			else if (msg.type === "chat:send") {
-				ChatService.sendMessage(
-					msg.paneId,
-					msg.text,
-					ws,
-					msg.cwd,
-					msg.sessionId,
-					msg.agentKind ?? "claude"
-				);
+				ChatService.sendMessage(msg.paneId, msg.text, ws, {
+					cwd: msg.cwd,
+					sessionId: msg.sessionId,
+					agentKind: msg.agentKind ?? "claude",
+					systemPrompt: msg.systemPrompt ?? null,
+					referencePaths: msg.referencePaths ?? [],
+				});
 			} else if (msg.type === "chat:reconnect") {
 				ChatService.reassignWs(msg.paneId, ws);
 			} else if (msg.type === "chat:btw") {

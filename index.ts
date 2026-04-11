@@ -4,6 +4,7 @@ import { websocketHandler } from "./src/server/ws.ts";
 import { TerminalService } from "./src/server/routes/terminal.ts";
 import { ChatService } from "./src/server/services/claude-chat.ts";
 import { CheckpointService } from "./src/server/services/checkpoint.ts";
+import { PidTracker } from "./src/server/services/pid-tracker.ts";
 import { resolve } from "path";
 import { readdir } from "fs/promises";
 
@@ -145,9 +146,14 @@ CheckpointService.load().catch((e) =>
 	console.error("[Checkpoint] Failed to load:", e)
 );
 
-function cleanShutdown() {
+PidTracker.cleanupOrphans().catch((e) =>
+	console.error("[PID] Failed to cleanup orphans:", e)
+);
+
+async function cleanShutdown() {
 	TerminalService.destroyAll();
 	ChatService.destroyAll();
+	await PidTracker.flush();
 	process.exit(0);
 }
 process.on("SIGTERM", cleanShutdown);

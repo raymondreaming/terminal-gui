@@ -1,6 +1,10 @@
 import type { ServerWebSocket } from "bun";
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import type { AgentHandle, AgentRunContext } from "../agents/types.ts";
+import type {
+	AgentHandle,
+	AgentRunContext,
+	SessionUsage,
+} from "../agents/types.ts";
 import { getAgentAdapter } from "../agents/registry.ts";
 import type { ChatAgentKind } from "../../lib/agents.ts";
 import { CheckpointService } from "./checkpoint.ts";
@@ -181,7 +185,20 @@ interface ChatSession {
 	cwd: string;
 	messageBuffer: ChatMessageBuffer;
 	cleanupTimer: ReturnType<typeof setTimeout> | null;
+	systemPrompt: string | null;
+	referencePaths: string[];
+	usage: SessionUsage;
 }
+
+const ZERO_USAGE: SessionUsage = {
+	contextTokens: 0,
+	contextLimit: 200_000,
+	totalInputTokens: 0,
+	totalOutputTokens: 0,
+	totalCostUsd: 0,
+	numTurns: 0,
+	durationMs: 0,
+};
 
 interface AgentSessionInfo {
 	paneId: string;
@@ -275,6 +292,8 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 	const ctx: AgentRunContext = {
 		paneId,
 		cwd: session.cwd,
+		systemPrompt: session.systemPrompt,
+		referencePaths: session.referencePaths,
 		getSessionId: () => session.sessionId,
 		updateSessionId: (nextSessionId) =>
 			updateSessionId(session, paneId, nextSessionId),
@@ -287,6 +306,27 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 		emitSystemMessage: (message) => {
 			session.messageBuffer.pushSystem(message);
 			broadcast(session, { type: "chat:system", paneId, message });
+		},
+		emitUsage: (incoming) => {
+			const u = session.usage;
+			// Result events provide authoritative totals — overwrite
+			if (incoming.totalCostUsd) u.totalCostUsd = incoming.totalCostUsd;
+			if (incoming.numTurns) u.numTurns = incoming.numTurns;
+			if (incoming.durationMs) u.durationMs = incoming.durationMs;
+			// Token counts from result are also authoritative totals
+			if (incoming.totalCostUsd) {
+				// This is a result event — use absolute values
+				u.totalInputTokens = incoming.totalInputTokens;
+				u.totalOutputTokens = incoming.totalOutputTokens;
+				u.contextTokens = incoming.contextTokens;
+			} else {
+				// Incremental from assistant messages — accumulate
+				u.totalInputTokens += incoming.totalInputTokens;
+				u.totalOutputTokens += incoming.totalOutputTokens;
+				u.contextTokens = incoming.contextTokens;
+			}
+			if (incoming.contextLimit > 0) u.contextLimit = incoming.contextLimit;
+			broadcast(session, { type: "chat:usage", paneId, ...u });
 		},
 	};
 	const state = adapter.createState(ctx);
@@ -309,15 +349,29 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 	}
 }
 
+export interface SendMessageOpts {
+	cwd?: string;
+	sessionId?: string | null;
+	agentKind?: ChatAgentKind;
+	systemPrompt?: string | null;
+	referencePaths?: string[];
+}
+
 export const ChatService = {
 	async sendMessage(
 		paneId: string,
 		text: string,
 		ws: ServerWebSocket<any>,
-		cwd?: string,
-		clientSessionId?: string | null,
-		agentKind: ChatAgentKind = "claude"
+		opts: SendMessageOpts = {}
 	) {
+		const {
+			cwd,
+			sessionId: clientSessionId,
+			agentKind = "claude",
+			systemPrompt = null,
+			referencePaths = [],
+		} = opts;
+
 		let session = sessions.get(paneId);
 		if (!session) {
 			session = {
@@ -329,6 +383,9 @@ export const ChatService = {
 				cwd: cwd || process.cwd(),
 				messageBuffer: new ChatMessageBuffer(),
 				cleanupTimer: null,
+				systemPrompt,
+				referencePaths,
+				usage: { ...ZERO_USAGE },
 			};
 			sessions.set(paneId, session);
 		}
@@ -336,6 +393,8 @@ export const ChatService = {
 		session.agentKind = agentKind;
 		session.clients.add(ws);
 		if (cwd) session.cwd = cwd;
+		if (systemPrompt !== null) session.systemPrompt = systemPrompt;
+		if (referencePaths.length > 0) session.referencePaths = referencePaths;
 		if (!session.sessionId && clientSessionId)
 			updateSessionId(session, paneId, clientSessionId);
 
