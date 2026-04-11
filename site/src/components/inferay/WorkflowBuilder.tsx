@@ -372,15 +372,15 @@ function WorkflowList({
 			</div>
 
 			{/* List */}
-			<div className="flex-1 overflow-y-auto py-1">
+			<div className="flex-1 overflow-y-auto p-2 space-y-1.5">
 				{workflows.map((wf) => (
 					<button
 						key={wf.id}
 						onClick={() => onSelect(wf.id)}
-						className={`w-full text-left px-3 py-2 border-l-2 transition-colors ${
+						className={`w-full text-left px-2.5 py-2 rounded-lg border transition-colors ${
 							activeId === wf.id
-								? "border-surgent-accent bg-surgent-surface-2"
-								: "border-transparent hover:bg-surgent-surface/50"
+								? "border-surgent-border bg-surgent-surface-2"
+								: "border-surgent-border/50 hover:bg-surgent-surface/50 hover:border-surgent-border"
 						}`}
 					>
 						<div className="flex items-center gap-2">
@@ -388,7 +388,7 @@ function WorkflowList({
 								{wf.name}
 							</span>
 							{wf.status === "active" && (
-								<div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+								<div className="w-1.5 h-1.5 rounded-full bg-surgent-accent shrink-0" />
 							)}
 						</div>
 						<p className="text-[8px] text-surgent-text-3 truncate mt-0.5">
@@ -785,8 +785,8 @@ export function WorkflowBuilder() {
 
 						{/* Running indicator */}
 						{isRunning && (
-							<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-surgent-surface border border-surgent-border">
-								<div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+							<div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-surgent-surface border border-surgent-border">
+								<div className="w-2 h-2 rounded-full bg-surgent-accent animate-pulse" />
 								<span className="text-[10px] text-surgent-text">
 									Executing workflow...
 								</span>

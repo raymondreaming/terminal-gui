@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Icons } from "./Icons";
-import { activityTimeline } from "./data";
+import { activityTimeline, sessionTimeline } from "./data";
 import { FileIcon, gitStatusColors } from "./fileIcons";
 
 // Path-based file list for git changes
@@ -451,33 +451,75 @@ export function UnifiedSidebar({
 
 			{/* Content */}
 			{activeTab === "activity" ? (
-				<div className="flex-1 overflow-auto">
-					{activityTimeline.map((item, i) => (
-						<div
-							key={i}
-							className="flex items-center gap-2 px-3 py-1.5 hover:bg-surgent-surface/50 transition-colors border-b border-surgent-border/30"
-						>
-							<span className="text-[9px] tabular-nums text-surgent-text-3">
-								{item.time}
-							</span>
-							<span
-								className={`${item.type === "edit" ? "text-amber-400" : item.type === "bash" ? "text-green-400" : item.type === "search" ? "text-purple-400" : "text-blue-400"}`}
-							>
-								{item.type === "edit" ? (
-									<Icons.Edit />
-								) : item.type === "bash" ? (
-									<Icons.Bash />
-								) : item.type === "search" ? (
-									<Icons.Search />
-								) : (
-									<Icons.Eye />
-								)}
-							</span>
-							<span className="flex-1 truncate text-[9px] text-surgent-text font-mono">
-								{item.file || item.command || item.query}
-							</span>
+				<div className="flex-1 overflow-auto p-1.5 space-y-1">
+					{/* Session timeline - conversations */}
+					<div className="mb-2">
+						<div className="text-[8px] font-medium text-surgent-text-3 px-1 mb-1">
+							Conversations
 						</div>
-					))}
+						{sessionTimeline.map((item, idx) => (
+							<div
+								key={idx}
+								className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-surgent-surface/50 transition-colors"
+							>
+								<div
+									className={`w-3 h-3 rounded-full flex items-center justify-center shrink-0 ${
+										item.status === "checkpoint"
+											? "bg-surgent-accent/20 border border-surgent-accent"
+											: "bg-surgent-surface border border-surgent-border"
+									}`}
+								>
+									{item.status === "checkpoint" ? (
+										<Icons.Zap />
+									) : (
+										<Icons.Check />
+									)}
+								</div>
+								<span className="flex-1 truncate text-[8px] text-surgent-text">
+									{item.summary}
+								</span>
+								{item.changes && (
+									<span className="text-[7px] px-1 rounded-full bg-surgent-accent/10 text-surgent-accent shrink-0">
+										{item.changes}
+									</span>
+								)}
+								<span className="text-[7px] text-surgent-text-3 shrink-0">
+									{item.time}
+								</span>
+							</div>
+						))}
+					</div>
+
+					{/* Recent activity - tool actions */}
+					<div>
+						<div className="text-[8px] font-medium text-surgent-text-3 px-1 mb-1">
+							Recent Actions
+						</div>
+						{activityTimeline.map((item, i) => (
+							<div
+								key={i}
+								className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-surgent-surface/50 transition-colors"
+							>
+								<span className="text-[8px] tabular-nums text-surgent-text-3 shrink-0">
+									{item.time}
+								</span>
+								<span className="text-surgent-text-2">
+									{item.type === "edit" ? (
+										<Icons.Edit />
+									) : item.type === "bash" ? (
+										<Icons.Bash />
+									) : item.type === "search" ? (
+										<Icons.Search />
+									) : (
+										<Icons.Eye />
+									)}
+								</span>
+								<span className="flex-1 truncate text-[8px] text-surgent-text font-mono">
+									{item.file || item.command || item.query}
+								</span>
+							</div>
+						))}
+					</div>
 				</div>
 			) : (
 				<>

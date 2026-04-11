@@ -833,6 +833,117 @@ export const inlineDiffLines = [
 	{ num: 34, content: "  }, [token, refreshToken]);", type: "added" },
 ];
 
+// Different inline diffs for each chat thread
+export const inlineDiffVariants = {
+	authMiddleware: [
+		{
+			num: 15,
+			content: "  const validateState = (state: string) => {",
+			type: "added",
+		},
+		{
+			num: 16,
+			content: "    const decoded = Buffer.from(state, 'base64');",
+			type: "added",
+		},
+		{
+			num: 17,
+			content: "    const { nonce, returnTo } = JSON.parse(decoded);",
+			type: "added",
+		},
+		{
+			num: 18,
+			content: "    if (!verifyNonce(nonce)) throw new AuthError();",
+			type: "added",
+		},
+		{ num: 19, content: "    return returnTo;", type: "added" },
+		{ num: 20, content: "  };", type: "added" },
+	],
+	useAuthHook: [
+		{ num: 42, content: "  const refresh = async () => {", type: "added" },
+		{
+			num: 43,
+			content: "    const res = await fetch('/api/refresh', {",
+			type: "added",
+		},
+		{ num: 44, content: "      method: 'POST',", type: "added" },
+		{ num: 45, content: "      credentials: 'include',", type: "added" },
+		{ num: 46, content: "    });", type: "added" },
+		{
+			num: 47,
+			content: "    const { token } = await res.json();",
+			type: "added",
+		},
+		{ num: 48, content: "    setAccessToken(token);", type: "added" },
+		{ num: 49, content: "  };", type: "added" },
+	],
+	cacheWrapper: [
+		{
+			num: 8,
+			content: "  async getUser(id: string): Promise<User> {",
+			type: "added",
+		},
+		{
+			num: 9,
+			content: "    const cached = await redis.get(`user:${id}`);",
+			type: "added",
+		},
+		{
+			num: 10,
+			content: "    if (cached) return JSON.parse(cached);",
+			type: "added",
+		},
+		{
+			num: 11,
+			content: "    const user = await this.db.findUser(id);",
+			type: "added",
+		},
+		{
+			num: 12,
+			content:
+				"    await redis.setex(`user:${id}`, 3600, JSON.stringify(user));",
+			type: "added",
+		},
+		{ num: 13, content: "    return user;", type: "added" },
+		{ num: 14, content: "  }", type: "added" },
+	],
+	cacheTypes: [
+		{ num: 3, content: "export interface CacheOptions {", type: "added" },
+		{ num: 4, content: "  ttl?: number;", type: "added" },
+		{ num: 5, content: "  prefix?: string;", type: "added" },
+		{ num: 6, content: "  serialize?: (v: unknown) => string;", type: "added" },
+		{ num: 7, content: "}", type: "added" },
+	],
+	migration: [
+		{ num: 1, content: "ALTER TABLE users", type: "added" },
+		{
+			num: 2,
+			content: "  ADD COLUMN email_verified BOOLEAN DEFAULT FALSE,",
+			type: "added",
+		},
+		{
+			num: 3,
+			content: "  ADD COLUMN last_login TIMESTAMP NULL;",
+			type: "added",
+		},
+		{ num: 4, content: "", type: "added" },
+		{
+			num: 5,
+			content: "CREATE INDEX idx_users_last_login ON users(last_login);",
+			type: "added",
+		},
+	],
+	userType: [
+		{ num: 12, content: "export interface User {", type: "normal" },
+		{ num: 13, content: "  id: string;", type: "normal" },
+		{ num: 14, content: "  email: string;", type: "normal" },
+		{ num: 15, content: "  name: string;", type: "added" },
+		{ num: 16, content: "  emailVerified: boolean;", type: "added" },
+		{ num: 17, content: "  lastLogin: Date | null;", type: "added" },
+		{ num: 18, content: "}", type: "normal" },
+	],
+};
+
 // Chat data
 export const chatMessages = [
 	{
@@ -896,6 +1007,7 @@ export const chatThreads = [
 				content: "Adding the auth wrapper with error handling:",
 				tool: { name: "Edit", file: "UserProfile.tsx" },
 				inlineDiff: true,
+				diffVariant: "default",
 			},
 			{
 				role: "assistant",
@@ -903,6 +1015,7 @@ export const chatThreads = [
 					"Now I need to update the useAuth hook to expose the refresh function:",
 				tool: { name: "Edit", file: "useAuth.ts" },
 				inlineDiff: true,
+				diffVariant: "useAuthHook",
 			},
 		],
 	},
@@ -937,6 +1050,7 @@ export const chatThreads = [
 				content: "On it. First, fixing the state validation:",
 				tool: { name: "Edit", file: "authMiddleware.ts" },
 				inlineDiff: true,
+				diffVariant: "authMiddleware",
 			},
 			{
 				role: "assistant",
@@ -967,12 +1081,14 @@ export const chatThreads = [
 				content: "Added cache wrapper with TTL support:",
 				tool: { name: "Edit", file: "userService.ts" },
 				inlineDiff: true,
+				diffVariant: "cacheWrapper",
 			},
 			{
 				role: "assistant",
 				content: "Also updated the types:",
 				tool: { name: "Edit", file: "types.ts" },
 				inlineDiff: true,
+				diffVariant: "cacheTypes",
 			},
 			{
 				role: "assistant",
@@ -1005,6 +1121,7 @@ export const chatThreads = [
 				content: "Creating the migration with proper defaults and indexes:",
 				tool: { name: "Edit", file: "migrations/002_add_user_fields.sql" },
 				inlineDiff: true,
+				diffVariant: "migration",
 			},
 			{
 				role: "user",
@@ -1015,6 +1132,7 @@ export const chatThreads = [
 				content: "Updated the User interface:",
 				tool: { name: "Edit", file: "types/user.ts" },
 				inlineDiff: true,
+				diffVariant: "userType",
 			},
 			{
 				role: "assistant",
@@ -1086,4 +1204,5 @@ export type ChatMessage = {
 	content: string;
 	tool?: { name: string; file?: string; command?: string; query?: string };
 	inlineDiff?: boolean;
+	diffVariant?: string;
 };

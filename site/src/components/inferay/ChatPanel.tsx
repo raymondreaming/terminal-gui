@@ -5,6 +5,7 @@ import { InlineDiffBlock } from "./DiffViewer";
 import {
 	chatMessages,
 	inlineDiffLines,
+	inlineDiffVariants,
 	chatThreads,
 	models,
 	type ChatMessage,
@@ -77,7 +78,14 @@ export function ChatPanel({
 										</div>
 										{msg.inlineDiff && (
 											<InlineDiffBlock
-												lines={inlineDiffLines}
+												lines={
+													msg.diffVariant &&
+													msg.diffVariant in inlineDiffVariants
+														? inlineDiffVariants[
+																msg.diffVariant as keyof typeof inlineDiffVariants
+															]
+														: inlineDiffLines
+												}
 												filePath={msg.tool.file || "file.tsx"}
 											/>
 										)}
@@ -273,7 +281,14 @@ export function VerticalChatPanel({
 										</div>
 										{msg.inlineDiff && (
 											<InlineDiffBlock
-												lines={inlineDiffLines}
+												lines={
+													msg.diffVariant &&
+													msg.diffVariant in inlineDiffVariants
+														? inlineDiffVariants[
+																msg.diffVariant as keyof typeof inlineDiffVariants
+															]
+														: inlineDiffLines
+												}
 												filePath={msg.tool.file || "file.tsx"}
 											/>
 										)}

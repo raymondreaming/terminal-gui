@@ -61,8 +61,8 @@ function RepoCard({
 			onClick={onSelect}
 			className={`w-full text-left p-3 rounded-lg border transition-colors ${
 				isSelected
-					? "border-surgent-accent/50 bg-surgent-surface-2"
-					: "border-surgent-border bg-surgent-surface/30 hover:bg-surgent-surface/50"
+					? "border-surgent-border bg-surgent-surface-2"
+					: "border-surgent-border/50 hover:bg-surgent-surface/50 hover:border-surgent-border"
 			}`}
 		>
 			<div className="flex items-start gap-3">
@@ -75,20 +75,20 @@ function RepoCard({
 							{repo.name}
 						</span>
 						{repo.status === "changes" && (
-							<span className="flex items-center gap-1 text-[8px] text-amber-500">
-								<div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+							<span className="flex items-center gap-1 text-[8px] text-surgent-text-3">
+								<div className="w-1.5 h-1.5 rounded-full bg-surgent-accent" />
 								{repo.changes} changes
 							</span>
 						)}
 						{repo.status === "behind" && (
-							<span className="flex items-center gap-1 text-[8px] text-blue-400">
+							<span className="flex items-center gap-1 text-[8px] text-surgent-text-3">
 								<Icons.ArrowDown className="w-2 h-2" />
 								Behind
 							</span>
 						)}
 						{repo.status === "clean" && (
-							<span className="flex items-center gap-1 text-[8px] text-emerald-500">
-								<div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+							<span className="flex items-center gap-1 text-[8px] text-surgent-text-3">
+								<div className="w-1.5 h-1.5 rounded-full bg-surgent-text-3" />
 								Clean
 							</span>
 						)}
@@ -134,15 +134,17 @@ function RepoDetail({ repo }: { repo: Repository }) {
 							</span>
 						</div>
 						{repo.status === "clean" && (
-							<span className="text-[9px] text-emerald-500">Up to date</span>
+							<span className="text-[9px] text-surgent-text-2">Up to date</span>
 						)}
 						{repo.status === "changes" && (
-							<span className="text-[9px] text-amber-500">
+							<span className="text-[9px] text-surgent-accent">
 								{repo.changes} uncommitted changes
 							</span>
 						)}
 						{repo.status === "behind" && (
-							<span className="text-[9px] text-blue-400">Behind remote</span>
+							<span className="text-[9px] text-surgent-text-3">
+								Behind remote
+							</span>
 						)}
 					</div>
 				</div>

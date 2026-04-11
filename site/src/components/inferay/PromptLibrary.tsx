@@ -548,8 +548,8 @@ export function PromptLibrary() {
 										onClick={() => handleSelect(prompt)}
 										className={`text-left rounded-lg border p-2.5 transition-colors ${
 											isActive
-												? "border-surgent-accent/30 bg-surgent-accent/5"
-												: "border-surgent-border hover:bg-surgent-surface hover:border-surgent-border"
+												? "border-surgent-border bg-surgent-surface-2"
+												: "border-surgent-border/50 hover:bg-surgent-surface/50 hover:border-surgent-border"
 										}`}
 									>
 										<div className="flex items-center gap-1.5 mb-1">
@@ -562,7 +562,7 @@ export function PromptLibrary() {
 												</span>
 											)}
 											{prompt.isNew && (
-												<span className="text-[6px] text-green-400 bg-green-500/10 px-1 py-0.5 rounded">
+												<span className="text-[6px] text-surgent-accent bg-surgent-accent/10 px-1 py-0.5 rounded">
 													new
 												</span>
 											)}
