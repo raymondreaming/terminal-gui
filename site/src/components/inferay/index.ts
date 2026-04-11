@@ -15,3 +15,5 @@ export { UnifiedSidebar } from "./Sidebar";
 export { GraphView } from "./GraphView";
 export { TimelineView } from "./TimelineView";
 export { TerminalPanel } from "./TerminalPanel";
+export { PromptLibrary } from "./PromptLibrary";
+export { Workspaces } from "./Workspaces";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 // Import all components from the inferay module
 import { Icons } from "./inferay/Icons";
@@ -15,20 +15,46 @@ import { UnifiedSidebar } from "./inferay/Sidebar";
 import { GraphView } from "./inferay/GraphView";
 import { TimelineView } from "./inferay/TimelineView";
 import { TerminalPanel } from "./inferay/TerminalPanel";
+import { PromptLibrary } from "./inferay/PromptLibrary";
+import { Workspaces } from "./inferay/Workspaces";
 
 // ============ MAIN COMPONENT ============
 
 export function Inferay() {
-	const [view, setView] = useState<"code" | "chat" | "graph" | "timeline">(
-		"code"
-	);
+	const [view, setView] = useState<
+		"code" | "chat" | "graph" | "timeline" | "prompts" | "workspaces"
+	>("chat");
+	const hasSwitched = useRef(false);
+
+	// Switch from Chat to Editor when user scrolls down
+	useEffect(() => {
+		let scrollAccumulator = 0;
+
+		const handleWheel = (e: WheelEvent) => {
+			if (hasSwitched.current) return;
+
+			if (e.deltaY > 0) {
+				scrollAccumulator += e.deltaY;
+				if (scrollAccumulator >= 100) {
+					hasSwitched.current = true;
+					setView("code");
+				}
+			}
+		};
+
+		window.addEventListener("wheel", handleWheel, { passive: true });
+
+		return () => {
+			window.removeEventListener("wheel", handleWheel);
+		};
+	}, []);
 	const [showCommandBar, setShowCommandBar] = useState(false);
 	const [showSidebar, setShowSidebar] = useState(true);
 	const [showMinimap, setShowMinimap] = useState(false);
 	const [zenMode, setZenMode] = useState(false);
 	const [selectedFile, setSelectedFile] = useState("SettingsPanel.tsx");
 	const [selectedModel, setSelectedModel] = useState("claude-4");
-	const [showTerminal, setShowTerminal] = useState(true);
+	const [showTerminal, setShowTerminal] = useState(false);
 
 	return (
 		<section
@@ -67,7 +93,7 @@ export function Inferay() {
 				/>
 				{/* Main container with enhanced shadow */}
 				<div
-					className="relative rounded-xl overflow-hidden border border-white/20"
+					className="relative rounded-xl overflow-hidden border border-black/40"
 					style={{
 						boxShadow: `
 							inset 0 1px 0 0 rgba(255,255,255,0.1),
@@ -102,10 +128,26 @@ export function Inferay() {
 							</div>
 							<nav className="flex-1 py-2 flex flex-col items-center gap-0.5">
 								<button
-									className="w-6 h-6 flex items-center justify-center rounded-md border border-surgent-border bg-surgent-surface-2 text-surgent-text transition-colors"
+									onClick={() => setView("chat")}
+									className={`w-6 h-6 flex items-center justify-center rounded-md border transition-colors ${
+										view === "chat"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
 									title="Chat"
 								>
 									<Icons.Terminal />
+								</button>
+								<button
+									onClick={() => setView("prompts")}
+									className={`w-6 h-6 flex items-center justify-center rounded-md border transition-colors ${
+										view === "prompts"
+											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									}`}
+									title="Prompts"
+								>
+									<Icons.File />
 								</button>
 								<button
 									className="w-6 h-6 flex items-center justify-center rounded-md border border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
@@ -265,6 +307,8 @@ export function Inferay() {
 									</>
 								) : view === "timeline" ? (
 									<TimelineView />
+								) : view === "prompts" ? (
+									<PromptLibrary />
 								) : null}
 							</div>
 
