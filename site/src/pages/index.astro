@@ -8,131 +8,246 @@ import Inferay from "../components/Inferay";
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/png" href="/app-icon.png" />
 		<meta name="viewport" content="width=device-width" />
-		<meta name="description" content="Run Claude and Codex side by side in a multi-pane terminal. Compare responses. Switch instantly." />
-		<title>inferay - Multi-Model AI Terminal</title>
+		<meta name="description" content="Run Claude, GPT, and Codex side by side in a multi-pane terminal. Compare responses. Switch instantly. One interface for every model." />
+		<title>inferay - The Multi-Model AI Terminal</title>
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 	</head>
-	<body class="bg-[#050505] text-surgent-text min-h-screen antialiased font-sans">
-		<!-- Background with grid and radial gradient -->
+	<body class="bg-[#0a0a0a] text-white min-h-screen antialiased font-sans overflow-x-hidden">
+
+		<!-- Subtle background -->
 		<div class="fixed inset-0 -z-10">
-			<!-- Grid pattern -->
 			<div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
-			<!-- Radial gradient overlay -->
-			<div class="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-30%,rgba(255,255,255,0.08),transparent)]"></div>
-			<!-- Bottom fade -->
-			<div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
+			<div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,255,255,0.03),transparent)]"></div>
 		</div>
 
 		<!-- Header -->
-		<header class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-			<nav class="max-w-5xl mx-auto flex items-center justify-between px-4 py-2 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl">
+		<header class="fixed top-0 left-0 right-0 z-50 px-4 py-4">
+			<nav class="max-w-6xl mx-auto flex items-center justify-between px-5 py-2 rounded-xl border border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl">
 				<div class="flex items-center gap-2.5">
 					<img src="/app-icon.png" alt="inferay" class="w-7 h-7 rounded-lg" />
-					<span class="text-sm font-semibold tracking-tight">inferay</span>
+					<span class="text-[14px] font-semibold">inferay</span>
 				</div>
-				<a href="/inferay-installer.dmg" download class="text-xs font-medium px-4 py-1.5 rounded-full bg-white/[0.08] text-surgent-text-2 hover:bg-white/[0.12] hover:text-surgent-text transition-all duration-150">
+
+				<div class="hidden md:flex items-center gap-8 text-[13px] text-white/50">
+					<a href="#features" class="hover:text-white transition-colors">Features</a>
+					<a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+					<a href="https://github.com/inferay" class="hover:text-white transition-colors">GitHub</a>
+				</div>
+
+				<a href="/inferay-installer.dmg" download class="inline-flex items-center gap-2 bg-white text-black px-4 py-1.5 rounded-lg font-medium text-[13px] hover:bg-white/90 transition-colors">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+					</svg>
 					Download
 				</a>
 			</nav>
 		</header>
 
-		<main class="max-w-7xl mx-auto px-6 pt-28 pb-24">
+		<main class="relative">
 
-			<!-- Hero -->
-			<section class="mb-16 text-center">
-				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] font-medium text-surgent-text-3 mb-6 animate-fade-in">
-					<span class="w-1.5 h-1.5 rounded-full bg-surgent-success animate-pulse"></span>
-					Now available for macOS
+			<!-- Hero Section -->
+			<section class="pt-32 pb-8 px-6">
+				<div class="text-center max-w-3xl mx-auto mb-10">
+					<h1 class="text-[clamp(2.5rem,7vw,4.5rem)] font-bold tracking-tight leading-[1.1] mb-4 text-white">
+						One terminal.<br />Every AI model.
+					</h1>
+					<p class="text-[17px] text-white/40 max-w-xl mx-auto">
+						Run Claude, GPT-4, and Codex side by side. Compare responses in real-time. Switch models mid-conversation.
+					</p>
 				</div>
-				<h1 class="text-5xl md:text-6xl font-semibold tracking-tight leading-[1.1] mb-5 animate-fade-in bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
-					Every model.<br />One interface.
-				</h1>
-				<p class="text-lg text-surgent-text-3 max-w-lg mx-auto mb-8 leading-relaxed animate-slide-up" style="animation-delay: 0.1s;">
-					Run Claude and Codex side by side in a multi-pane terminal. Compare responses. Switch instantly.
-				</p>
-				<div class="flex items-center justify-center gap-4 animate-slide-up" style="animation-delay: 0.2s;">
-					<a href="/inferay-installer.dmg" download class="group inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-full font-medium text-sm hover:bg-white/90 transition-all duration-150 active:scale-[0.97]">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+
+				<!-- Inferay UI -->
+				<div class="w-full max-w-7xl mx-auto">
+					<Inferay client:visible />
+				</div>
+			</section>
+
+			<!-- Features Section -->
+			<section id="features" class="py-24 px-6">
+				<div class="max-w-5xl mx-auto">
+					<div class="text-center mb-16">
+						<h2 class="text-3xl font-bold tracking-tight mb-3 text-white">Built for developers</h2>
+						<p class="text-white/40">Everything you need to work with multiple AI models efficiently.</p>
+					</div>
+
+					<div class="grid md:grid-cols-3 gap-6">
+						<div class="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<div class="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+								<svg class="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
+								</svg>
+							</div>
+							<h3 class="text-[15px] font-semibold mb-2">Multi-pane view</h3>
+							<p class="text-[14px] text-white/40 leading-relaxed">Run multiple AI conversations side by side. Compare outputs instantly.</p>
+						</div>
+
+						<div class="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<div class="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+								<svg class="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+								</svg>
+							</div>
+							<h3 class="text-[15px] font-semibold mb-2">Terminal-native</h3>
+							<p class="text-[14px] text-white/40 leading-relaxed">Keyboard-first interface. Works the way you think.</p>
+						</div>
+
+						<div class="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<div class="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+								<svg class="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+								</svg>
+							</div>
+							<h3 class="text-[15px] font-semibold mb-2">Your API keys</h3>
+							<p class="text-[14px] text-white/40 leading-relaxed">Connect your own keys. No middleman. Full control.</p>
+						</div>
+
+						<div class="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<div class="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+								<svg class="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+								</svg>
+							</div>
+							<h3 class="text-[15px] font-semibold mb-2">Git integration</h3>
+							<p class="text-[14px] text-white/40 leading-relaxed">Track changes, view diffs, commit directly from conversations.</p>
+						</div>
+
+						<div class="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<div class="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+								<svg class="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+								</svg>
+							</div>
+							<h3 class="text-[15px] font-semibold mb-2">Fast switching</h3>
+							<p class="text-[14px] text-white/40 leading-relaxed">Switch between models mid-conversation with a keystroke.</p>
+						</div>
+
+						<div class="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<div class="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+								<svg class="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+								</svg>
+							</div>
+							<h3 class="text-[15px] font-semibold mb-2">Local history</h3>
+							<p class="text-[14px] text-white/40 leading-relaxed">All conversations stored locally. Search and revisit anytime.</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Pricing Section -->
+			<section id="pricing" class="py-24 px-6">
+				<div class="max-w-4xl mx-auto">
+					<div class="text-center mb-16">
+						<h2 class="text-3xl font-bold tracking-tight mb-3 text-white">Simple pricing</h2>
+						<p class="text-white/40">One price. All features. Forever yours.</p>
+					</div>
+
+					<div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+						<!-- Free tier -->
+						<div class="p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+							<h3 class="text-lg font-semibold mb-2">Free</h3>
+							<div class="flex items-baseline gap-1 mb-4">
+								<span class="text-4xl font-bold">$0</span>
+								<span class="text-white/40">/forever</span>
+							</div>
+							<p class="text-sm text-white/40 mb-6">Everything you need to get started</p>
+							<ul class="space-y-3 text-sm text-white/60 mb-8">
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									3 concurrent sessions
+								</li>
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									All AI models supported
+								</li>
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									Git integration
+								</li>
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									Local history
+								</li>
+							</ul>
+							<a href="/inferay-installer.dmg" download class="block w-full py-3 rounded-xl text-center font-medium text-sm bg-white/[0.06] hover:bg-white/[0.1] transition-colors">
+								Download Free
+							</a>
+						</div>
+
+						<!-- Pro tier -->
+						<div class="p-8 rounded-2xl border border-white/[0.1] bg-white/[0.03]">
+							<h3 class="text-lg font-semibold mb-2">Pro</h3>
+							<div class="flex items-baseline gap-1 mb-4">
+								<span class="text-4xl font-bold">$12</span>
+								<span class="text-white/40">/month</span>
+							</div>
+							<p class="text-sm text-white/40 mb-6">For power users and teams</p>
+							<ul class="space-y-3 text-sm text-white/60 mb-8">
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									Unlimited sessions
+								</li>
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									Cloud sync & backup
+								</li>
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									Team workspaces
+								</li>
+								<li class="flex items-center gap-2">
+									<svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+									Priority support
+								</li>
+							</ul>
+							<button class="block w-full py-3 rounded-xl text-center font-medium text-sm bg-white text-black hover:bg-white/90 transition-colors">
+								Start Free Trial
+							</button>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Final CTA -->
+			<section class="py-24 px-6">
+				<div class="max-w-2xl mx-auto text-center">
+					<h2 class="text-3xl font-bold tracking-tight mb-4 text-white">
+						Ready to try it?
+					</h2>
+					<p class="text-white/40 mb-8">
+						Download now. Free forever for personal use.
+					</p>
+					<a href="/inferay-installer.dmg" download class="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-xl font-semibold text-[15px] hover:bg-white/90 transition-colors">
+						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+							<path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
 						</svg>
 						Download for macOS
 					</a>
-					<span class="text-xs text-surgent-text-3">macOS 12+ · Apple Silicon</span>
+					<p class="text-[12px] text-white/30 mt-4">
+						macOS 12+ · Apple Silicon & Intel
+					</p>
 				</div>
-			</section>
-
-			<!-- Interactive App Demo (React Component) -->
-			<Inferay client:load />
-
-			<!-- Features -->
-			<section class="mb-24">
-				<div class="flex flex-wrap justify-center gap-x-12 gap-y-8 max-w-4xl mx-auto">
-					<div class="flex items-start gap-3 animate-slide-up" style="animation-delay: 0.5s;">
-						<div class="w-px h-8 bg-gradient-to-b from-surgent-info to-transparent mt-0.5"></div>
-						<div>
-							<h2 class="text-[13px] font-medium text-white/90 mb-1">Multi-Agent</h2>
-							<p class="text-[12px] text-white/40 leading-relaxed max-w-[180px]">
-								Claude and Codex side by side
-							</p>
-						</div>
-					</div>
-
-					<div class="flex items-start gap-3 animate-slide-up" style="animation-delay: 0.6s;">
-						<div class="w-px h-8 bg-gradient-to-b from-surgent-warning to-transparent mt-0.5"></div>
-						<div>
-							<h2 class="text-[13px] font-medium text-white/90 mb-1">Your Keys</h2>
-							<p class="text-[12px] text-white/40 leading-relaxed max-w-[180px]">
-								Direct API access, no middleman
-							</p>
-						</div>
-					</div>
-
-					<div class="flex items-start gap-3 animate-slide-up" style="animation-delay: 0.7s;">
-						<div class="w-px h-8 bg-gradient-to-b from-surgent-success to-transparent mt-0.5"></div>
-						<div>
-							<h2 class="text-[13px] font-medium text-white/90 mb-1">Terminal Native</h2>
-							<p class="text-[12px] text-white/40 leading-relaxed max-w-[180px]">
-								Real PTY, keyboard-first
-							</p>
-						</div>
-					</div>
-
-					<div class="flex items-start gap-3 animate-slide-up" style="animation-delay: 0.8s;">
-						<div class="w-px h-8 bg-gradient-to-b from-surgent-error to-transparent mt-0.5"></div>
-						<div>
-							<h2 class="text-[13px] font-medium text-white/90 mb-1">Fast</h2>
-							<p class="text-[12px] text-white/40 leading-relaxed max-w-[180px]">
-								Bun runtime, native macOS
-							</p>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<!-- Bottom CTA -->
-			<section class="text-center pt-8 pb-16">
-				<a href="/inferay-installer.dmg" download class="inline-flex items-center gap-2 text-[13px] text-white/50 hover:text-white/80 transition-colors duration-150">
-					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-					</svg>
-					Download
-				</a>
 			</section>
 
 		</main>
 
 		<!-- Footer -->
-		<footer class="py-8 px-6">
-			<div class="max-w-7xl mx-auto flex items-center justify-between text-xs text-surgent-text-3">
-				<span>&copy; 2025 inferay</span>
-				<span class="flex items-center gap-1.5">
-					<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-					</svg>
-					macOS 12+
-				</span>
+		<footer class="border-t border-white/[0.06] py-8 px-6">
+			<div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+				<div class="flex items-center gap-2">
+					<img src="/app-icon.png" alt="inferay" class="w-6 h-6 rounded-lg" />
+					<span class="text-sm font-medium text-white/60">inferay</span>
+				</div>
+
+				<div class="flex items-center gap-6 text-sm text-white/40">
+					<a href="#" class="hover:text-white/60 transition-colors">Privacy</a>
+					<a href="#" class="hover:text-white/60 transition-colors">Terms</a>
+					<a href="https://github.com/inferay" class="hover:text-white/60 transition-colors">GitHub</a>
+				</div>
+
+				<p class="text-xs text-white/30">&copy; 2025 inferay</p>
 			</div>
 		</footer>
 
