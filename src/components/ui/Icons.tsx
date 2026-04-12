@@ -205,6 +205,19 @@ export function IconOpenAI({ size = 16, ...props }: IconProps) {
 	);
 }
 
+export const IconCpu = iconMulti([
+	"M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+	"M9 9h6v6H9z",
+	"M9 1v3",
+	"M15 1v3",
+	"M9 20v3",
+	"M15 20v3",
+	"M20 9h3",
+	"M20 14h3",
+	"M1 9h3",
+	"M1 14h3",
+]);
+
 export const IconPanelLeft = iconMulti([
 	"M3 3h18a0 0 0 0 1 0 0v18a0 0 0 0 1 0 0H3a0 0 0 0 1 0 0V3z",
 	"M9 3v18",

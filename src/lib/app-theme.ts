@@ -97,21 +97,21 @@ const THEME_DATA = [
 	[
 		"default",
 		"Default Dark",
-		"#000000",
-		"#1c1c1e",
-		"#2c2c2e",
-		"#3a3a3c",
-		"rgba(255, 255, 255, 0.08)",
-		"rgba(255, 255, 255, 0.15)",
-		"#007AFF",
-		"#0A84FF",
-		"#30D158",
-		"#FF9F0A",
-		"#FF453A",
-		"#64D2FF",
-		"#F5F5F7",
-		"rgba(255, 255, 255, 0.55)",
-		"rgba(255, 255, 255, 0.3)",
+		"#0d1117",
+		"#161b22",
+		"#21262d",
+		"#30363d",
+		"rgba(240, 246, 252, 0.1)",
+		"rgba(240, 246, 252, 0.18)",
+		"#58a6ff",
+		"#79c0ff",
+		"#3fb950",
+		"#d29922",
+		"#f85149",
+		"#58a6ff",
+		"#e6edf3",
+		"rgba(201, 209, 217, 0.60)",
+		"rgba(201, 209, 217, 0.35)",
 	],
 	[
 		"nord",
@@ -359,7 +359,7 @@ export function applyAppTheme(id: AppThemeId): void {
 			root.style.removeProperty(cssVar);
 		}
 		root.style.colorScheme = "dark";
-		meta?.setAttribute("content", "#09090b");
+		meta?.setAttribute("content", "#0d1117");
 		return;
 	}
 	const theme = getAppThemeById(id);

@@ -2,7 +2,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal } from "@xterm/xterm";
 import type React from "react";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
 import { ClaudeChatView } from "../../components/chat/ClaudeChatView.tsx";
 import { IconTerminal } from "../../components/ui/Icons.tsx";
@@ -12,8 +12,15 @@ import type {
 	TerminalPaneModel,
 	TerminalTheme,
 } from "../../lib/terminal-utils.ts";
+import { getPaneTitle } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { InlineDirectoryPicker } from "./InlineDirectoryPicker.tsx";
+
+function formatTokens(n: number): string {
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+	return String(n);
+}
 
 interface TerminalPaneViewProps {
 	pane: TerminalPaneModel;
@@ -27,6 +34,13 @@ interface TerminalPaneViewProps {
 	onDirectoryCancel?: (paneId: string) => void;
 	chatRef: (paneId: string, handle: ClaudeChatHandle | null) => void;
 	onAgentStatusChange?: (paneId: string, status: string) => void;
+	onRenamePane?: (paneId: string, name: string) => void;
+	usage?: {
+		totalCostUsd: number;
+		totalInputTokens: number;
+		totalOutputTokens: number;
+	};
+	systemPrompt?: string;
 	paneIndex?: number;
 	onHeaderDragStart?: (e: React.DragEvent, index: number) => void;
 	onHeaderDragEnd?: () => void;
@@ -44,6 +58,9 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 	onDirectoryCancel,
 	chatRef,
 	onAgentStatusChange,
+	onRenamePane,
+	usage,
+	systemPrompt,
 	paneIndex,
 	onHeaderDragStart,
 	onHeaderDragEnd,
@@ -55,6 +72,14 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 	const chatHandleRef = useRef<ClaudeChatHandle | null>(null);
 	const isAgentChatPane = isChatAgentKind(pane.agentKind);
 	const paneLabel = getAgentDefinition(pane.agentKind).label;
+	const [isRenaming, setIsRenaming] = useState(false);
+	const [renameValue, setRenameValue] = useState("");
+	const displayTitle = getPaneTitle(pane);
+	const commitRename = () => {
+		const trimmed = renameValue.trim();
+		if (onRenamePane) onRenamePane(pane.id, trimmed);
+		setIsRenaming(false);
+	};
 
 	useEffect(() => {
 		if (isAgentChatPane || pane.pendingCwd || !containerRef.current) return;
@@ -283,23 +308,42 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						<IconTerminal size={10} />
 					)}
 				</span>
-				<span
-					className={`font-medium ${isSelected ? "text-surgent-text-2" : "text-surgent-text-3"} text-[10px]`}
-				>
-					{getAgentDefinition(pane.agentKind).label}
-				</span>
-				{pane.cwd && (
-					<>
-						<span className="text-[10px] text-surgent-text-3">›</span>
-						<span
-							className={`font-medium ${isSelected ? "text-surgent-text" : "text-surgent-text-3"} text-[10px] truncate`}
-							title={pane.cwd}
-						>
-							{pane.cwd.split("/").pop() || pane.cwd}
-						</span>
-					</>
+				{isRenaming ? (
+					<input
+						ref={(el) => el?.focus()}
+						value={renameValue}
+						onChange={(e) => setRenameValue(e.target.value)}
+						onBlur={commitRename}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") commitRename();
+							if (e.key === "Escape") setIsRenaming(false);
+						}}
+						onClick={(e) => e.stopPropagation()}
+						className="w-24 bg-transparent text-[10px] font-medium text-surgent-text outline-none ring-0 border-0 focus:outline-none focus:ring-0"
+					/>
+				) : (
+					<span
+						className={`font-medium ${isSelected ? "text-surgent-text-2" : "text-surgent-text-3"} text-[10px] truncate`}
+						title={`${paneLabel}${pane.cwd ? ` · ${pane.cwd}` : ""} (double-click to rename)`}
+						onDoubleClick={(e) => {
+							if (!onRenamePane) return;
+							e.stopPropagation();
+							setRenameValue(pane.name || "");
+							setIsRenaming(true);
+						}}
+					>
+						{displayTitle}
+					</span>
 				)}
 				<span className="flex-1" />
+				{usage && usage.totalCostUsd > 0 && (
+					<span
+						className="text-[9px] tabular-nums text-surgent-text-3 shrink-0"
+						title={`Input: ${formatTokens(usage.totalInputTokens)} · Output: ${formatTokens(usage.totalOutputTokens)}`}
+					>
+						${usage.totalCostUsd.toFixed(2)}
+					</span>
+				)}
 				{isSelected && (
 					<div className="h-1.5 w-1.5 rounded-full bg-surgent-accent" />
 				)}
@@ -350,6 +394,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						cwd={pane.cwd}
 						theme={theme}
 						agentKind={pane.agentKind}
+						systemPrompt={systemPrompt}
 						onStatusChange={onAgentStatusChange}
 						ref={(handle) => {
 							chatHandleRef.current = handle;

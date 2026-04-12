@@ -129,6 +129,10 @@ export async function resolveInteractiveAgentCommand(
 		return { ok: true, cmd: isWin ? [userShell] : [userShell, "-l"] };
 	}
 
+	if (kind === "local") {
+		return { ok: false, error: "Local model support is coming soon" };
+	}
+
 	if (kind === "claude") {
 		const available = await hasCli("claude");
 		return {

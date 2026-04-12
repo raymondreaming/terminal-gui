@@ -2,6 +2,7 @@ import { checkpointRoutes } from "./checkpoint.ts";
 import { configRoutes } from "./config.ts";
 import { fileRoutes } from "./files.ts";
 import { gitRoutes } from "./git.ts";
+import { notesRoutes } from "./notes.ts";
 import { promptRoutes } from "./prompts.ts";
 import { terminalRoutes } from "./terminal.ts";
 export function buildApiRoutes() {
@@ -12,5 +13,6 @@ export function buildApiRoutes() {
 		...checkpointRoutes(),
 		...promptRoutes(),
 		...gitRoutes(),
+		...notesRoutes(),
 	};
 }

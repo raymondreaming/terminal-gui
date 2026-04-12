@@ -52,7 +52,7 @@ interface Session {
 	groupName: string;
 	paneId: string;
 	paneTitle: string;
-	agentKind: "claude" | "codex";
+	agentKind: "claude" | "codex" | "local";
 	cwd?: string;
 	messageCount: number;
 }
@@ -1438,7 +1438,7 @@ function ZenModeInput({
 	onExitZen,
 }: {
 	chatRef: React.RefObject<ClaudeChatHandle | null>;
-	agentKind: "claude" | "codex";
+	agentKind: "claude" | "codex" | "local";
 	onExitZen: () => void;
 }) {
 	const [input, setInput] = useState("");
