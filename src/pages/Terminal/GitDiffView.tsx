@@ -222,11 +222,11 @@ const DiffRow = memo(function DiffRow({
 				{renderContent()}
 			</span>
 			{/* Copy button on hover */}
-			{isHovered && line.content && onCopy && (
+			{line.content && onCopy && (
 				<button
 					type="button"
 					onClick={handleCopy}
-					className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-50 hover:opacity-100 transition-opacity bg-surgent-surface-2"
+					className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-surgent-surface-2 p-0.5 opacity-0 transition-opacity group-hover:opacity-50 hover:!opacity-100"
 					title="Copy line"
 				>
 					<svg
@@ -669,6 +669,7 @@ export const GitDiffView = memo(function GitDiffView({
 		(changeIdx: number) => {
 			if (changeIdx < 0 || changeIdx >= changePositions.length) return;
 			const lineIdx = changePositions[changeIdx];
+			if (lineIdx === undefined) return;
 			const scrollPos = Math.max(0, (lineIdx - 5) * LINE_H);
 			setExternalScrollTop(scrollPos);
 			setHighlightedChangeIdx(changeIdx);
@@ -700,7 +701,8 @@ export const GitDiffView = memo(function GitDiffView({
 		const currentLine = Math.floor(currentScroll / LINE_H);
 		let prevIdx = -1;
 		for (let i = changePositions.length - 1; i >= 0; i--) {
-			if (changePositions[i] < currentLine - 2) {
+			const changeLine = changePositions[i];
+			if (changeLine !== undefined && changeLine < currentLine - 2) {
 				prevIdx = i;
 				break;
 			}

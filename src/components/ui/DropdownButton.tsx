@@ -21,6 +21,8 @@ interface DropdownButtonProps {
 	minWidth?: number;
 	fullWidth?: boolean;
 	renderOption?: (opt: DropdownOption, isSelected: boolean) => React.ReactNode;
+	buttonClassName?: string;
+	labelClassName?: string;
 }
 
 function DropdownCustomOption({
@@ -68,6 +70,8 @@ export function DropdownButton({
 	minWidth = 220,
 	fullWidth = false,
 	renderOption,
+	buttonClassName = "",
+	labelClassName = "",
 }: DropdownButtonProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -139,11 +143,11 @@ export function DropdownButton({
 					open
 						? "border-surgent-accent/40 bg-surgent-text/[0.08] text-surgent-text"
 						: "border-surgent-border bg-surgent-surface hover:border-surgent-border text-surgent-text-2"
-				}`}
+				} ${buttonClassName}`}
 			>
 				{icon}
 				<span
-					className={`${fullWidth ? "flex-1 truncate text-left" : ""} ${selected ? "text-surgent-text" : "text-surgent-text-3"}`}
+					className={`${fullWidth ? "flex-1 truncate text-left" : ""} ${selected ? "text-surgent-text" : "text-surgent-text-3"} ${labelClassName}`}
 				>
 					{selected?.label || placeholder}
 				</span>

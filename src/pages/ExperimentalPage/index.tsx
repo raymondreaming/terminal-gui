@@ -7,24 +7,29 @@ import {
 	useState,
 } from "react";
 import {
-	type ClaudeChatHandle,
-	type ToolActivity,
-	type QueuedMessageInfo,
 	type AttachedImageInfo,
+	type ClaudeChatHandle,
 	ClaudeChatView,
 	clearChatMessages,
+	type QueuedMessageInfo,
+	type ToolActivity,
 } from "../../components/chat/ClaudeChatView.tsx";
 import { CommitGraph } from "../../components/git/CommitGraph.tsx";
+import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
 import {
 	IconGitBranch,
 	IconLayoutGrid,
 	IconLayoutRows,
 	IconPanelRight,
-	IconZen,
 } from "../../components/ui/Icons.tsx";
-import { useCommitDetails, useGitGraph } from "../../hooks/useGitGraph.ts";
+import {
+	ActivityIndicator,
+	useActivityFeed,
+} from "../../features/activity-feed/index.ts";
+import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { type DiffRequest, useGitDiff } from "../../hooks/useGitDiff.ts";
+import { useCommitDetails, useGitGraph } from "../../hooks/useGitGraph.ts";
 import {
 	type GitFileEntry,
 	type GitProjectStatus,
@@ -32,20 +37,14 @@ import {
 } from "../../hooks/useGitStatus.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
+import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
-	getStatusInfo,
 	getThemeById,
 	loadTerminalState,
 	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
-import {
-	ActivityIndicator,
-	useActivityFeed,
-} from "../../features/activity-feed/index.ts";
-import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
-import { StatusIcon } from "../Terminal/StatusIcon.tsx";
 
 interface Session {
 	groupId: string;
@@ -106,6 +105,10 @@ function basename(p?: string): string {
 	return p.split("/").pop() || p;
 }
 
+function loadZenMode() {
+	return readStoredValue("terminal-editor-zen") === "true";
+}
+
 export function ExperimentalPage() {
 	const [, setTick] = useState(0);
 	const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
@@ -120,7 +123,7 @@ export function ExperimentalPage() {
 	const [commitMessage, setCommitMessage] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
 	const [scrollToChange, setScrollToChange] = useState(0);
-	const [zenMode, setZenMode] = useState(false);
+	const [zenMode, setZenMode] = useState(loadZenMode);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [sidebarWidth, setSidebarWidth] = useState(224); // Default w-56 = 224px
 	const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
@@ -145,7 +148,11 @@ export function ExperimentalPage() {
 	);
 	const { sessions: liveAgentSessions } = useAgentSessions();
 	const trackedDirs = useMemo(
-		() => [...new Set(sessions.map((s) => s.cwd).filter(Boolean))],
+		() => [
+			...new Set(
+				sessions.map((s) => s.cwd).filter((cwd): cwd is string => Boolean(cwd))
+			),
+		],
 		[sessions]
 	);
 	const { projectMap } = useGitStatus(trackedDirs);
@@ -192,7 +199,9 @@ export function ExperimentalPage() {
 			return;
 		}
 		setSelectedPaneId((cur) =>
-			cur && sessions.some((s) => s.paneId === cur) ? cur : sessions[0]?.paneId
+			cur && sessions.some((s) => s.paneId === cur)
+				? cur
+				: (sessions[0]?.paneId ?? null)
 		);
 	}, [sessions]);
 
@@ -261,6 +270,21 @@ export function ExperimentalPage() {
 		}, [refresh]),
 	});
 
+	const updateZenMode = useCallback((next: boolean) => {
+		setZenMode(next);
+		writeStoredValue("terminal-editor-zen", next ? "true" : "false");
+		window.dispatchEvent(new Event("terminal-shell-change"));
+	}, []);
+
+	useEffect(() => {
+		const syncEditorShellState = () => {
+			setZenMode(loadZenMode());
+		};
+		window.addEventListener("terminal-shell-change", syncEditorShellState);
+		return () =>
+			window.removeEventListener("terminal-shell-change", syncEditorShellState);
+	}, []);
+
 	useEffect(() => {
 		if (diff && !diffLoading) checkPendingScroll();
 	}, [diff, diffLoading, checkPendingScroll]);
@@ -316,7 +340,7 @@ export function ExperimentalPage() {
 					: idx <= 0
 						? sessions.length - 1
 						: idx - 1;
-			setSelectedPaneId(sessions[next]?.paneId);
+			setSelectedPaneId(sessions[next]?.paneId ?? null);
 		},
 		[sessionIdx, sessions]
 	);
@@ -468,77 +492,6 @@ export function ExperimentalPage() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-surgent-bg">
-			<div className="electrobun-webkit-app-region-drag relative flex h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
-				<div className="electrobun-webkit-app-region-no-drag relative z-10 min-w-0 shrink-0 overflow-x-auto">
-					<AgentStrip
-						sessions={sessions}
-						statuses={agentStatuses}
-						selectedId={session?.paneId ?? null}
-						onSelect={setSelectedPaneId}
-						onClose={closePane}
-					/>
-				</div>
-				<div className="flex-1 min-w-0" />
-				{/* Main view mode toggle: Diff / Graph */}
-				<div className="electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-					<button
-						type="button"
-						onClick={() => setMainViewMode("diff")}
-						className={`px-2.5 h-full text-[10px] font-medium transition-all ${
-							mainViewMode === "diff"
-								? "bg-surgent-text/10 text-surgent-text"
-								: "text-surgent-text-3 hover:text-surgent-text-2"
-						}`}
-					>
-						Diff
-					</button>
-					<button
-						type="button"
-						onClick={() => setMainViewMode("graph")}
-						className={`px-2.5 h-full text-[10px] font-medium transition-all ${
-							mainViewMode === "graph"
-								? "bg-surgent-text/10 text-surgent-text"
-								: "text-surgent-text-3 hover:text-surgent-text-2"
-						}`}
-					>
-						Graph
-					</button>
-				</div>
-				{/* Diff view mode buttons */}
-				<div className="electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-					<ToolbarButton
-						active={diffViewMode === "split"}
-						title="Split diff"
-						onClick={() => setDiffViewMode("split")}
-						icon={<IconLayoutGrid size={13} />}
-					/>
-					<ToolbarButton
-						active={diffViewMode === "stacked"}
-						title="Vertical diff"
-						onClick={() => setDiffViewMode("stacked")}
-						icon={<IconLayoutRows size={13} />}
-					/>
-					<ToolbarButton
-						active={diffViewMode === "hunks"}
-						title="Hunk view"
-						onClick={() => setDiffViewMode("hunks")}
-						icon={<IconGitBranch size={13} />}
-					/>
-				</div>
-				<button
-					type="button"
-					onClick={() => setZenMode((v) => !v)}
-					title={zenMode ? "Zen mode: ON" : "Zen mode: OFF"}
-					className={`electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center justify-center rounded-lg border border-surgent-border bg-surgent-surface h-7 w-7 transition-all ${
-						zenMode
-							? "bg-surgent-text/10 text-surgent-text"
-							: "text-surgent-text-3 hover:text-surgent-text-2"
-					}`}
-				>
-					<IconZen size={13} />
-				</button>
-			</div>
-
 			{!session ? (
 				<EmptyState />
 			) : zenMode ? (
@@ -616,55 +569,19 @@ export function ExperimentalPage() {
 								onMouseDown={handleSidebarDragStart}
 							/>
 							<div className="flex flex-1 flex-col min-w-0">
-								{/* Sidebar Header */}
-								<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
-									<IconGitBranch
-										size={12}
-										className="shrink-0 text-surgent-text-3"
-									/>
-									<span className="flex-1 truncate text-[11px] font-medium text-surgent-text">
-										{project?.branch ?? "No repo"}
-									</span>
-									<button
-										type="button"
-										onClick={() => setSidebarCollapsed(true)}
-										title="Hide sidebar"
-										className="shrink-0 flex items-center justify-center rounded w-5 h-5 text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-all"
-									>
-										<IconPanelRight size={12} />
-									</button>
-								</div>
+								<EditorSidebarHeader
+									branch={project?.branch}
+									mainViewMode={mainViewMode}
+									diffViewMode={diffViewMode}
+									fileViewMode={fileViewMode}
+									onMainViewModeChange={setMainViewMode}
+									onDiffViewModeChange={setDiffViewMode}
+									onFileViewModeChange={setFileViewMode}
+									onCollapse={() => setSidebarCollapsed(true)}
+								/>
 
 								{/* Files View */}
 								<div className="flex-1 min-h-0 overflow-y-auto">
-									<div className="sticky top-0 z-20 flex items-center justify-end gap-1 px-2 py-1 border-b border-surgent-border/30 bg-surgent-bg">
-										<div className="flex items-center rounded border border-surgent-border bg-surgent-surface overflow-hidden">
-											<button
-												type="button"
-												onClick={() => setFileViewMode("path")}
-												title="Path view"
-												className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-													fileViewMode === "path"
-														? "bg-surgent-text/10 text-surgent-text"
-														: "text-surgent-text-3 hover:text-surgent-text-2"
-												}`}
-											>
-												Path
-											</button>
-											<button
-												type="button"
-												onClick={() => setFileViewMode("tree")}
-												title="Tree view"
-												className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-													fileViewMode === "tree"
-														? "bg-surgent-text/10 text-surgent-text"
-														: "text-surgent-text-3 hover:text-surgent-text-2"
-												}`}
-											>
-												Tree
-											</button>
-										</div>
-									</div>
 									<FileGroup
 										title="Unstaged"
 										files={[...modified, ...untracked]}
@@ -728,7 +645,7 @@ export function ExperimentalPage() {
 					<ZenModeInput
 						chatRef={chatRef}
 						agentKind={session.agentKind}
-						onExitZen={() => setZenMode(false)}
+						onExitZen={() => updateZenMode(false)}
 					/>
 				</div>
 			) : (
@@ -745,12 +662,28 @@ export function ExperimentalPage() {
 							{session.cwd && (
 								<>
 									<span className="text-[10px] text-surgent-text-3">›</span>
-									<span
-										className="text-[10px] font-medium text-surgent-text truncate"
-										title={session.cwd}
-									>
-										{session.cwd.split("/").pop() || session.cwd}
-									</span>
+									{sessions.length > 1 ? (
+										<DropdownButton
+											value={session.paneId}
+											options={sessions.map((item) => ({
+												id: item.paneId,
+												label: basename(item.cwd),
+												detail: getAgentDefinition(item.agentKind).label,
+												icon: getAgentIcon(item.agentKind, 12),
+											}))}
+											onChange={setSelectedPaneId}
+											minWidth={220}
+											buttonClassName="h-6 rounded-md border-transparent bg-surgent-surface-2 px-2 text-[10px] font-medium hover:bg-surgent-surface"
+											labelClassName="max-w-[120px] truncate text-[10px]"
+										/>
+									) : (
+										<span
+											className="text-[10px] font-medium text-surgent-text truncate"
+											title={session.cwd}
+										>
+											{session.cwd.split("/").pop() || session.cwd}
+										</span>
+									)}
 								</>
 							)}
 							<span className="flex-1" />
@@ -862,57 +795,20 @@ export function ExperimentalPage() {
 											onMouseDown={handleSidebarDragStart}
 										/>
 										<div className="flex flex-1 flex-col min-w-0">
-											{/* Sidebar Header */}
-											<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
-												<IconGitBranch
-													size={12}
-													className="shrink-0 text-surgent-text-3"
-												/>
-												<span className="flex-1 truncate text-[11px] font-medium text-surgent-text">
-													{project?.branch ?? "No repo"}
-												</span>
-												<button
-													type="button"
-													onClick={() => setSidebarCollapsed(true)}
-													title="Hide sidebar"
-													className="shrink-0 flex items-center justify-center rounded w-5 h-5 text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-all"
-												>
-													<IconPanelRight size={12} />
-												</button>
-											</div>
+											<EditorSidebarHeader
+												branch={project?.branch}
+												mainViewMode={mainViewMode}
+												diffViewMode={diffViewMode}
+												fileViewMode={fileViewMode}
+												onMainViewModeChange={setMainViewMode}
+												onDiffViewModeChange={setDiffViewMode}
+												onFileViewModeChange={setFileViewMode}
+												onCollapse={() => setSidebarCollapsed(true)}
+											/>
 
 											{/* Files View */}
 											{mainViewMode !== "graph" && (
 												<div className="flex-1 min-h-0 overflow-y-auto">
-													{/* Path/Tree toggle */}
-													<div className="sticky top-0 z-20 flex items-center justify-end gap-1 px-2 py-1 border-b border-surgent-border/30 bg-surgent-bg">
-														<div className="flex items-center rounded border border-surgent-border bg-surgent-surface overflow-hidden">
-															<button
-																type="button"
-																onClick={() => setFileViewMode("path")}
-																title="Path view"
-																className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-																	fileViewMode === "path"
-																		? "bg-surgent-text/10 text-surgent-text"
-																		: "text-surgent-text-3 hover:text-surgent-text-2"
-																}`}
-															>
-																Path
-															</button>
-															<button
-																type="button"
-																onClick={() => setFileViewMode("tree")}
-																title="Tree view"
-																className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-																	fileViewMode === "tree"
-																		? "bg-surgent-text/10 text-surgent-text"
-																		: "text-surgent-text-3 hover:text-surgent-text-2"
-																}`}
-															>
-																Tree
-															</button>
-														</div>
-													</div>
 													<FileGroup
 														title="Unstaged"
 														files={[...modified, ...untracked]}
@@ -1143,79 +1039,6 @@ export function ExperimentalPage() {
 	);
 }
 
-function AgentStrip({
-	sessions,
-	statuses,
-	selectedId,
-	onSelect,
-	onClose,
-}: {
-	sessions: Session[];
-	statuses: Map<string, string>;
-	selectedId: string | null;
-	onSelect: (id: string) => void;
-	onClose: (id: string) => void;
-}) {
-	return (
-		<div className="flex items-center gap-1 overflow-x-auto py-1">
-			{sessions.map((s) => {
-				const selected = s.paneId === selectedId;
-				const info = getStatusInfo(statuses.get(s.paneId) ?? "idle");
-				return (
-					<div
-						key={s.paneId}
-						className={`group flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 cursor-pointer transition-colors ${
-							selected
-								? "bg-surgent-surface-2 text-surgent-text"
-								: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
-						}`}
-						title={`${basename(s.cwd)} - ${getAgentDefinition(s.agentKind).label}`}
-						onClick={() => onSelect(s.paneId)}
-					>
-						<StatusIcon
-							iconType={info.iconType}
-							size={12}
-							className={info.iconColor}
-						/>
-						<span className="max-w-[110px] truncate text-[10px] font-medium">
-							{basename(s.cwd)}
-						</span>
-						{s.messageCount > 0 && (
-							<span
-								className={`rounded-md px-1.5 py-0.5 text-[9px] tabular-nums ${selected ? "bg-surgent-text/10 text-surgent-text" : "bg-surgent-text/5 text-surgent-text-3"}`}
-							>
-								{s.messageCount}
-							</span>
-						)}
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								onClose(s.paneId);
-							}}
-							className="ml-0.5 w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-surgent-text/10 transition-opacity"
-							title="Close"
-						>
-							<svg
-								aria-hidden
-								width="8"
-								height="8"
-								viewBox="0 0 8 8"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-							>
-								<path d="M1 1l6 6M7 1L1 7" />
-							</svg>
-						</button>
-					</div>
-				);
-			})}
-		</div>
-	);
-}
-
 function EmptyState() {
 	return (
 		<div className="flex flex-1 items-center justify-center px-6">
@@ -1239,6 +1062,122 @@ function Placeholder({ label }: { label: string }) {
 				{label}
 			</p>
 		</div>
+	);
+}
+
+function EditorSidebarHeader({
+	branch,
+	mainViewMode,
+	diffViewMode,
+	fileViewMode,
+	onMainViewModeChange,
+	onDiffViewModeChange,
+	onFileViewModeChange,
+	onCollapse,
+}: {
+	branch?: string;
+	mainViewMode: "diff" | "graph";
+	diffViewMode: DiffViewMode;
+	fileViewMode: "path" | "tree";
+	onMainViewModeChange: (mode: "diff" | "graph") => void;
+	onDiffViewModeChange: (mode: DiffViewMode) => void;
+	onFileViewModeChange: (mode: "path" | "tree") => void;
+	onCollapse: () => void;
+}) {
+	return (
+		<>
+			<div className="sticky top-0 z-20 flex items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
+				<div className="flex items-center gap-1 rounded-md border border-surgent-border bg-surgent-surface px-1.5 py-1 text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<IconGitBranch size={10} className="text-surgent-text-3" />
+					<span>Git</span>
+				</div>
+				<span className="flex-1 truncate text-[11px] font-medium text-surgent-text">
+					{branch ?? "No repo"}
+				</span>
+				<button
+					type="button"
+					onClick={onCollapse}
+					title="Hide sidebar"
+					className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-surgent-text-3 transition-all hover:bg-surgent-text/10 hover:text-surgent-text-2"
+				>
+					<IconPanelRight size={12} />
+				</button>
+			</div>
+			<div className="sticky top-[38px] z-20 flex flex-wrap items-center gap-2 border-b border-surgent-border/50 bg-surgent-bg px-2.5 py-1.5">
+				<div className="flex h-7 items-center overflow-hidden rounded-lg border border-surgent-border bg-surgent-surface">
+					<button
+						type="button"
+						onClick={() => onMainViewModeChange("diff")}
+						className={`px-2.5 text-[10px] font-medium transition-colors ${
+							mainViewMode === "diff"
+								? "bg-surgent-text/10 text-surgent-text"
+								: "text-surgent-text-3 hover:text-surgent-text-2"
+						}`}
+					>
+						Diff
+					</button>
+					<button
+						type="button"
+						onClick={() => onMainViewModeChange("graph")}
+						className={`px-2.5 text-[10px] font-medium transition-colors ${
+							mainViewMode === "graph"
+								? "bg-surgent-text/10 text-surgent-text"
+								: "text-surgent-text-3 hover:text-surgent-text-2"
+						}`}
+					>
+						Graph
+					</button>
+				</div>
+				<div className="flex h-7 items-center overflow-hidden rounded-lg border border-surgent-border bg-surgent-surface">
+					<ToolbarButton
+						active={diffViewMode === "split"}
+						title="Split diff"
+						onClick={() => onDiffViewModeChange("split")}
+						icon={<IconLayoutGrid size={13} />}
+					/>
+					<ToolbarButton
+						active={diffViewMode === "stacked"}
+						title="Vertical diff"
+						onClick={() => onDiffViewModeChange("stacked")}
+						icon={<IconLayoutRows size={13} />}
+					/>
+					<ToolbarButton
+						active={diffViewMode === "hunks"}
+						title="Hunk view"
+						onClick={() => onDiffViewModeChange("hunks")}
+						icon={<IconGitBranch size={13} />}
+					/>
+				</div>
+				{mainViewMode === "diff" ? (
+					<div className="ml-auto flex h-7 items-center overflow-hidden rounded-lg border border-surgent-border bg-surgent-surface">
+						<button
+							type="button"
+							onClick={() => onFileViewModeChange("path")}
+							title="Path view"
+							className={`px-2 text-[9px] font-medium transition-colors ${
+								fileViewMode === "path"
+									? "bg-surgent-text/10 text-surgent-text"
+									: "text-surgent-text-3 hover:text-surgent-text-2"
+							}`}
+						>
+							Path
+						</button>
+						<button
+							type="button"
+							onClick={() => onFileViewModeChange("tree")}
+							title="Tree view"
+							className={`px-2 text-[9px] font-medium transition-colors ${
+								fileViewMode === "tree"
+									? "bg-surgent-text/10 text-surgent-text"
+									: "text-surgent-text-3 hover:text-surgent-text-2"
+							}`}
+						>
+							Tree
+						</button>
+					</div>
+				) : null}
+			</div>
+		</>
 	);
 }
 

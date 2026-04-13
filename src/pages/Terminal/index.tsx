@@ -8,31 +8,29 @@ import {
 } from "react";
 import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
 import { clearChatMessages } from "../../components/chat/ClaudeChatView.tsx";
+import { CommitGraph } from "../../components/git/CommitGraph.tsx";
 import { Button } from "../../components/ui/Button.tsx";
-import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
 import { EmptyState } from "../../components/ui/EmptyState.tsx";
-import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconArrowLeft,
-	IconChevronDown,
 	IconCircle,
 	IconExternalLink,
 	IconFolder,
-	IconFolderOpen,
+	IconGitBranch,
 	IconGlobe,
-	IconLayoutGrid,
-	IconLayoutRows,
-	IconPalette,
-	IconPlus,
+	IconMessageCircle,
 	IconX,
 } from "../../components/ui/Icons.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
+import { useCommitDetails, useGitGraph } from "../../hooks/useGitGraph.ts";
+import { useGitStatus } from "../../hooks/useGitStatus.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
+import { isChatAgentKind } from "../../lib/agents.ts";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { wsClient } from "../../lib/websocket.ts";
+import { ExperimentalPage } from "../ExperimentalPage/index.tsx";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
@@ -42,8 +40,6 @@ import { TerminalGrid } from "./TerminalGrid.tsx";
 import { TerminalSettingsPanel } from "./TerminalSettingsPanel.tsx";
 
 import "@xterm/xterm/css/xterm.css";
-
-import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
 
 import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
@@ -66,6 +62,8 @@ import {
 	type TerminalGroupModel,
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
+
+type MainViewMode = "editor" | "chat" | "graph";
 
 interface TerminalPageProps {
 	isPopout?: boolean;
@@ -98,6 +96,19 @@ function TerminalEmptyStateBrand() {
 	return (
 		<div className="rounded-2xl border border-surgent-border bg-surgent-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
 			<img src={logoUrl} alt="inferay logo" className="h-14 w-14 rounded-xl" />
+		</div>
+	);
+}
+
+function GraphEmptyState({ message }: { message: string }) {
+	return (
+		<div className="flex h-full items-center justify-center p-6">
+			<div className="max-w-sm text-center">
+				<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-surgent-border bg-surgent-surface text-surgent-text-3">
+					<IconGitBranch size={18} />
+				</div>
+				<p className="text-sm text-surgent-text">{message}</p>
+			</div>
 		</div>
 	);
 }
@@ -226,9 +237,16 @@ export function TerminalPage({
 	const [layoutMode, setLayoutMode] = useState<"grid" | "rows">(() =>
 		readStoredValue("terminal-layout-mode") === "grid" ? "grid" : "rows"
 	);
+	const [mainView, setMainView] = useState<MainViewMode>(() => {
+		const stored = readStoredValue("terminal-main-view");
+		return stored === "chat" || stored === "graph" ? stored : "editor";
+	});
 	useEffect(() => {
 		writeStoredValue("terminal-layout-mode", layoutMode);
 	}, [layoutMode]);
+	useEffect(() => {
+		writeStoredValue("terminal-main-view", mainView);
+	}, [mainView]);
 	const initialState = useMemo(() => loadTerminalState(), []);
 	const initGroups = useMemo(() => getInitialGroups(), []);
 	const [groups, groupsDispatch] = useReducer(groupsReducer, initGroups);
@@ -256,10 +274,8 @@ export function TerminalPage({
 			setSidebarSections((prev) => ({ ...prev, [key]: !prev[key] })),
 		[]
 	);
-	const [showNewMenu, setShowNewMenu] = useState(false);
 	const popoutWindowRef = useRef<Window | null>(null);
 	const broadcastChannel = useRef<BroadcastChannel | null>(null);
-	const newMenuRef = useRef<HTMLDivElement>(null);
 	const chatRefs = useRef<Map<string, ClaudeChatHandle>>(new Map());
 	const [agentStatuses, setAgentStatuses] = useState<Map<string, string>>(
 		new Map()
@@ -276,6 +292,71 @@ export function TerminalPage({
 		() => groups.find((g) => g.id === selectedGroupId),
 		[groups, selectedGroupId]
 	);
+	const chatPanes = useMemo(
+		() =>
+			currentGroup?.panes.filter((pane) => isChatAgentKind(pane.agentKind)) ??
+			[],
+		[currentGroup]
+	);
+	const selectedChatPane = useMemo(() => {
+		if (!currentGroup) return null;
+		const selectedPane = currentGroup.panes.find(
+			(pane) => pane.id === currentGroup.selectedPaneId
+		);
+		if (selectedPane && isChatAgentKind(selectedPane.agentKind)) {
+			return selectedPane;
+		}
+		return chatPanes[0] ?? null;
+	}, [chatPanes, currentGroup]);
+	const graphCwds = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					(currentGroup?.panes ?? [])
+						.map((pane) => pane.cwd)
+						.filter((cwd): cwd is string => Boolean(cwd))
+				)
+			),
+		[currentGroup]
+	);
+	const [activeGraphCwd, setActiveGraphCwd] = useState<string | null>(null);
+	useEffect(() => {
+		const selectedPaneCwd =
+			currentGroup?.panes.find(
+				(pane) => pane.id === currentGroup.selectedPaneId
+			)?.cwd ?? null;
+		if (selectedPaneCwd && graphCwds.includes(selectedPaneCwd)) {
+			setActiveGraphCwd(selectedPaneCwd);
+			return;
+		}
+		setActiveGraphCwd((current) =>
+			current && graphCwds.includes(current) ? current : (graphCwds[0] ?? null)
+		);
+	}, [currentGroup, graphCwds]);
+	const { projectMap } = useGitStatus(graphCwds);
+	const activeGraphProject = activeGraphCwd
+		? (projectMap.get(activeGraphCwd) ?? null)
+		: null;
+	const { commits: graphCommits, loading: graphLoading } = useGitGraph(
+		activeGraphCwd ?? undefined,
+		100
+	);
+	const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
+		null
+	);
+	useEffect(() => {
+		setSelectedCommitHash((current) => {
+			if (current && graphCommits.some((commit) => commit.hash === current)) {
+				return current;
+			}
+			return graphCommits[0]?.hash ?? null;
+		});
+	}, [graphCommits]);
+	const { details: selectedCommitDetails, loading: commitDetailsLoading } =
+		useCommitDetails(
+			activeGraphCwd ?? undefined,
+			selectedCommitHash ?? undefined
+		);
 	const restoreSavedState = useCallback(
 		(s: ReturnType<typeof loadTerminalState>) => {
 			setIsPoppedOut(false);
@@ -390,7 +471,10 @@ export function TerminalPage({
 		};
 	}, [groups, selectedGroupId, themeId, fontSize, fontFamily, opacity]);
 	useEffect(() => {
-		const id = setTimeout(() => saveTerminalState(latestStateRef.current), 100);
+		const id = setTimeout(() => {
+			saveTerminalState(latestStateRef.current);
+			window.dispatchEvent(new Event("terminal-shell-change"));
+		}, 100);
 		return () => clearTimeout(id);
 	});
 	useEffect(
@@ -400,18 +484,69 @@ export function TerminalPage({
 		[]
 	);
 	useEffect(() => {
-		if (!showNewMenu) return;
-		const handleClick = (e: MouseEvent) => {
-			if (
-				newMenuRef.current &&
-				!newMenuRef.current.contains(e.target as Node)
-			) {
-				setShowNewMenu(false);
+		const handleShellChange = () => {
+			const savedState = loadTerminalState();
+			if (savedState) {
+				const savedShellKey = JSON.stringify({
+					selectedGroupId: savedState.selectedGroupId,
+					groups: savedState.groups.map((group) => ({
+						id: group.id,
+						name: group.name,
+						selectedPaneId: group.selectedPaneId,
+						columns: group.columns,
+						rows: group.rows,
+						panes: group.panes.map((pane) => ({
+							id: pane.id,
+							agentKind: pane.agentKind,
+							cwd: pane.cwd ?? null,
+							pendingCwd: pane.pendingCwd ?? false,
+							title: pane.title,
+						})),
+					})),
+				});
+				const currentShellKey = JSON.stringify({
+					selectedGroupId,
+					groups: groups.map((group) => ({
+						id: group.id,
+						name: group.name,
+						selectedPaneId: group.selectedPaneId,
+						columns: group.columns,
+						rows: group.rows,
+						panes: group.panes.map((pane) => ({
+							id: pane.id,
+							agentKind: pane.agentKind,
+							cwd: pane.cwd ?? null,
+							pendingCwd: pane.pendingCwd ?? false,
+							title: pane.title,
+						})),
+					})),
+				});
+				if (savedShellKey !== currentShellKey) {
+					restoreSavedState(savedState);
+				}
 			}
+			const storedView = readStoredValue("terminal-main-view");
+			const nextMainView =
+				storedView === "chat" || storedView === "graph" ? storedView : "editor";
+			if (nextMainView !== mainView) {
+				setMainView(nextMainView);
+			}
+			const nextLayoutMode =
+				readStoredValue("terminal-layout-mode") === "grid" ? "grid" : "rows";
+			setLayoutMode(nextLayoutMode);
 		};
-		document.addEventListener("mousedown", handleClick);
-		return () => document.removeEventListener("mousedown", handleClick);
-	}, [showNewMenu]);
+		window.addEventListener("terminal-shell-change", handleShellChange);
+		return () =>
+			window.removeEventListener("terminal-shell-change", handleShellChange);
+	}, [groups, mainView, restoreSavedState, selectedGroupId]);
+	useEffect(() => {
+		const handleThemeOpen = () => {
+			setShowSettings(true);
+		};
+		window.addEventListener("terminal-open-theme-panel", handleThemeOpen);
+		return () =>
+			window.removeEventListener("terminal-open-theme-panel", handleThemeOpen);
+	}, []);
 	const handleAgentStatusChange = useCallback(
 		(paneId: string, status: string) => {
 			setAgentStatuses((prev) => {
@@ -485,13 +620,6 @@ export function TerminalPage({
 			),
 		[withSelectedGroup]
 	);
-	const setGroupRows = useCallback(
-		(rows: number) =>
-			withSelectedGroup((groupId) =>
-				groupsDispatch({ type: "setRows", groupId, rows })
-			),
-		[withSelectedGroup]
-	);
 	const removeGroup = useCallback(
 		(groupId: string) => {
 			if (groups.length <= 1) return;
@@ -516,15 +644,16 @@ export function TerminalPage({
 		},
 		[]
 	);
-	const groupTabItems = useMemo(
+	const editorViewKey = useMemo(
 		() =>
-			groups.map((g) => ({
-				id: g.id,
-				name: g.name,
-				count: g.panes.length,
-				icon: <IconFolder size={12} />,
-				activeIcon: <IconFolderOpen size={12} />,
-			})),
+			groups
+				.map(
+					(group) =>
+						`${group.id}:${group.selectedPaneId ?? "none"}:${group.panes
+							.map((pane) => `${pane.id}:${pane.cwd ?? ""}`)
+							.join(",")}`
+				)
+				.join("|"),
 		[groups]
 	);
 	if (isPopout || (isStandalone && compactMode)) {
@@ -620,143 +749,28 @@ export function TerminalPage({
 			className={`flex flex-col bg-surgent-bg ${isStandalone ? "h-screen" : "h-full"}`}
 		>
 			<div className="relative flex flex-1 flex-col overflow-hidden">
-				<div
-					className={`electrobun-webkit-app-region-drag relative flex items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2 sm:gap-3 sm:px-3 ${isStandalone ? "py-1.5" : "h-12"}`}
-				>
-					<div className="electrobun-webkit-app-region-no-drag relative z-10 overflow-x-auto shrink-0">
-						<GroupTabs
-							items={groupTabItems}
-							activeId={selectedGroupId}
-							onSelect={setSelectedGroupId}
-							onRename={renameGroup}
-							onDelete={removeGroup}
-							onAdd={addGroup}
-							addLabel="Group"
-						/>
-					</div>
-					<div className="flex-1 min-w-0" />
-					<div className="electrobun-webkit-app-region-no-drag relative z-10 flex items-center gap-2 sm:gap-3 shrink-0">
-						<Button
-							size="sm"
-							variant={showSettings ? "secondary" : "ghost"}
-							onClick={() => setShowSettings((v) => !v)}
-							className="hidden sm:flex shrink-0"
-						>
-							Theme
-						</Button>
-						<IconButton
-							size="sm"
-							variant={showSettings ? "secondary" : "ghost"}
-							onClick={() => setShowSettings((v) => !v)}
-							title="Theme settings"
-							className="flex sm:hidden shrink-0"
-						>
-							<IconPalette size={12} />
-						</IconButton>
-						<div className="flex items-center shrink-0 rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-							<button
-								type="button"
-								onClick={() => setLayoutMode("grid")}
-								className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-surgent-text/10 text-surgent-text" : "text-surgent-text-3 hover:text-surgent-text-2"}`}
-								title="Grid layout"
-							>
-								<IconLayoutGrid size={13} />
-							</button>
-							<button
-								type="button"
-								onClick={() => setLayoutMode("rows")}
-								className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-surgent-text/10 text-surgent-text" : "text-surgent-text-3 hover:text-surgent-text-2"}`}
-								title="Row layout"
-							>
-								<IconLayoutRows size={13} />
-							</button>
-						</div>
-						{layoutMode === "grid" && (
-							<>
-								<div className="flex items-center gap-1.5 shrink-0">
-									<span className="text-[9px] text-surgent-text-3 sm:text-[10px]">
-										Col
-									</span>
-									<DropdownButton
-										key={`cols-${selectedGroupId}`}
-										value={String(currentGroup?.columns ?? DEFAULT_COLUMNS)}
-										options={[1, 2, 3, 4].map((n) => ({
-											id: String(n),
-											label: String(n),
-										}))}
-										onChange={(id) => setGroupColumns(Number(id))}
-										minWidth={60}
-									/>
-								</div>
-								<div className="flex items-center gap-1.5 shrink-0">
-									<span className="text-[9px] text-surgent-text-3 sm:text-[10px]">
-										Row
-									</span>
-									<DropdownButton
-										key={`rows-${selectedGroupId}`}
-										value={String(currentGroup?.rows ?? DEFAULT_ROWS)}
-										options={[1, 2, 3, 4].map((n) => ({
-											id: String(n),
-											label: String(n),
-										}))}
-										onChange={(id) => setGroupRows(Number(id))}
-										minWidth={60}
-									/>
-								</div>
-							</>
-						)}
-						<div className="relative shrink-0" ref={newMenuRef}>
-							<Button
-								size="sm"
-								variant="secondary"
-								onClick={() => setShowNewMenu((v) => !v)}
-								className="shrink-0"
-							>
-								<span>New</span>
-								<IconPlus size={10} />
-								<IconChevronDown
-									size={10}
-									className={`transition-transform ${showNewMenu ? "rotate-180" : ""}`}
-								/>
-							</Button>
-							{showNewMenu && (
-								<div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-surgent-border bg-surgent-surface shadow-lg overflow-hidden">
-									{NEW_PANE_AGENT_KINDS.map((kind) => (
-										<button
-											type="button"
-											key={kind}
-											onClick={() => {
-												handleAddPane(kind);
-												setShowNewMenu(false);
-											}}
-											className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
-										>
-											{getAgentIcon(kind, 12, "text-surgent-text-3")}
-											<span>{getAgentDefinition(kind).label}</span>
-										</button>
-									))}
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
 				<div className="flex flex-1 flex-col overflow-hidden">
-					{!sidebarOpen && currentGroup && currentGroup.panes.length > 0 && (
-						<CollapsedAgentBar
-							panes={currentGroup.panes}
-							selectedPaneId={currentGroup.selectedPaneId}
-							agentStatuses={agentStatuses}
-							onSelectPane={selectPane}
-							onExpand={() => setSidebarOpen((v) => !v)}
-						/>
-					)}
+					{false &&
+						mainView === "editor" &&
+						!sidebarOpen &&
+						currentGroup &&
+						currentGroup.panes.length > 0 && (
+							<CollapsedAgentBar
+								panes={currentGroup.panes}
+								selectedPaneId={currentGroup.selectedPaneId}
+								agentStatuses={agentStatuses}
+								onSelectPane={selectPane}
+								onExpand={() => setSidebarOpen((v) => !v)}
+							/>
+						)}
 					<div className="flex flex-1 overflow-hidden">
 						<div
-							className={`relative flex-1 flex flex-col ${layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
+							className={`relative flex-1 flex flex-col ${mainView === "editor" && layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
 								<EmptyState
 									icon={<TerminalEmptyStateBrand />}
+									title="No Sessions"
 									description="Start a new terminal or agent session"
 									action={
 										<NewSessionButtons
@@ -766,6 +780,198 @@ export function TerminalPage({
 										/>
 									}
 								/>
+							) : mainView === "editor" ? (
+								<ExperimentalPage key={editorViewKey} />
+							) : mainView === "chat" ? (
+								chatPanes.length === 0 ? (
+									<EmptyState
+										icon={
+											<IconMessageCircle
+												size={18}
+												className="text-surgent-text-3"
+											/>
+										}
+										title="No Chat Panes"
+										description="Add a Claude or Codex pane to use the shared chat view"
+										action={
+											<div className="flex items-center gap-2">
+												<Button
+													size="sm"
+													variant="secondary"
+													onClick={() => handleAddPane("claude")}
+												>
+													New Claude
+												</Button>
+												<Button
+													size="sm"
+													variant="secondary"
+													onClick={() => handleAddPane("codex")}
+												>
+													New Codex
+												</Button>
+											</div>
+										}
+									/>
+								) : (
+									<TerminalGrid
+										panes={chatPanes}
+										selectedPaneId={selectedChatPane?.id ?? null}
+										columns={currentGroup.columns}
+										rows={currentGroup.rows ?? DEFAULT_ROWS}
+										layoutMode={layoutMode}
+										theme={theme}
+										fontSize={fontSize}
+										fontFamily={fontFamily}
+										onSelectPane={selectPane}
+										onClosePane={removePane}
+										onDirectorySelect={handleDirectorySelected}
+										onDirectoryCancel={removePane}
+										onChatRef={handleChatRef}
+										onAgentStatusChange={handleAgentStatusChange}
+										onReorderPanes={reorderPanes}
+									/>
+								)
+							) : mainView === "graph" ? (
+								graphCwds.length === 0 ? (
+									<GraphEmptyState message="Open a project directory in one of this group's panes to populate the commit graph." />
+								) : (
+									<div className="flex h-full overflow-hidden">
+										<div className="min-w-0 flex-1 border-r border-surgent-border">
+											<div className="flex items-center gap-2 border-b border-surgent-border px-3 py-2">
+												<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+													{graphCwds.map((cwd) => {
+														const project = projectMap.get(cwd);
+														const active = cwd === activeGraphCwd;
+														return (
+															<button
+																type="button"
+																key={cwd}
+																onClick={() => setActiveGraphCwd(cwd)}
+																className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] transition-colors ${
+																	active
+																		? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
+																		: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+																}`}
+															>
+																<IconFolder size={11} />
+																<span>{project?.name ?? _cwdLabel(cwd)}</span>
+															</button>
+														);
+													})}
+												</div>
+												{activeGraphProject && (
+													<div className="flex items-center gap-1 rounded-md border border-surgent-border bg-surgent-surface px-2 py-1 text-[10px] text-surgent-text-2">
+														<IconGitBranch size={10} />
+														<span className="font-mono">
+															{activeGraphProject.branch}
+														</span>
+													</div>
+												)}
+											</div>
+											<div className="h-full overflow-y-auto">
+												{graphLoading && graphCommits.length === 0 ? (
+													<GraphEmptyState message="Loading commit graph..." />
+												) : graphCommits.length === 0 ? (
+													<GraphEmptyState message="No commits available for this repository yet." />
+												) : (
+													<CommitGraph
+														commits={graphCommits}
+														selectedHash={selectedCommitHash ?? undefined}
+														onSelect={setSelectedCommitHash}
+														wipFiles={activeGraphProject?.files ?? []}
+														branch={activeGraphProject?.branch}
+													/>
+												)}
+											</div>
+										</div>
+										<div className="w-80 shrink-0 bg-surgent-surface/20">
+											<div className="border-b border-surgent-border px-4 py-3">
+												<p className="text-[11px] font-medium text-surgent-text">
+													Commit Details
+												</p>
+												<p className="text-[10px] text-surgent-text-3">
+													{activeGraphProject?.name ?? "Repository"}
+												</p>
+											</div>
+											<div className="overflow-y-auto p-4">
+												{commitDetailsLoading ? (
+													<p className="text-[11px] text-surgent-text-3">
+														Loading commit details...
+													</p>
+												) : selectedCommitDetails ? (
+													<div className="space-y-4">
+														<div>
+															<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
+																Commit
+															</p>
+															<p className="font-mono text-[11px] text-surgent-accent">
+																{selectedCommitDetails.hash}
+															</p>
+														</div>
+														<div>
+															<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
+																Message
+															</p>
+															<p className="text-[12px] text-surgent-text">
+																{selectedCommitDetails.message}
+															</p>
+														</div>
+														<div className="grid grid-cols-2 gap-3 text-[11px]">
+															<div>
+																<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
+																	Author
+																</p>
+																<p className="text-surgent-text-2">
+																	{selectedCommitDetails.author}
+																</p>
+															</div>
+															<div>
+																<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
+																	Date
+																</p>
+																<p className="text-surgent-text-2">
+																	{selectedCommitDetails.date}
+																</p>
+															</div>
+														</div>
+														<div>
+															<p className="mb-2 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
+																Changed Files
+															</p>
+															<div className="space-y-1.5">
+																{selectedCommitDetails.files.map((file) => (
+																	<div
+																		key={`${selectedCommitDetails.hash}-${file.path}`}
+																		className="rounded-lg border border-surgent-border bg-surgent-surface px-3 py-2"
+																	>
+																		<div className="flex items-center justify-between gap-2">
+																			<p
+																				className="truncate text-[11px] text-surgent-text"
+																				title={file.path}
+																			>
+																				{file.path}
+																			</p>
+																			<span className="shrink-0 text-[10px] text-surgent-text-3">
+																				{file.status}
+																			</span>
+																		</div>
+																		<p className="mt-1 text-[10px] text-surgent-text-3">
+																			+{file.additions} / -{file.deletions}
+																		</p>
+																	</div>
+																))}
+															</div>
+														</div>
+													</div>
+												) : (
+													<p className="text-[11px] text-surgent-text-3">
+														Select a commit to inspect its files.
+													</p>
+												)}
+											</div>
+										</div>
+									</div>
+								)
 							) : (
 								<TerminalGrid
 									panes={currentGroup.panes}
@@ -807,80 +1013,84 @@ export function TerminalPage({
 								/>
 							)}
 						</div>
-						{sidebarOpen && currentGroup && currentGroup.panes.length > 0 && (
-							<div className="flex flex-col shrink-0 border-l border-surgent-border bg-surgent-bg order-last">
-								<AgentSidebar
-									panes={currentGroup.panes}
-									selectedPaneId={currentGroup.selectedPaneId}
-									agentStatuses={agentStatuses}
-									onSelectPane={selectPane}
-									onRemovePane={removePane}
-									onCollapse={() => setSidebarOpen((v) => !v)}
-								/>
-								<CollapsibleSidebarSection
-									icon={<IconGlobe size={12} />}
-									label="Ports"
-									count={runningPorts.length}
-									countColor="text-surgent-accent"
-									expanded={sidebarSections.ports}
-									onToggle={() => toggleSection("ports")}
-									emptyMessage="No ports running"
-								>
-									{runningPorts.map((p) => (
-										<div
-											key={`${p.port}-${p.pid}`}
-											className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surgent-surface"
-										>
-											<div className="shrink-0">
-												<IconCircle
-													size={8}
-													className="fill-surgent-accent text-surgent-accent"
-												/>
+						{false &&
+							mainView === "editor" &&
+							sidebarOpen &&
+							currentGroup &&
+							currentGroup.panes.length > 0 && (
+								<div className="flex flex-col shrink-0 border-l border-surgent-border bg-surgent-bg order-last">
+									<AgentSidebar
+										panes={currentGroup.panes}
+										selectedPaneId={currentGroup.selectedPaneId}
+										agentStatuses={agentStatuses}
+										onSelectPane={selectPane}
+										onRemovePane={removePane}
+										onCollapse={() => setSidebarOpen((v) => !v)}
+									/>
+									<CollapsibleSidebarSection
+										icon={<IconGlobe size={12} />}
+										label="Ports"
+										count={runningPorts.length}
+										countColor="text-surgent-accent"
+										expanded={sidebarSections.ports}
+										onToggle={() => toggleSection("ports")}
+										emptyMessage="No ports running"
+									>
+										{runningPorts.map((p) => (
+											<div
+												key={`${p.port}-${p.pid}`}
+												className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surgent-surface"
+											>
+												<div className="shrink-0">
+													<IconCircle
+														size={8}
+														className="fill-surgent-accent text-surgent-accent"
+													/>
+												</div>
+												<div className="min-w-0 flex-1">
+													<p
+														className="truncate text-[11px] font-medium text-surgent-text"
+														title={p.command}
+													>
+														:{p.port}
+													</p>
+													<p
+														className="truncate text-[9px] text-surgent-text-3"
+														title={p.command}
+													>
+														{p.name}
+													</p>
+												</div>
+												<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+													<IconButton
+														variant="ghost"
+														size="xs"
+														onClick={() => openInBrowser(p.port)}
+														title="Open in browser"
+													>
+														<IconExternalLink size={10} />
+													</IconButton>
+													<IconButton
+														variant="danger"
+														size="xs"
+														onClick={() => killPort(p.pid)}
+														title="Kill process"
+													>
+														<IconX size={10} />
+													</IconButton>
+												</div>
 											</div>
-											<div className="min-w-0 flex-1">
-												<p
-													className="truncate text-[11px] font-medium text-surgent-text"
-													title={p.command}
-												>
-													:{p.port}
-												</p>
-												<p
-													className="truncate text-[9px] text-surgent-text-3"
-													title={p.command}
-												>
-													{p.name}
-												</p>
-											</div>
-											<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-												<IconButton
-													variant="ghost"
-													size="xs"
-													onClick={() => openInBrowser(p.port)}
-													title="Open in browser"
-												>
-													<IconExternalLink size={10} />
-												</IconButton>
-												<IconButton
-													variant="danger"
-													size="xs"
-													onClick={() => killPort(p.port, p.pid)}
-													title="Kill process"
-												>
-													<IconX size={10} />
-												</IconButton>
-											</div>
-										</div>
-									))}
-								</CollapsibleSidebarSection>
-								<ClaudeProcessesSidebar
-									processes={claudeProcesses}
-									onKillProcess={killClaudeProcess}
-									onKillAll={killAllClaudeProcesses}
-									expanded={sidebarSections.claudeProcesses}
-									onToggle={() => toggleSection("claudeProcesses")}
-								/>
-							</div>
-						)}
+										))}
+									</CollapsibleSidebarSection>
+									<ClaudeProcessesSidebar
+										processes={claudeProcesses}
+										onKillProcess={killClaudeProcess}
+										onKillAll={killAllClaudeProcesses}
+										expanded={sidebarSections.claudeProcesses}
+										onToggle={() => toggleSection("claudeProcesses")}
+									/>
+								</div>
+							)}
 					</div>
 				</div>
 			</div>
