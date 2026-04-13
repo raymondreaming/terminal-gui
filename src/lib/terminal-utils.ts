@@ -166,12 +166,25 @@ function isValidTerminalState(value: unknown): value is TerminalSavedState {
 	);
 }
 
+/** In-memory cache so readers see the latest state immediately,
+ *  even before the debounced localStorage write fires. */
+let _cachedTerminalState: TerminalSavedState | null = null;
+
+/** Update only the in-memory cache (safe to call during render). */
+export function cacheTerminalState(state: TerminalSavedState): void {
+	_cachedTerminalState = state;
+}
+
 export function loadTerminalState(): TerminalSavedState | null {
+	if (_cachedTerminalState) return _cachedTerminalState;
 	const parsed = readStoredJson<unknown>(TERMINAL_STORAGE_KEY, null);
-	return parsed && isValidTerminalState(parsed) ? parsed : null;
+	const state = parsed && isValidTerminalState(parsed) ? parsed : null;
+	_cachedTerminalState = state;
+	return state;
 }
 
 export function saveTerminalState(state: TerminalSavedState): void {
+	_cachedTerminalState = state;
 	writeStoredJson(TERMINAL_STORAGE_KEY, state);
 	sendJson("/api/terminal/state", state).catch(() => {});
 }

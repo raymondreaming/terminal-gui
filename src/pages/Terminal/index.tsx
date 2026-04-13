@@ -52,6 +52,7 @@ import {
 	DEFAULT_OPACITY,
 	DEFAULT_ROWS,
 	DEFAULT_THEME_ID,
+	cacheTerminalState,
 	getInitialGroups,
 	getPaneTitle,
 	getThemeById,
@@ -452,24 +453,22 @@ export function TerminalPage({
 			};
 		}
 	}, [handleRestore, isPopout, isStandalone, restoreSavedState]);
-	const latestStateRef = useRef({
+	const latestState = {
 		groups,
 		selectedGroupId,
 		themeId,
 		fontSize,
 		fontFamily,
 		opacity,
-	});
-	useEffect(() => {
-		latestStateRef.current = {
-			groups,
-			selectedGroupId,
-			themeId,
-			fontSize,
-			fontFamily,
-			opacity,
-		};
-	}, [groups, selectedGroupId, themeId, fontSize, fontFamily, opacity]);
+	};
+	const latestStateRef = useRef(latestState);
+	latestStateRef.current = latestState;
+
+	// Update the in-memory cache synchronously during render so that any
+	// component that mounts in this render cycle (e.g. ExperimentalPage
+	// remounting via key change) reads the latest state from loadTerminalState().
+	cacheTerminalState(latestState);
+
 	useEffect(() => {
 		const id = setTimeout(() => {
 			saveTerminalState(latestStateRef.current);
