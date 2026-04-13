@@ -50,12 +50,12 @@ interface SideBySideDiffViewerProps {
 
 // Default theme colors
 const DEFAULT_THEME = {
-	bg: "var(--color-surgent-surface)",
-	lineBg: "var(--color-surgent-surface)",
+	bg: "var(--color-inferay-surface)",
+	lineBg: "var(--color-inferay-surface)",
 	addedBg: "rgba(46, 160, 67, 0.15)",
 	removedBg: "rgba(248, 81, 73, 0.15)",
-	lineNumColor: "var(--color-surgent-text-2)",
-	textColor: "var(--color-surgent-text)",
+	lineNumColor: "var(--color-inferay-text-2)",
+	textColor: "var(--color-inferay-text)",
 };
 
 const LINE_HEIGHT = 12;
@@ -206,7 +206,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 					type="button"
 					onClick={handleCopy}
 					className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-60 hover:opacity-100 transition-opacity"
-					style={{ backgroundColor: "var(--color-surgent-surface-2)" }}
+					style={{ backgroundColor: "var(--color-inferay-surface-2)" }}
 					title="Copy line"
 				>
 					<svg
@@ -215,7 +215,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 						fill="none"
 						stroke="currentColor"
 						strokeWidth="2"
-						style={{ color: "var(--color-surgent-text-2)" }}
+						style={{ color: "var(--color-inferay-text-2)" }}
 					>
 						<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
 						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -351,8 +351,8 @@ const CopyFeedback = memo(function CopyFeedback({ show }: { show: boolean }) {
 		<div
 			className="absolute top-2 right-2 px-2 py-1 rounded text-[10px] font-medium z-10 animate-pulse"
 			style={{
-				backgroundColor: "var(--color-surgent-accent)",
-				color: "var(--color-surgent-surface)",
+				backgroundColor: "var(--color-inferay-accent)",
+				color: "var(--color-inferay-surface)",
 			}}
 		>
 			Copied!
@@ -511,7 +511,7 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 			className="rounded-lg border overflow-hidden relative"
 			style={{
 				backgroundColor: theme.bg,
-				borderColor: "var(--color-surgent-border)",
+				borderColor: "var(--color-inferay-border)",
 			}}
 		>
 			<CopyFeedback show={showCopyFeedback} />
@@ -519,15 +519,15 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 			{/* Header */}
 			<div
 				className="flex items-center border-b"
-				style={{ borderColor: "var(--color-surgent-border)" }}
+				style={{ borderColor: "var(--color-inferay-border)" }}
 			>
 				{/* Left header */}
 				<div
 					className="flex-1 flex items-center gap-2 px-3 py-1.5 text-[10px] font-medium"
 					style={{
-						backgroundColor: "var(--color-surgent-surface-2)",
-						color: "var(--color-surgent-text-2)",
-						borderRight: "1px solid var(--color-surgent-border)",
+						backgroundColor: "var(--color-inferay-surface-2)",
+						color: "var(--color-inferay-text-2)",
+						borderRight: "1px solid var(--color-inferay-border)",
 					}}
 				>
 					<span className="opacity-50">Before</span>
@@ -548,8 +548,8 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 				<div
 					className="flex-1 flex items-center gap-2 px-3 py-1.5 text-[10px] font-medium"
 					style={{
-						backgroundColor: "var(--color-surgent-surface-2)",
-						color: "var(--color-surgent-text-2)",
+						backgroundColor: "var(--color-inferay-surface-2)",
+						color: "var(--color-inferay-text-2)",
 					}}
 				>
 					<span className="opacity-50">After</span>
@@ -590,7 +590,7 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 				{/* Divider */}
 				<div
 					className="w-px shrink-0"
-					style={{ backgroundColor: "var(--color-surgent-border)" }}
+					style={{ backgroundColor: "var(--color-inferay-border)" }}
 				/>
 
 				{/* Right pane (after) */}
@@ -615,9 +615,9 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 			<div
 				className="flex items-center justify-between px-3 py-1 text-[9px] border-t"
 				style={{
-					backgroundColor: "var(--color-surgent-surface-2)",
-					borderColor: "var(--color-surgent-border)",
-					color: "var(--color-surgent-text-3)",
+					backgroundColor: "var(--color-inferay-surface-2)",
+					borderColor: "var(--color-inferay-border)",
+					color: "var(--color-inferay-text-3)",
 				}}
 			>
 				<span>
@@ -630,7 +630,7 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 						<button
 							type="button"
 							onClick={goToPrevChange}
-							className="px-1.5 py-0.5 rounded hover:bg-surgent-surface-3 transition-colors"
+							className="px-1.5 py-0.5 rounded hover:bg-inferay-surface-3 transition-colors"
 							title="Previous change (k/p)"
 						>
 							<svg
@@ -649,7 +649,7 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 						<button
 							type="button"
 							onClick={goToNextChange}
-							className="px-1.5 py-0.5 rounded hover:bg-surgent-surface-3 transition-colors"
+							className="px-1.5 py-0.5 rounded hover:bg-inferay-surface-3 transition-colors"
 							title="Next change (j/n)"
 						>
 							<svg

@@ -135,11 +135,11 @@ export interface TerminalSavedState {
 	opacity: number;
 }
 
-const TERMINAL_STORAGE_KEY = "surgent-terminal-state" as const;
+const TERMINAL_STORAGE_KEY = "inferay-terminal-state" as const;
 
-const CUSTOM_THEME_KEY = "surgent-custom-theme" as const;
+const CUSTOM_THEME_KEY = "inferay-custom-theme" as const;
 
-export const POPOUT_CHANNEL = "surgent-terminal-popout" as const;
+export const POPOUT_CHANNEL = "inferay-terminal-popout" as const;
 
 export const DEFAULT_THEME_ID: ThemeId = "default";
 
@@ -224,12 +224,11 @@ export function createTerminalPane(
 }
 
 export function createDefaultGroup(): TerminalGroupModel {
-	const pane = createTerminalPane("claude");
 	return {
 		id: createGroupId(),
 		name: "Default",
-		panes: [pane],
-		selectedPaneId: pane.id,
+		panes: [],
+		selectedPaneId: null,
 		columns: DEFAULT_COLUMNS,
 		rows: DEFAULT_ROWS,
 	};

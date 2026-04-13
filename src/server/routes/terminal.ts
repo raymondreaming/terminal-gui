@@ -49,9 +49,9 @@ interface TerminalSession {
 }
 
 const g = globalThis as any;
-if (!g.__surgent_terminalSessions)
-	g.__surgent_terminalSessions = new Map<string, TerminalSession>();
-const sessions: Map<string, TerminalSession> = g.__surgent_terminalSessions;
+if (!g.__inferay_terminalSessions)
+	g.__inferay_terminalSessions = new Map<string, TerminalSession>();
+const sessions: Map<string, TerminalSession> = g.__inferay_terminalSessions;
 
 function killProcessTree(pid: number): void {
 	if (isWin) {
@@ -207,7 +207,9 @@ export const TerminalService = {
 		const session = sessions.get(paneId);
 		if (!session) return { ok: false };
 		session.ws = ws;
-		return { ok: true, buffer: session.outputBuffer.drain() || undefined };
+		// Don't send the old buffer - just reconnect
+		session.outputBuffer.drain(); // Clear it but don't send
+		return { ok: true };
 	},
 
 	listSessions() {

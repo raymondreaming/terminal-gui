@@ -91,7 +91,7 @@ const DiffRow = memo(function DiffRow({
 					height: 6,
 					marginTop: 2,
 					marginBottom: 2,
-					backgroundColor: "var(--color-surgent-border)",
+					backgroundColor: "var(--color-inferay-border)",
 					opacity: 0.15,
 					minWidth: minWidth || "100%",
 				}}
@@ -216,7 +216,7 @@ const DiffRow = memo(function DiffRow({
 					fontSize: DIFF_CONFIG.contentFontSize,
 					paddingRight: 12,
 					paddingLeft: 4,
-					color: highlightedHtml ? undefined : "var(--color-surgent-text)",
+					color: highlightedHtml ? undefined : "var(--color-inferay-text)",
 				}}
 			>
 				{renderContent()}
@@ -226,7 +226,7 @@ const DiffRow = memo(function DiffRow({
 				<button
 					type="button"
 					onClick={handleCopy}
-					className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-surgent-surface-2 p-0.5 opacity-0 transition-opacity group-hover:opacity-50 hover:!opacity-100"
+					className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-inferay-surface-2 p-0.5 opacity-0 transition-opacity group-hover:opacity-50 hover:!opacity-100"
 					title="Copy line"
 				>
 					<svg
@@ -235,7 +235,7 @@ const DiffRow = memo(function DiffRow({
 						fill="none"
 						stroke="currentColor"
 						strokeWidth="2"
-						style={{ color: "var(--color-surgent-text-2)" }}
+						style={{ color: "var(--color-inferay-text-2)" }}
 					>
 						<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
 						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -533,7 +533,7 @@ const DiffMinimap = memo(function DiffMinimap({
 		return (
 			<div
 				ref={containerRef}
-				className="w-[14px] shrink-0 bg-surgent-bg border-l border-surgent-border/30"
+				className="w-[14px] shrink-0 bg-inferay-bg border-l border-inferay-border/30"
 			/>
 		);
 	}
@@ -560,7 +560,7 @@ const DiffMinimap = memo(function DiffMinimap({
 	return (
 		<div
 			ref={containerRef}
-			className="w-[14px] shrink-0 bg-surgent-bg border-l border-surgent-border/30 cursor-pointer relative"
+			className="w-[14px] shrink-0 bg-inferay-bg border-l border-inferay-border/30 cursor-pointer relative"
 			onClick={handleClick}
 		>
 			{segments.map((seg, i) => (
@@ -575,7 +575,7 @@ const DiffMinimap = memo(function DiffMinimap({
 				/>
 			))}
 			<div
-				className="absolute left-0 right-0 bg-surgent-text/10 border-y border-surgent-text/20 pointer-events-none"
+				className="absolute left-0 right-0 bg-inferay-text/10 border-y border-inferay-text/20 pointer-events-none"
 				style={{ top: thumbTop, height: thumbHeight }}
 			/>
 		</div>
@@ -589,8 +589,8 @@ const CopyFeedback = memo(function CopyFeedback({ show }: { show: boolean }) {
 		<div
 			className="absolute top-2 right-2 px-2 py-1 rounded text-[10px] font-medium z-10 animate-pulse"
 			style={{
-				backgroundColor: "var(--color-surgent-accent)",
-				color: "var(--color-surgent-surface)",
+				backgroundColor: "var(--color-inferay-accent)",
+				color: "var(--color-inferay-surface)",
 			}}
 		>
 			Copied!
@@ -822,10 +822,10 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (loading) {
 		return (
-			<div className="flex h-full items-center justify-center bg-surgent-bg">
+			<div className="flex h-full items-center justify-center bg-inferay-bg">
 				<div className="flex items-center gap-2">
-					<div className="w-3 h-3 border border-surgent-text-3 border-t-transparent rounded-full animate-spin" />
-					<span className="text-[11px] text-surgent-text-3">Loading...</span>
+					<div className="w-3 h-3 border border-inferay-text-3 border-t-transparent rounded-full animate-spin" />
+					<span className="text-[11px] text-inferay-text-3">Loading...</span>
 				</div>
 			</div>
 		);
@@ -833,7 +833,7 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (diff.isBinary) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
+			<div className="flex h-full flex-col bg-inferay-bg">
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
@@ -842,10 +842,10 @@ export const GitDiffView = memo(function GitDiffView({
 						<img
 							src={`/api/file?path=${encodeURIComponent(diff.imagePath)}`}
 							alt={filePath}
-							className="max-w-full max-h-full object-contain rounded border border-surgent-border"
+							className="max-w-full max-h-full object-contain rounded border border-inferay-border"
 						/>
 					) : (
-						<span className="text-[11px] text-surgent-text-3">Binary file</span>
+						<span className="text-[11px] text-inferay-text-3">Binary file</span>
 					)}
 				</div>
 			</div>
@@ -854,12 +854,12 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (statusMessage) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
+			<div className="flex h-full flex-col bg-inferay-bg">
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
 				<div className="flex flex-1 items-center justify-center px-6">
-					<p className="max-w-xs text-center text-[11px] leading-5 text-surgent-text-3">
+					<p className="max-w-xs text-center text-[11px] leading-5 text-inferay-text-3">
 						{statusMessage}
 					</p>
 				</div>
@@ -877,7 +877,7 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (isMarkdown) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
+			<div className="flex h-full flex-col bg-inferay-bg">
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
@@ -893,7 +893,7 @@ export const GitDiffView = memo(function GitDiffView({
 	return (
 		<div
 			ref={containerRef}
-			className="flex h-full flex-col bg-surgent-bg relative"
+			className="flex h-full flex-col bg-inferay-bg relative"
 		>
 			<CopyFeedback show={showCopyFeedback} />
 			{!hideHeader && (
@@ -913,9 +913,9 @@ export const GitDiffView = memo(function GitDiffView({
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				{viewMode === "split" ? (
 					<>
-						<div className="flex-1 flex flex-col min-w-0 border-r border-surgent-border">
+						<div className="flex-1 flex flex-col min-w-0 border-r border-inferay-border">
 							{diff.isNew ? (
-								<div className="flex-1 flex items-center justify-center text-[11px] text-surgent-text-3/30">
+								<div className="flex-1 flex items-center justify-center text-[11px] text-inferay-text-3/30">
 									New file
 								</div>
 							) : (
@@ -951,9 +951,9 @@ export const GitDiffView = memo(function GitDiffView({
 					</>
 				) : viewMode === "stacked" ? (
 					<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-						<div className="flex-1 flex min-h-0 flex-col border-b border-surgent-border">
+						<div className="flex-1 flex min-h-0 flex-col border-b border-inferay-border">
 							{diff.isNew ? (
-								<div className="flex-1 flex items-center justify-center text-[11px] text-surgent-text-3/30">
+								<div className="flex-1 flex items-center justify-center text-[11px] text-inferay-text-3/30">
 									New file
 								</div>
 							) : (
@@ -1076,7 +1076,7 @@ function DiffViewToolbar({
 	onChange: (viewMode: DiffViewMode) => void;
 }) {
 	return (
-		<div className="flex h-8 shrink-0 items-center gap-1 border-b border-surgent-border bg-surgent-bg px-2">
+		<div className="flex h-8 shrink-0 items-center gap-1 border-b border-inferay-border bg-inferay-bg px-2">
 			<DiffViewButton
 				active={viewMode === "split"}
 				label="Split"
@@ -1111,8 +1111,8 @@ function DiffViewButton({
 			onClick={onClick}
 			className={`rounded-md px-2 py-1 text-[10px] transition-colors ${
 				active
-					? "bg-surgent-surface-2 text-surgent-text"
-					: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+					? "bg-inferay-surface-2 text-inferay-text"
+					: "text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 			}`}
 		>
 			{label}
@@ -1143,17 +1143,17 @@ function DiffHeader({
 	const name = filePath.split("/").pop() || filePath;
 
 	return (
-		<div className="shrink-0 flex items-center gap-1.5 px-3 h-9 border-b border-surgent-border bg-surgent-bg">
+		<div className="shrink-0 flex items-center gap-1.5 px-3 h-9 border-b border-inferay-border bg-inferay-bg">
 			{dir && (
-				<span className="text-[10px] font-mono text-surgent-text-3/50 truncate">
+				<span className="text-[10px] font-mono text-inferay-text-3/50 truncate">
 					{dir}
 				</span>
 			)}
-			<span className="text-[10px] font-mono font-medium text-surgent-text truncate">
+			<span className="text-[10px] font-mono font-medium text-inferay-text truncate">
 				{name}
 			</span>
 			{staged && (
-				<span className="text-[8px] text-surgent-accent/80 bg-surgent-accent/8 px-1 py-0.5 rounded shrink-0">
+				<span className="text-[8px] text-inferay-accent/80 bg-inferay-accent/8 px-1 py-0.5 rounded shrink-0">
 					staged
 				</span>
 			)}
@@ -1181,7 +1181,7 @@ function DiffHeader({
 						<button
 							type="button"
 							onClick={onPrevChange}
-							className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
+							className="flex items-center justify-center h-5 w-5 rounded text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors"
 							title="Previous change (k/p)"
 						>
 							<svg
@@ -1194,13 +1194,13 @@ function DiffHeader({
 								<polyline points="15 18 9 12 15 6" />
 							</svg>
 						</button>
-						<span className="text-[9px] text-surgent-text-3 tabular-nums px-1">
+						<span className="text-[9px] text-inferay-text-3 tabular-nums px-1">
 							{totalChanges}
 						</span>
 						<button
 							type="button"
 							onClick={onNextChange}
-							className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
+							className="flex items-center justify-center h-5 w-5 rounded text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors"
 							title="Next change (j/n)"
 						>
 							<svg
@@ -1219,7 +1219,7 @@ function DiffHeader({
 			<button
 				type="button"
 				onClick={onClose}
-				className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3/50 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
+				className="flex items-center justify-center h-5 w-5 rounded text-inferay-text-3/50 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors"
 			>
 				<svg
 					aria-hidden

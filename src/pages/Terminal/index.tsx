@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
 import { clearChatMessages } from "../../components/chat/ClaudeChatView.tsx";
-import { CommitGraph } from "../../components/git/CommitGraph.tsx";
+import { ProjectFileGraphView } from "../../components/graph/ProjectFileGraphView.tsx";
 import { Button } from "../../components/ui/Button.tsx";
 import { EmptyState } from "../../components/ui/EmptyState.tsx";
 import { IconButton } from "../../components/ui/IconButton.tsx";
@@ -16,7 +16,6 @@ import {
 	IconArrowLeft,
 	IconCircle,
 	IconExternalLink,
-	IconFolder,
 	IconGitBranch,
 	IconGlobe,
 	IconMessageCircle,
@@ -24,7 +23,6 @@ import {
 } from "../../components/ui/Icons.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
-import { useCommitDetails, useGitGraph } from "../../hooks/useGitGraph.ts";
 import { useGitStatus } from "../../hooks/useGitStatus.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { isChatAgentKind } from "../../lib/agents.ts";
@@ -73,7 +71,7 @@ interface TerminalPageProps {
 
 function wasPopoutRestored(): boolean {
 	try {
-		return sessionStorage.getItem("surgent-popout-restored") === "true";
+		return sessionStorage.getItem("inferay-popout-restored") === "true";
 	} catch {
 		return false;
 	}
@@ -81,21 +79,15 @@ function wasPopoutRestored(): boolean {
 
 function markPopoutRestored() {
 	try {
-		sessionStorage.setItem("surgent-popout-restored", "true");
+		sessionStorage.setItem("inferay-popout-restored", "true");
 	} catch {}
 }
 
 const logoUrl = resolveServerUrl("/logo.png");
 
-function _cwdLabel(cwd: string): string {
-	if (!cwd) return "unknown";
-	const parts = cwd.split("/");
-	return parts[parts.length - 1] || cwd;
-}
-
 function TerminalEmptyStateBrand() {
 	return (
-		<div className="rounded-2xl border border-surgent-border bg-surgent-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+		<div className="rounded-2xl border border-inferay-border bg-inferay-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
 			<img src={logoUrl} alt="inferay logo" className="h-14 w-14 rounded-xl" />
 		</div>
 	);
@@ -105,10 +97,10 @@ function GraphEmptyState({ message }: { message: string }) {
 	return (
 		<div className="flex h-full items-center justify-center p-6">
 			<div className="max-w-sm text-center">
-				<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-surgent-border bg-surgent-surface text-surgent-text-3">
+				<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-inferay-border bg-inferay-surface text-inferay-text-3">
 					<IconGitBranch size={18} />
 				</div>
-				<p className="text-sm text-surgent-text">{message}</p>
+				<p className="text-sm text-inferay-text">{message}</p>
 			</div>
 		</div>
 	);
@@ -338,26 +330,6 @@ export function TerminalPage({
 	const activeGraphProject = activeGraphCwd
 		? (projectMap.get(activeGraphCwd) ?? null)
 		: null;
-	const { commits: graphCommits, loading: graphLoading } = useGitGraph(
-		activeGraphCwd ?? undefined,
-		100
-	);
-	const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
-		null
-	);
-	useEffect(() => {
-		setSelectedCommitHash((current) => {
-			if (current && graphCommits.some((commit) => commit.hash === current)) {
-				return current;
-			}
-			return graphCommits[0]?.hash ?? null;
-		});
-	}, [graphCommits]);
-	const { details: selectedCommitDetails, loading: commitDetailsLoading } =
-		useCommitDetails(
-			activeGraphCwd ?? undefined,
-			selectedCommitHash ?? undefined
-		);
 	const restoreSavedState = useCallback(
 		(s: ReturnType<typeof loadTerminalState>) => {
 			setIsPoppedOut(false);
@@ -453,25 +425,31 @@ export function TerminalPage({
 			};
 		}
 	}, [handleRestore, isPopout, isStandalone, restoreSavedState]);
-	const latestState = {
+	const latestStateRef = useRef({
 		groups,
 		selectedGroupId,
 		themeId,
 		fontSize,
 		fontFamily,
 		opacity,
-	};
-	const latestStateRef = useRef(latestState);
-	latestStateRef.current = latestState;
-
-	// Update the in-memory cache synchronously during render so that any
-	// component that mounts in this render cycle (e.g. ExperimentalPage
-	// remounting via key change) reads the latest state from loadTerminalState().
-	cacheTerminalState(latestState);
-
+	});
+	const pendingSaveRef = useRef(false);
 	useEffect(() => {
+		latestStateRef.current = {
+			groups,
+			selectedGroupId,
+			themeId,
+			fontSize,
+			fontFamily,
+			opacity,
+		};
+		cacheTerminalState(latestStateRef.current);
+	}, [groups, selectedGroupId, themeId, fontSize, fontFamily, opacity]);
+	useEffect(() => {
+		pendingSaveRef.current = true;
 		const id = setTimeout(() => {
 			saveTerminalState(latestStateRef.current);
+			pendingSaveRef.current = false;
 			window.dispatchEvent(new Event("terminal-shell-change"));
 		}, 100);
 		return () => clearTimeout(id);
@@ -484,6 +462,10 @@ export function TerminalPage({
 	);
 	useEffect(() => {
 		const handleShellChange = () => {
+			// Skip restore check if we have a pending save - this prevents undoing local changes
+			if (pendingSaveRef.current) {
+				return;
+			}
 			const savedState = loadTerminalState();
 			if (savedState) {
 				const savedShellKey = JSON.stringify({
@@ -657,7 +639,7 @@ export function TerminalPage({
 	);
 	if (isPopout || (isStandalone && compactMode)) {
 		return (
-			<div className="flex h-screen flex-col bg-surgent-bg">
+			<div className="flex h-screen flex-col bg-inferay-bg">
 				<PopoutHeader
 					groups={groups}
 					currentGroup={currentGroup}
@@ -683,7 +665,7 @@ export function TerminalPage({
 							<div className="flex w-full max-w-sm flex-col items-center gap-4 px-6 text-center">
 								<TerminalEmptyStateBrand />
 								<div>
-									<p className="text-sm text-surgent-text-2">
+									<p className="text-sm text-inferay-text-2">
 										Start a new terminal or agent session
 									</p>
 								</div>
@@ -719,19 +701,19 @@ export function TerminalPage({
 	}
 	if (isPoppedOut) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
-				<div className="relative h-12 shrink-0 border-b border-surgent-border bg-surgent-bg"></div>
+			<div className="flex h-full flex-col bg-inferay-bg">
+				<div className="relative h-12 shrink-0 border-b border-inferay-border bg-inferay-bg"></div>
 				<div className="flex flex-1 items-center justify-center">
 					<div className="text-center">
 						<div className="mb-4 flex items-center justify-center">
-							<div className="rounded-full bg-surgent-surface p-4">
-								<IconExternalLink size={32} className="text-surgent-accent" />
+							<div className="rounded-full bg-inferay-surface p-4">
+								<IconExternalLink size={32} className="text-inferay-accent" />
 							</div>
 						</div>
-						<h2 className="text-lg font-medium text-surgent-text mb-2">
+						<h2 className="text-lg font-medium text-inferay-text mb-2">
 							Terminal in Separate Window
 						</h2>
-						<p className="text-sm text-surgent-text-3 mb-4">
+						<p className="text-sm text-inferay-text-3 mb-4">
 							The terminal is currently open in a pop-out window.
 						</p>
 						<Button variant="primary" onClick={handleRestore}>
@@ -745,7 +727,7 @@ export function TerminalPage({
 	}
 	return (
 		<div
-			className={`flex flex-col bg-surgent-bg ${isStandalone ? "h-screen" : "h-full"}`}
+			className={`flex flex-col bg-inferay-bg ${isStandalone ? "h-screen" : "h-full"}`}
 		>
 			<div className="relative flex flex-1 flex-col overflow-hidden">
 				<div className="flex flex-1 flex-col overflow-hidden">
@@ -782,39 +764,28 @@ export function TerminalPage({
 							) : mainView === "editor" ? (
 								<ExperimentalPage key={editorViewKey} />
 							) : mainView === "chat" ? (
-								chatPanes.length === 0 ? (
+								!currentGroup || currentGroup.panes.length === 0 ? (
 									<EmptyState
 										icon={
 											<IconMessageCircle
 												size={18}
-												className="text-surgent-text-3"
+												className="text-inferay-text-3"
 											/>
 										}
-										title="No Chat Panes"
-										description="Add a Claude or Codex pane to use the shared chat view"
+										title="No Panes"
+										description="Add a terminal or agent session to get started"
 										action={
-											<div className="flex items-center gap-2">
-												<Button
-													size="sm"
-													variant="secondary"
-													onClick={() => handleAddPane("claude")}
-												>
-													New Claude
-												</Button>
-												<Button
-													size="sm"
-													variant="secondary"
-													onClick={() => handleAddPane("codex")}
-												>
-													New Codex
-												</Button>
-											</div>
+											<NewSessionButtons
+												labelPrefix="New"
+												layout="row"
+												onAddPane={handleAddPane}
+											/>
 										}
 									/>
 								) : (
 									<TerminalGrid
-										panes={chatPanes}
-										selectedPaneId={selectedChatPane?.id ?? null}
+										panes={currentGroup.panes}
+										selectedPaneId={currentGroup.selectedPaneId}
 										columns={currentGroup.columns}
 										rows={currentGroup.rows ?? DEFAULT_ROWS}
 										layoutMode={layoutMode}
@@ -832,144 +803,14 @@ export function TerminalPage({
 								)
 							) : mainView === "graph" ? (
 								graphCwds.length === 0 ? (
-									<GraphEmptyState message="Open a project directory in one of this group's panes to populate the commit graph." />
+									<GraphEmptyState message="Open a project directory in one of this group's panes to populate the file graph." />
 								) : (
-									<div className="flex h-full overflow-hidden">
-										<div className="min-w-0 flex-1 border-r border-surgent-border">
-											<div className="flex items-center gap-2 border-b border-surgent-border px-3 py-2">
-												<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
-													{graphCwds.map((cwd) => {
-														const project = projectMap.get(cwd);
-														const active = cwd === activeGraphCwd;
-														return (
-															<button
-																type="button"
-																key={cwd}
-																onClick={() => setActiveGraphCwd(cwd)}
-																className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] transition-colors ${
-																	active
-																		? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-																		: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
-																}`}
-															>
-																<IconFolder size={11} />
-																<span>{project?.name ?? _cwdLabel(cwd)}</span>
-															</button>
-														);
-													})}
-												</div>
-												{activeGraphProject && (
-													<div className="flex items-center gap-1 rounded-md border border-surgent-border bg-surgent-surface px-2 py-1 text-[10px] text-surgent-text-2">
-														<IconGitBranch size={10} />
-														<span className="font-mono">
-															{activeGraphProject.branch}
-														</span>
-													</div>
-												)}
-											</div>
-											<div className="h-full overflow-y-auto">
-												{graphLoading && graphCommits.length === 0 ? (
-													<GraphEmptyState message="Loading commit graph..." />
-												) : graphCommits.length === 0 ? (
-													<GraphEmptyState message="No commits available for this repository yet." />
-												) : (
-													<CommitGraph
-														commits={graphCommits}
-														selectedHash={selectedCommitHash ?? undefined}
-														onSelect={setSelectedCommitHash}
-														wipFiles={activeGraphProject?.files ?? []}
-														branch={activeGraphProject?.branch}
-													/>
-												)}
-											</div>
-										</div>
-										<div className="w-80 shrink-0 bg-surgent-surface/20">
-											<div className="border-b border-surgent-border px-4 py-3">
-												<p className="text-[11px] font-medium text-surgent-text">
-													Commit Details
-												</p>
-												<p className="text-[10px] text-surgent-text-3">
-													{activeGraphProject?.name ?? "Repository"}
-												</p>
-											</div>
-											<div className="overflow-y-auto p-4">
-												{commitDetailsLoading ? (
-													<p className="text-[11px] text-surgent-text-3">
-														Loading commit details...
-													</p>
-												) : selectedCommitDetails ? (
-													<div className="space-y-4">
-														<div>
-															<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
-																Commit
-															</p>
-															<p className="font-mono text-[11px] text-surgent-accent">
-																{selectedCommitDetails.hash}
-															</p>
-														</div>
-														<div>
-															<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
-																Message
-															</p>
-															<p className="text-[12px] text-surgent-text">
-																{selectedCommitDetails.message}
-															</p>
-														</div>
-														<div className="grid grid-cols-2 gap-3 text-[11px]">
-															<div>
-																<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
-																	Author
-																</p>
-																<p className="text-surgent-text-2">
-																	{selectedCommitDetails.author}
-																</p>
-															</div>
-															<div>
-																<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
-																	Date
-																</p>
-																<p className="text-surgent-text-2">
-																	{selectedCommitDetails.date}
-																</p>
-															</div>
-														</div>
-														<div>
-															<p className="mb-2 text-[10px] uppercase tracking-[0.12em] text-surgent-text-3">
-																Changed Files
-															</p>
-															<div className="space-y-1.5">
-																{selectedCommitDetails.files.map((file) => (
-																	<div
-																		key={`${selectedCommitDetails.hash}-${file.path}`}
-																		className="rounded-lg border border-surgent-border bg-surgent-surface px-3 py-2"
-																	>
-																		<div className="flex items-center justify-between gap-2">
-																			<p
-																				className="truncate text-[11px] text-surgent-text"
-																				title={file.path}
-																			>
-																				{file.path}
-																			</p>
-																			<span className="shrink-0 text-[10px] text-surgent-text-3">
-																				{file.status}
-																			</span>
-																		</div>
-																		<p className="mt-1 text-[10px] text-surgent-text-3">
-																			+{file.additions} / -{file.deletions}
-																		</p>
-																	</div>
-																))}
-															</div>
-														</div>
-													</div>
-												) : (
-													<p className="text-[11px] text-surgent-text-3">
-														Select a commit to inspect its files.
-													</p>
-												)}
-											</div>
-										</div>
-									</div>
+									<ProjectFileGraphView
+										cwds={graphCwds}
+										activeCwd={activeGraphCwd}
+										onSelectCwd={setActiveGraphCwd}
+										project={activeGraphProject}
+									/>
 								)
 							) : (
 								<TerminalGrid
@@ -1017,7 +858,7 @@ export function TerminalPage({
 							sidebarOpen &&
 							currentGroup &&
 							currentGroup.panes.length > 0 && (
-								<div className="flex flex-col shrink-0 border-l border-surgent-border bg-surgent-bg order-last">
+								<div className="flex flex-col shrink-0 border-l border-inferay-border bg-inferay-bg order-last">
 									<AgentSidebar
 										panes={currentGroup.panes}
 										selectedPaneId={currentGroup.selectedPaneId}
@@ -1030,7 +871,7 @@ export function TerminalPage({
 										icon={<IconGlobe size={12} />}
 										label="Ports"
 										count={runningPorts.length}
-										countColor="text-surgent-accent"
+										countColor="text-inferay-accent"
 										expanded={sidebarSections.ports}
 										onToggle={() => toggleSection("ports")}
 										emptyMessage="No ports running"
@@ -1038,23 +879,23 @@ export function TerminalPage({
 										{runningPorts.map((p) => (
 											<div
 												key={`${p.port}-${p.pid}`}
-												className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surgent-surface"
+												className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-inferay-surface"
 											>
 												<div className="shrink-0">
 													<IconCircle
 														size={8}
-														className="fill-surgent-accent text-surgent-accent"
+														className="fill-inferay-accent text-inferay-accent"
 													/>
 												</div>
 												<div className="min-w-0 flex-1">
 													<p
-														className="truncate text-[11px] font-medium text-surgent-text"
+														className="truncate text-[11px] font-medium text-inferay-text"
 														title={p.command}
 													>
 														:{p.port}
 													</p>
 													<p
-														className="truncate text-[9px] text-surgent-text-3"
+														className="truncate text-[9px] text-inferay-text-3"
 														title={p.command}
 													>
 														{p.name}

@@ -20,11 +20,11 @@ export function Button({
 		lg: "h-9 px-4 text-sm",
 	};
 	const variants = {
-		primary: "bg-surgent-accent text-white hover:bg-surgent-accent-hover",
+		primary: "bg-inferay-accent text-white hover:bg-inferay-accent-hover",
 		secondary:
-			"bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3 border border-surgent-border",
+			"bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3 border border-inferay-border",
 		ghost:
-			"text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-text/[0.08] backdrop-blur-sm",
+			"text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-text/[0.08] backdrop-blur-sm",
 		danger:
 			"bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20",
 	};

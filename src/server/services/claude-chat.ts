@@ -198,9 +198,9 @@ interface AgentSessionInfo {
 }
 
 const _g = globalThis as any;
-if (!_g.__surgent_chatSessions)
-	_g.__surgent_chatSessions = new Map<string, ChatSession>();
-const sessions: Map<string, ChatSession> = _g.__surgent_chatSessions;
+if (!_g.__inferay_chatSessions)
+	_g.__inferay_chatSessions = new Map<string, ChatSession>();
+const sessions: Map<string, ChatSession> = _g.__inferay_chatSessions;
 
 function sendTo(ws: ServerWebSocket<any>, msg: object) {
 	if (ws.readyState === 1) ws.send(JSON.stringify(msg));

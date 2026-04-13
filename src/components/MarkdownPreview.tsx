@@ -72,7 +72,7 @@ function MermaidBlock({ code }: { code: string }) {
 
 	if (error)
 		return (
-			<div className="rounded-md border border-surgent-border bg-surgent-surface p-3">
+			<div className="rounded-md border border-inferay-border bg-inferay-surface p-3">
 				<pre className="text-[10px] text-red-400 whitespace-pre-wrap">
 					{error}
 				</pre>
@@ -82,7 +82,7 @@ function MermaidBlock({ code }: { code: string }) {
 	return (
 		<div
 			ref={ref}
-			className="flex items-center justify-center rounded-md border border-surgent-border bg-surgent-surface p-4 overflow-x-auto"
+			className="flex items-center justify-center rounded-md border border-inferay-border bg-inferay-surface p-4 overflow-x-auto"
 		/>
 	);
 }
@@ -117,7 +117,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 			return (
 				<a
 					href={token.href}
-					className="text-surgent-accent underline underline-offset-2 decoration-surgent-accent/40 hover:decoration-surgent-accent"
+					className="text-inferay-accent underline underline-offset-2 decoration-inferay-accent/40 hover:decoration-inferay-accent"
 					target="_blank"
 					rel="noopener noreferrer"
 				>
@@ -131,14 +131,14 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "code":
 			return (
-				<code className="rounded bg-surgent-surface border border-surgent-border px-1.5 py-0.5 text-[10px] font-mono text-surgent-text">
+				<code className="rounded bg-inferay-surface border border-inferay-border px-1.5 py-0.5 text-[10px] font-mono text-inferay-text">
 					{token.text}
 				</code>
 			);
 
 		case "bold-italic":
 			return (
-				<strong className="font-bold text-surgent-text">
+				<strong className="font-bold text-inferay-text">
 					<em className="italic">
 						{token.children ? (
 							<InlineTokens tokens={token.children} />
@@ -151,7 +151,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "bold":
 			return (
-				<strong className="font-semibold text-surgent-text">
+				<strong className="font-semibold text-inferay-text">
 					{token.children ? (
 						<InlineTokens tokens={token.children} />
 					) : (
@@ -162,7 +162,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "italic":
 			return (
-				<em className="italic text-surgent-text-2">
+				<em className="italic text-inferay-text-2">
 					{token.children ? (
 						<InlineTokens tokens={token.children} />
 					) : (
@@ -173,7 +173,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "strikethrough":
 			return (
-				<del className="line-through text-surgent-text-3">
+				<del className="line-through text-inferay-text-3">
 					{token.children ? (
 						<InlineTokens tokens={token.children} />
 					) : (
@@ -194,25 +194,25 @@ function Inline({ text }: { text: string }) {
 // ── Block renderers ──
 
 const HEADING_CLASSES: Record<number, string> = {
-	1: "text-[18px] font-bold text-surgent-text pb-2 mt-6 first:mt-0 border-b border-surgent-border",
-	2: "text-[15px] font-semibold text-surgent-text pb-1.5 mt-5 first:mt-0 border-b border-surgent-border",
-	3: "text-[13px] font-semibold text-surgent-text mt-4 first:mt-0",
-	4: "text-[12px] font-semibold text-surgent-text mt-3 first:mt-0",
-	5: "text-[11px] font-semibold text-surgent-text mt-2 first:mt-0",
-	6: "text-[10px] font-semibold text-surgent-text-2 uppercase tracking-wide mt-2 first:mt-0",
+	1: "text-[18px] font-bold text-inferay-text pb-2 mt-6 first:mt-0 border-b border-inferay-border",
+	2: "text-[15px] font-semibold text-inferay-text pb-1.5 mt-5 first:mt-0 border-b border-inferay-border",
+	3: "text-[13px] font-semibold text-inferay-text mt-4 first:mt-0",
+	4: "text-[12px] font-semibold text-inferay-text mt-3 first:mt-0",
+	5: "text-[11px] font-semibold text-inferay-text mt-2 first:mt-0",
+	6: "text-[10px] font-semibold text-inferay-text-2 uppercase tracking-wide mt-2 first:mt-0",
 };
 
 function ListItemRenderer({ item }: { item: MdListItem }) {
 	return (
-		<li className="text-[11px] text-surgent-text-2 leading-relaxed">
+		<li className="text-[11px] text-inferay-text-2 leading-relaxed">
 			{item.checked !== undefined && (
 				<span className="mr-1.5 inline-flex">
 					{item.checked ? (
-						<span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded border border-surgent-accent/50 bg-surgent-accent/15 text-[8px] text-surgent-accent">
+						<span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded border border-inferay-accent/50 bg-inferay-accent/15 text-[8px] text-inferay-accent">
 							✓
 						</span>
 					) : (
-						<span className="inline-flex h-3.5 w-3.5 rounded border border-surgent-border" />
+						<span className="inline-flex h-3.5 w-3.5 rounded border border-inferay-border" />
 					)}
 				</span>
 			)}
@@ -244,12 +244,12 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 			return (
 				<div className="relative group">
 					{block.lang && (
-						<span className="absolute top-1.5 right-2 text-[8px] font-mono uppercase tracking-wider text-surgent-text-3/40">
+						<span className="absolute top-1.5 right-2 text-[8px] font-mono uppercase tracking-wider text-inferay-text-3/40">
 							{block.lang}
 						</span>
 					)}
-					<pre className="overflow-x-auto rounded-md border border-surgent-border bg-surgent-surface p-3">
-						<code className="text-[10px] font-mono text-surgent-text-2 leading-[18px] whitespace-pre">
+					<pre className="overflow-x-auto rounded-md border border-inferay-border bg-inferay-surface p-3">
+						<code className="text-[10px] font-mono text-inferay-text-2 leading-[18px] whitespace-pre">
 							{block.content}
 						</code>
 					</pre>
@@ -259,7 +259,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 		case "blockquote": {
 			const innerBlocks = parseBlocks(block.content);
 			return (
-				<div className="border-l-2 border-surgent-accent/30 pl-4 py-0.5">
+				<div className="border-l-2 border-inferay-accent/30 pl-4 py-0.5">
 					{innerBlocks.map((inner, j) => (
 						<BlockRenderer key={j} block={inner} />
 					))}
@@ -268,19 +268,19 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 		}
 
 		case "hr":
-			return <hr className="border-surgent-border my-4" />;
+			return <hr className="border-inferay-border my-4" />;
 
 		case "table":
 			if (!block.rows?.length) return null;
 			return (
-				<div className="overflow-x-auto rounded-md border border-surgent-border">
+				<div className="overflow-x-auto rounded-md border border-inferay-border">
 					<table className="w-full text-[10px]">
 						<thead>
-							<tr className="border-b border-surgent-border bg-surgent-surface">
+							<tr className="border-b border-inferay-border bg-inferay-surface">
 								{block.rows[0]?.map((cell, j) => (
 									<th
 										key={j}
-										className="px-3 py-2 text-left font-medium text-surgent-text whitespace-nowrap"
+										className="px-3 py-2 text-left font-medium text-inferay-text whitespace-nowrap"
 									>
 										<Inline text={cell} />
 									</th>
@@ -291,10 +291,10 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 							{block.rows.slice(1).map((row, k) => (
 								<tr
 									key={k}
-									className="border-b border-surgent-border/50 last:border-0"
+									className="border-b border-inferay-border/50 last:border-0"
 								>
 									{row.map((cell, j) => (
-										<td key={j} className="px-3 py-1.5 text-surgent-text-2">
+										<td key={j} className="px-3 py-1.5 text-inferay-text-2">
 											<Inline text={cell} />
 										</td>
 									))}
@@ -334,7 +334,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 
 		case "paragraph":
 			return (
-				<p className="text-[11px] text-surgent-text-2 leading-relaxed">
+				<p className="text-[11px] text-inferay-text-2 leading-relaxed">
 					<Inline text={block.content} />
 				</p>
 			);

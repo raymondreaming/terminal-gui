@@ -83,15 +83,15 @@ export function Sidebar() {
 
 	return (
 		<aside
-			className={`relative flex flex-col border-r border-surgent-border bg-surgent-bg transition-all duration-200 ${
+			className={`relative flex flex-col border-r border-inferay-border bg-inferay-bg transition-all duration-200 ${
 				collapsed ? "w-12" : "w-48"
 			}`}
 		>
-			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-surgent-border">
+			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-inferay-border">
 				<button
 					type="button"
 					onClick={() => setCollapsed(!collapsed)}
-					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-surgent-text/[0.05] transition-colors"
+					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-inferay-text/[0.05] transition-colors"
 				>
 					<img src={logoUrl} alt="" className="h-7 w-7 rounded" />
 				</button>
@@ -106,8 +106,8 @@ export function Sidebar() {
 							className={({ isActive }) =>
 								`mx-1 mb-px flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors ${
 									isActive
-										? "bg-surgent-text/[0.06] text-surgent-text"
-										: "text-surgent-text-3 hover:bg-surgent-text/[0.03] hover:text-surgent-text-2"
+										? "bg-inferay-text/[0.06] text-inferay-text"
+										: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
 								} ${collapsed ? "justify-center !px-0" : ""}`
 							}
 							title={collapsed ? item.label : undefined}
@@ -118,14 +118,14 @@ export function Sidebar() {
 					);
 				})}
 			</nav>
-			<div className="border-t border-surgent-border p-1.5">
+			<div className="border-t border-inferay-border p-1.5">
 				<NavLink
 					to="/profile"
 					className={({ isActive }) =>
 						`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors ${
 							isActive
-								? "bg-surgent-text/[0.06] text-surgent-text"
-								: "text-surgent-text-3 hover:bg-surgent-text/[0.03] hover:text-surgent-text-2"
+								? "bg-inferay-text/[0.06] text-inferay-text"
+								: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
 						} ${collapsed ? "justify-center !px-0" : ""}`
 					}
 					title={collapsed ? "Profile" : undefined}

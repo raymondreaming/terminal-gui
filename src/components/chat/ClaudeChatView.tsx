@@ -121,10 +121,10 @@ type RenderItem =
 const MAX_MESSAGES = 80;
 const MAX_TOTAL_CHARS = 150000;
 const TRIM_CHECK_INTERVAL = 5; // Only check trim every N new messages
-const STORAGE_KEY_PREFIX = "surgent-chat-";
-const SESSION_KEY_PREFIX = "surgent-chat-session-";
-const INPUT_KEY_PREFIX = "surgent-chat-input-";
-const CHECKPOINT_KEY_PREFIX = "surgent-checkpoints-";
+const STORAGE_KEY_PREFIX = "inferay-chat-";
+const SESSION_KEY_PREFIX = "inferay-chat-session-";
+const INPUT_KEY_PREFIX = "inferay-chat-input-";
+const CHECKPOINT_KEY_PREFIX = "inferay-checkpoints-";
 
 let msgId = 0;
 function nextId() {
@@ -347,7 +347,7 @@ function renderInputWithHighlights(
 	if (tokens.length === 0) {
 		// No tokens - render all text in theme color
 		return (
-			<span style={{ color: theme?.text ?? "var(--color-surgent-text)" }}>
+			<span style={{ color: theme?.text ?? "var(--color-inferay-text)" }}>
 				{text}
 			</span>
 		);
@@ -367,7 +367,7 @@ function renderInputWithHighlights(
 			segments.push(
 				<span
 					key={`t-${lastEnd}`}
-					style={{ color: theme?.text ?? "var(--color-surgent-text)" }}
+					style={{ color: theme?.text ?? "var(--color-inferay-text)" }}
 				>
 					{text.slice(lastEnd, token.start)}
 				</span>
@@ -380,10 +380,10 @@ function renderInputWithHighlights(
 				key={`h-${token.start}`}
 				className="rounded-sm"
 				style={{
-					color: theme?.accent ?? "var(--color-surgent-accent)",
+					color: theme?.accent ?? "var(--color-inferay-accent)",
 					backgroundColor: theme?.accent
 						? `${theme.accent}20`
-						: "var(--color-surgent-accent-15, rgba(0, 122, 255, 0.15))",
+						: "var(--color-inferay-accent-15, rgba(0, 122, 255, 0.15))",
 				}}
 			>
 				{tokenText}
@@ -397,7 +397,7 @@ function renderInputWithHighlights(
 		segments.push(
 			<span
 				key={`t-${lastEnd}`}
-				style={{ color: theme?.text ?? "var(--color-surgent-text)" }}
+				style={{ color: theme?.text ?? "var(--color-inferay-text)" }}
 			>
 				{text.slice(lastEnd)}
 			</span>
@@ -484,7 +484,7 @@ function parseTextWithPills(
 			segments.push(
 				<span
 					key={`${m.type}-${m.start}`}
-					className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-medium leading-none bg-surgent-accent/15 text-surgent-accent"
+					className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-medium leading-none bg-inferay-accent/15 text-inferay-accent"
 				>
 					{m.text}
 				</span>
@@ -2185,14 +2185,14 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						className="shrink-0 overflow-y-auto"
 						style={{
 							maxHeight: "140px",
-							borderTop: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
+							borderTop: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
 							backgroundColor: theme ? `${bgColor}cc` : "rgba(0,0,0,0.4)",
 						}}
 					>
 						<div
 							className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase"
 							style={{
-								color: theme ? fgDim : "var(--color-surgent-text-3)",
+								color: theme ? fgDim : "var(--color-inferay-text-3)",
 								borderBottom: `1px solid ${theme ? `${borderColor}60` : "rgba(255,255,255,0.06)"}`,
 							}}
 						>
@@ -2220,7 +2220,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								<span
 									className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums"
 									style={{
-										color: theme ? fgDim : "var(--color-surgent-text-3)",
+										color: theme ? fgDim : "var(--color-inferay-text-3)",
 									}}
 								>
 									{idx + 1}
@@ -2252,7 +2252,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											}}
 											className="flex-1 bg-transparent text-[11px] outline-none border-none px-1 py-0.5 rounded"
 											style={{
-												color: theme ? fgColor : "var(--color-surgent-text)",
+												color: theme ? fgColor : "var(--color-inferay-text)",
 												backgroundColor: theme
 													? surfaceColor
 													: "rgba(255,255,255,0.06)",
@@ -2278,7 +2278,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											style={{
 												color: theme
 													? cursorColor
-													: "var(--color-surgent-accent)",
+													: "var(--color-inferay-accent)",
 											}}
 											title="Save"
 										>
@@ -2289,7 +2289,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											onClick={() => setEditingQueueId(null)}
 											className="shrink-0 p-0.5 rounded transition-colors"
 											style={{
-												color: theme ? fgDim : "var(--color-surgent-text-3)",
+												color: theme ? fgDim : "var(--color-inferay-text-3)",
 											}}
 											title="Cancel"
 										>
@@ -2301,7 +2301,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 										<span
 											className="flex-1 text-[11px] truncate"
 											style={{
-												color: theme ? fgColor : "var(--color-surgent-text)",
+												color: theme ? fgColor : "var(--color-inferay-text)",
 											}}
 										>
 											{qm.displayText}
@@ -2315,7 +2315,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 												}}
 												className="p-0.5 rounded transition-colors hover:bg-white/10"
 												style={{
-													color: theme ? fgDim : "var(--color-surgent-text-3)",
+													color: theme ? fgDim : "var(--color-inferay-text-3)",
 												}}
 												title="Edit"
 											>
@@ -2350,7 +2350,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					<div
 						className="shrink-0 px-3 py-2"
 						style={{
-							borderTop: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
+							borderTop: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
 						}}
 					>
 						{/* Attached image previews */}
@@ -2363,7 +2363,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											alt={img.name}
 											className="h-12 w-12 rounded-md object-cover"
 											style={{
-												border: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
+												border: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
 											}}
 										/>
 										<button
@@ -2399,7 +2399,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								onClick={() => fileInputRef.current?.click()}
 								className="mb-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors"
 								style={{
-									color: theme ? fgDim : "var(--color-surgent-text-3)",
+									color: theme ? fgDim : "var(--color-inferay-text-3)",
 									backgroundColor: "transparent",
 								}}
 								onMouseEnter={(e) => {
@@ -2436,17 +2436,17 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											maxHeight: 300,
 											backgroundColor: theme
 												? surfaceColor
-												: "var(--color-surgent-surface)",
+												: "var(--color-inferay-surface)",
 											borderColor: theme
 												? borderColor
-												: "var(--color-surgent-border)",
+												: "var(--color-inferay-border)",
 										}}
 									>
 										<div
 											className="px-3 py-1.5 text-[9px] font-semibold tracking-wide"
 											style={{
-												color: theme ? fgDim : "var(--color-surgent-text-3)",
-												borderBottom: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
+												color: theme ? fgDim : "var(--color-inferay-text-3)",
+												borderBottom: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
 											}}
 										>
 											FILES
@@ -2478,7 +2478,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 													style={{
 														color: theme
 															? fgDim
-															: "var(--color-surgent-text-3)",
+															: "var(--color-inferay-text-3)",
 													}}
 												>
 													{file.isDir ? "\u{1F4C1}" : "\u{1F4C4}"}
@@ -2488,7 +2488,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 													style={{
 														color: theme
 															? cursorColor
-															: "var(--color-surgent-accent)",
+															: "var(--color-inferay-accent)",
 													}}
 												>
 													{file.name}
@@ -2498,7 +2498,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 													style={{
 														color: theme
 															? fgDim
-															: "var(--color-surgent-text-3)",
+															: "var(--color-inferay-text-3)",
 													}}
 												>
 													{file.path}
@@ -2571,7 +2571,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 									style={{
 										backgroundColor: theme
 											? surfaceColor
-											: "var(--color-surgent-surface)",
+											: "var(--color-inferay-surface)",
 										maxHeight: "120px",
 									}}
 								>
@@ -2626,7 +2626,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 											color: "transparent",
 											caretColor: theme
 												? cursorColor
-												: "var(--color-surgent-text)",
+												: "var(--color-inferay-text)",
 											WebkitTextFillColor: "transparent",
 											lineHeight: "18px",
 											wordBreak: "break-word",
@@ -2690,10 +2690,10 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 						<div
 							className="relative w-[90%] max-w-2xl max-h-[80%] rounded-lg border overflow-hidden flex flex-col"
 							style={{
-								backgroundColor: theme ? bgColor : "var(--color-surgent-bg)",
+								backgroundColor: theme ? bgColor : "var(--color-inferay-bg)",
 								borderColor: theme
 									? borderColor
-									: "var(--color-surgent-border)",
+									: "var(--color-inferay-border)",
 							}}
 							onClick={(e) => e.stopPropagation()}
 						>
@@ -2703,13 +2703,13 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								style={{
 									borderColor: theme
 										? borderColor
-										: "var(--color-surgent-border)",
+										: "var(--color-inferay-border)",
 								}}
 							>
 								<span
 									className="text-[11px] font-medium truncate"
 									style={{
-										color: theme ? fgColor : "var(--color-surgent-text)",
+										color: theme ? fgColor : "var(--color-inferay-text)",
 									}}
 								>
 									{mdPreview.path}
@@ -2730,7 +2730,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 									<IconX
 										className="w-3.5 h-3.5"
 										style={{
-											color: theme ? fgDim : "var(--color-surgent-text-3)",
+											color: theme ? fgDim : "var(--color-inferay-text-3)",
 										}}
 									/>
 								</button>
@@ -2739,7 +2739,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 							<div
 								className="flex-1 overflow-y-auto p-4 text-[12px]"
 								style={{
-									color: theme ? fgColor : "var(--color-surgent-text)",
+									color: theme ? fgColor : "var(--color-inferay-text)",
 								}}
 							>
 								{mdPreview.loading && (
@@ -2747,7 +2747,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 										<span
 											className="text-[10px]"
 											style={{
-												color: theme ? fgDim : "var(--color-surgent-text-3)",
+												color: theme ? fgDim : "var(--color-inferay-text-3)",
 											}}
 										>
 											Loading...
@@ -2756,7 +2756,7 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 								)}
 								{mdPreview.error && (
 									<div className="flex items-center justify-center py-8">
-										<span className="text-[10px] text-surgent-error">
+										<span className="text-[10px] text-inferay-error">
 											{mdPreview.error}
 										</span>
 									</div>
@@ -2962,7 +2962,7 @@ const Bubble = React.memo(function Bubble({
 		return (
 			<p
 				className="text-center text-[10px]"
-				style={{ color: theme ? theme.fgDim : "var(--color-surgent-text-3)" }}
+				style={{ color: theme ? theme.fgDim : "var(--color-inferay-text-3)" }}
 			>
 				{msg.content}
 			</p>
@@ -2990,7 +2990,7 @@ const Bubble = React.memo(function Bubble({
 						<span
 							className="text-[10px] font-mono"
 							style={{
-								color: theme ? theme.fgDim : "var(--color-surgent-text-3)",
+								color: theme ? theme.fgDim : "var(--color-inferay-text-3)",
 							}}
 						>
 							— {msg.btwQuestion}
@@ -3222,8 +3222,8 @@ const StatusBar = React.memo(function StatusBar({
 		<div
 			className="shrink-0 px-3 py-1.5 flex items-center gap-2"
 			style={{
-				borderTop: `1px solid ${theme ? borderColor : "var(--color-surgent-border)"}`,
-				backgroundColor: theme ? bgColor : "var(--color-surgent-bg)",
+				borderTop: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
+				backgroundColor: theme ? bgColor : "var(--color-inferay-bg)",
 			}}
 		>
 			<StatusIcon
@@ -3249,7 +3249,7 @@ const StatusBar = React.memo(function StatusBar({
 				<span
 					className="text-[9px] tabular-nums"
 					style={{
-						color: theme ? fgDim : "var(--color-surgent-text-3)",
+						color: theme ? fgDim : "var(--color-inferay-text-3)",
 					}}
 				>
 					{formatElapsedTime(elapsedTime)}
@@ -3262,7 +3262,7 @@ const StatusBar = React.memo(function StatusBar({
 						backgroundColor: theme
 							? `${cursorColor}20`
 							: "rgba(0,122,255,0.15)",
-						color: theme ? cursorColor : "var(--color-surgent-accent)",
+						color: theme ? cursorColor : "var(--color-inferay-accent)",
 					}}
 				>
 					{queuedCount} queued
@@ -3274,11 +3274,11 @@ const StatusBar = React.memo(function StatusBar({
 					onClick={onStop}
 					className="p-1 rounded-md transition-all border"
 					style={{
-						color: theme ? fgDim : "var(--color-surgent-text-3)",
+						color: theme ? fgDim : "var(--color-inferay-text-3)",
 						backgroundColor: theme
 							? `${bgColor}`
-							: "var(--color-surgent-surface)",
-						borderColor: theme ? borderColor : "var(--color-surgent-border)",
+							: "var(--color-inferay-surface)",
+						borderColor: theme ? borderColor : "var(--color-inferay-border)",
 					}}
 					title="Stop"
 				>
@@ -3480,7 +3480,7 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 	const activityCount = toolActivities.length;
 
 	return (
-		<div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 bg-surgent-bg border-t border-surgent-border">
+		<div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 bg-inferay-bg border-t border-inferay-border">
 			{/* Left side: Activity pill with hover dropdown */}
 			{hasActivity ? (
 				<div
@@ -3489,9 +3489,9 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 					onMouseLeave={() => setIsHovered(false)}
 				>
 					{/* The pill */}
-					<div className="flex items-center gap-1.5 h-6 px-2.5 rounded-md text-xs font-medium cursor-default bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3 transition-all border border-surgent-border">
+					<div className="flex items-center gap-1.5 h-6 px-2.5 rounded-md text-xs font-medium cursor-default bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3 transition-all border border-inferay-border">
 						{displayToolName && (
-							<span className="text-surgent-text-3">
+							<span className="text-inferay-text-3">
 								{getToolIcon(displayToolName)}
 							</span>
 						)}
@@ -3499,7 +3499,7 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 							{displaySummary || "Working..."}
 						</span>
 						{activityCount > 1 && (
-							<span className="text-[9px] tabular-nums text-surgent-text-3">
+							<span className="text-[9px] tabular-nums text-inferay-text-3">
 								+{activityCount - 1}
 							</span>
 						)}
@@ -3507,8 +3507,8 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 
 					{/* Dropdown (appears above) - only show if we have tool activities */}
 					{isHovered && activityCount > 0 && (
-						<div className="absolute bottom-full left-0 mb-1 min-w-[240px] max-w-[320px] rounded-lg overflow-hidden bg-surgent-surface shadow-lg border border-surgent-border">
-							<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-surgent-border text-surgent-text-3">
+						<div className="absolute bottom-full left-0 mb-1 min-w-[240px] max-w-[320px] rounded-lg overflow-hidden bg-inferay-surface shadow-lg border border-inferay-border">
+							<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-inferay-border text-inferay-text-3">
 								<span>Activity</span>
 								<span className="tabular-nums">{activityCount}</span>
 							</div>
@@ -3518,18 +3518,18 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 										key={activity.id}
 										className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] ${
 											idx < toolActivities.length - 1
-												? "border-b border-surgent-border/50"
+												? "border-b border-inferay-border/50"
 												: ""
 										}`}
 									>
-										<span className="shrink-0 text-surgent-text-3">
+										<span className="shrink-0 text-inferay-text-3">
 											{getToolIcon(activity.toolName)}
 										</span>
-										<span className="flex-1 truncate text-surgent-text-2">
+										<span className="flex-1 truncate text-inferay-text-2">
 											{activity.summary}
 										</span>
 										{activity.isStreaming && (
-											<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-surgent-text-3" />
+											<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-inferay-text-3" />
 										)}
 									</div>
 								))}
@@ -3539,8 +3539,8 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 				</div>
 			) : (
 				<div className="flex items-center gap-2">
-					<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-surgent-text-3" />
-					<span className="text-[10px] text-surgent-text-3">Working...</span>
+					<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-inferay-text-3" />
+					<span className="text-[10px] text-inferay-text-3">Working...</span>
 				</div>
 			)}
 
@@ -3548,7 +3548,7 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 			<button
 				type="button"
 				onClick={onStop}
-				className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3 border border-surgent-border"
+				className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3 border border-inferay-border"
 			>
 				<svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
 					<rect x="6" y="6" width="12" height="12" rx="1" />
@@ -4320,8 +4320,8 @@ function MiniDiffViewer({
 		<div
 			className="rounded-lg border overflow-hidden text-[10px] font-mono"
 			style={{
-				backgroundColor: theme?.surface ?? "var(--color-surgent-surface)",
-				borderColor: theme?.border ?? "var(--color-surgent-border)",
+				backgroundColor: theme?.surface ?? "var(--color-inferay-surface)",
+				borderColor: theme?.border ?? "var(--color-inferay-border)",
 			}}
 		>
 			{/* Compact header - clickable to expand */}
@@ -4330,10 +4330,10 @@ function MiniDiffViewer({
 				onClick={() => setIsExpanded(!isExpanded)}
 				className="w-full flex items-center gap-1.5 px-2 py-1 text-[9px] font-medium text-left hover:opacity-80 transition-all"
 				style={{
-					color: theme?.fg ?? "var(--color-surgent-text-2)",
-					backgroundColor: theme?.bg ?? "var(--color-surgent-surface-2)",
+					color: theme?.fg ?? "var(--color-inferay-text-2)",
+					backgroundColor: theme?.bg ?? "var(--color-inferay-surface-2)",
 					borderBottom: isExpanded
-						? `1px solid ${theme?.border ?? "var(--color-surgent-border)"}`
+						? `1px solid ${theme?.border ?? "var(--color-inferay-border)"}`
 						: "none",
 				}}
 			>
@@ -4390,7 +4390,7 @@ function MiniDiffViewer({
 										className="h-px my-0.5"
 										style={{
 											backgroundColor:
-												theme?.border ?? "var(--color-surgent-border)",
+												theme?.border ?? "var(--color-inferay-border)",
 											opacity: 0.3,
 										}}
 									/>
@@ -4444,7 +4444,7 @@ function MiniDiffViewer({
 												<span
 													className="flex-1 whitespace-pre pr-1 overflow-hidden text-[8px] shiki-line"
 													style={{
-														color: theme?.fg ?? "var(--color-surgent-text)",
+														color: theme?.fg ?? "var(--color-inferay-text)",
 													}}
 													dangerouslySetInnerHTML={
 														isReady && highlightedHtml
@@ -4587,8 +4587,8 @@ function GroupedEditViewer({
 		<div
 			className="rounded-lg border overflow-hidden text-[10px] font-mono"
 			style={{
-				backgroundColor: theme?.surface ?? "var(--color-surgent-surface)",
-				borderColor: theme?.border ?? "var(--color-surgent-border)",
+				backgroundColor: theme?.surface ?? "var(--color-inferay-surface)",
+				borderColor: theme?.border ?? "var(--color-inferay-border)",
 			}}
 		>
 			{/* Compact header - clickable to expand */}
@@ -4597,10 +4597,10 @@ function GroupedEditViewer({
 				onClick={() => setIsExpanded(!isExpanded)}
 				className="w-full flex items-center gap-1.5 px-2 py-1 text-[9px] font-medium text-left hover:opacity-80 transition-all"
 				style={{
-					color: theme?.fg ?? "var(--color-surgent-text-2)",
-					backgroundColor: theme?.bg ?? "var(--color-surgent-surface-2)",
+					color: theme?.fg ?? "var(--color-inferay-text-2)",
+					backgroundColor: theme?.bg ?? "var(--color-inferay-surface-2)",
 					borderBottom: isExpanded
-						? `1px solid ${theme?.border ?? "var(--color-surgent-border)"}`
+						? `1px solid ${theme?.border ?? "var(--color-inferay-border)"}`
 						: "none",
 				}}
 			>
@@ -4640,8 +4640,8 @@ function GroupedEditViewer({
 				<span
 					className="text-[8px] px-1 py-px rounded opacity-60"
 					style={{
-						backgroundColor: theme?.surface ?? "var(--color-surgent-surface)",
-						color: theme?.fgDim ?? "var(--color-surgent-text-3)",
+						backgroundColor: theme?.surface ?? "var(--color-inferay-surface)",
+						color: theme?.fgDim ?? "var(--color-inferay-text-3)",
 					}}
 				>
 					{editCount}×
@@ -4662,7 +4662,7 @@ function GroupedEditViewer({
 										className="h-px my-0.5"
 										style={{
 											backgroundColor:
-												theme?.border ?? "var(--color-surgent-border)",
+												theme?.border ?? "var(--color-inferay-border)",
 											opacity: 0.3,
 										}}
 									/>
@@ -4716,7 +4716,7 @@ function GroupedEditViewer({
 												<span
 													className="flex-1 whitespace-pre pr-1 overflow-hidden text-[8px] shiki-line"
 													style={{
-														color: theme?.fg ?? "var(--color-surgent-text)",
+														color: theme?.fg ?? "var(--color-inferay-text)",
 													}}
 													dangerouslySetInnerHTML={
 														isReady && highlightedHtml
@@ -4853,12 +4853,12 @@ function CopyButton({
 			onClick={handleCopy}
 			className={`flex items-center justify-center h-5 w-5 rounded transition-colors ${className ?? ""}`}
 			style={{
-				backgroundColor: theme ? theme.surface : "var(--color-surgent-surface)",
+				backgroundColor: theme ? theme.surface : "var(--color-inferay-surface)",
 				color: copied
 					? "#22c55e"
 					: theme
 						? theme.fgDim
-						: "var(--color-surgent-text-3)",
+						: "var(--color-inferay-text-3)",
 			}}
 			title={copied ? "Copied!" : "Copy"}
 		>
@@ -4974,7 +4974,7 @@ function CheckpointMarker({
 				) : (
 					<span
 						className="text-[9px] italic"
-						style={{ color: theme?.fgDim ?? "var(--color-surgent-text-3)" }}
+						style={{ color: theme?.fgDim ?? "var(--color-inferay-text-3)" }}
 					>
 						reverted
 					</span>
@@ -5006,7 +5006,7 @@ function CheckpointMarker({
 										: "~"}
 							</span>
 							<span
-								style={{ color: theme?.fgDim ?? "var(--color-surgent-text-3)" }}
+								style={{ color: theme?.fgDim ?? "var(--color-inferay-text-3)" }}
 							>
 								{f.path.split("/").pop()}
 							</span>

@@ -216,7 +216,7 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 		return {
 			outputPath: resolve(
 				tmpdir(),
-				`surgent-codex-${ctx.paneId}-${Date.now()}.txt`
+				`inferay-codex-${ctx.paneId}-${Date.now()}.txt`
 			),
 			assistantOpen: false,
 			toolOpen: false,

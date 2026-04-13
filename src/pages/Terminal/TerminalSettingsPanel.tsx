@@ -43,10 +43,10 @@ function ColorInput({
 				type="color"
 				value={value}
 				onChange={(e) => onChange(e.target.value as HexColor)}
-				className="h-7 w-7 cursor-pointer rounded border border-surgent-border bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
+				className="h-7 w-7 cursor-pointer rounded border border-inferay-border bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
 			/>
-			<span className="text-[10px] text-surgent-text-3">{label}</span>
-			<span className="ml-auto font-mono text-[9px] text-surgent-text-3">
+			<span className="text-[10px] text-inferay-text-3">{label}</span>
+			<span className="ml-auto font-mono text-[9px] text-inferay-text-3">
 				{value}
 			</span>
 		</label>
@@ -112,18 +112,18 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 		<>
 			<div
 				role="presentation"
-				className="fixed inset-0 bg-surgent-bg/30 z-[50]"
+				className="fixed inset-0 bg-inferay-bg/30 z-[50]"
 				onClick={onClose}
 			/>
-			<div className="fixed right-3 top-14 z-[51] w-[330px] max-h-[calc(100vh-4rem)] overflow-y-auto rounded-xl border border-surgent-border bg-surgent-bg shadow-2xl">
-				<div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-surgent-border bg-surgent-bg rounded-t-xl">
-					<span className="text-[10px] font-bold tracking-widest text-surgent-text-3">
+			<div className="fixed right-3 top-14 z-[51] w-[330px] max-h-[calc(100vh-4rem)] overflow-y-auto rounded-xl border border-inferay-border bg-inferay-bg shadow-2xl">
+				<div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-inferay-border bg-inferay-bg rounded-t-xl">
+					<span className="text-[10px] font-bold tracking-widest text-inferay-text-3">
 						THEME
 					</span>
 					<button
 						type="button"
 						onClick={onClose}
-						className="text-[10px] font-bold text-surgent-text-3 hover:text-surgent-text"
+						className="text-[10px] font-bold text-inferay-text-3 hover:text-inferay-text"
 					>
 						x
 					</button>
@@ -143,11 +143,11 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 										onClick={() => handleThemeChange(t.id)}
 										className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${
 											appThemeId === t.id
-												? "bg-surgent-accent/15 ring-1 ring-surgent-accent"
-												: "hover:bg-surgent-surface-2"
+												? "bg-inferay-accent/15 ring-1 ring-inferay-accent"
+												: "hover:bg-inferay-surface-2"
 										}`}
 									>
-										<div className="flex h-8 w-full rounded-md overflow-hidden border border-surgent-border/30">
+										<div className="flex h-8 w-full rounded-md overflow-hidden border border-inferay-border/30">
 											<div
 												className="flex w-1/2 items-center justify-center"
 												style={{ backgroundColor: t.colors.bg }}
@@ -172,7 +172,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 											</div>
 										</div>
 										<span
-											className={`text-[9px] ${appThemeId === t.id ? "font-semibold text-surgent-text" : "text-surgent-text-2"}`}
+											className={`text-[9px] ${appThemeId === t.id ? "font-semibold text-inferay-text" : "text-inferay-text-2"}`}
 										>
 											{t.name}
 										</span>
@@ -183,10 +183,10 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 							<button
 								type="button"
 								onClick={() => handleThemeChange("custom")}
-								className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${isCustom ? "bg-surgent-accent/15 ring-1 ring-surgent-accent" : "hover:bg-surgent-surface-2"}`}
+								className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${isCustom ? "bg-inferay-accent/15 ring-1 ring-inferay-accent" : "hover:bg-inferay-surface-2"}`}
 							>
 								<div
-									className="flex h-8 w-full items-center justify-center rounded-md border border-dashed border-surgent-border"
+									className="flex h-8 w-full items-center justify-center rounded-md border border-dashed border-inferay-border"
 									style={{ backgroundColor: custom.bg }}
 								>
 									<div className="flex items-center gap-1">
@@ -201,7 +201,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 									</div>
 								</div>
 								<span
-									className={`text-[9px] ${isCustom ? "font-semibold text-surgent-text" : "text-surgent-text-2"}`}
+									className={`text-[9px] ${isCustom ? "font-semibold text-inferay-text" : "text-inferay-text-2"}`}
 								>
 									Custom
 								</span>
@@ -210,9 +210,9 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 					</div>
 					{isCustom && (
 						<>
-							<div className="h-px bg-surgent-border" />
+							<div className="h-px bg-inferay-border" />
 							<div>
-								<h4 className="mb-3 text-[10px] font-semibold text-surgent-text-2">
+								<h4 className="mb-3 text-[10px] font-semibold text-inferay-text-2">
 									CUSTOM COLORS
 								</h4>
 								<div className="space-y-2.5">
@@ -238,7 +238,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 									/>
 								</div>
 								<div
-									className="mt-3 rounded-md p-3 font-mono text-[11px] leading-relaxed border border-surgent-border"
+									className="mt-3 rounded-md p-3 font-mono text-[11px] leading-relaxed border border-inferay-border"
 									style={{ backgroundColor: custom.bg, color: custom.fg }}
 								>
 									<span style={{ color: custom.cursor }}>$</span> terminal-gui
@@ -251,17 +251,17 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 							</div>
 						</>
 					)}
-					<div className="h-px bg-surgent-border" />
+					<div className="h-px bg-inferay-border" />
 					{/* Font settings */}
 					<div>
-						<h4 className="mb-2 text-[10px] font-semibold text-surgent-text-2">
+						<h4 className="mb-2 text-[10px] font-semibold text-inferay-text-2">
 							FONT
 						</h4>
 						<div className="flex items-center gap-3">
 							<select
 								value={fontFamily}
 								onChange={(e) => onFontFamilyChange(e.target.value)}
-								className="rounded-md border border-surgent-border bg-surgent-bg px-2 py-1 text-[11px] text-surgent-text-2 outline-none"
+								className="rounded-md border border-inferay-border bg-inferay-bg px-2 py-1 text-[11px] text-inferay-text-2 outline-none"
 							>
 								{TERMINAL_FONTS.map((f) => (
 									<option key={f} value={f}>
@@ -279,16 +279,16 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 									onChange={(e) => onFontSizeChange(Number(e.target.value))}
 									className="w-20"
 								/>
-								<span className="font-mono text-[10px] text-surgent-text-2">
+								<span className="font-mono text-[10px] text-inferay-text-2">
 									{fontSize}
 								</span>
 							</div>
 						</div>
 					</div>
-					<div className="h-px bg-surgent-border" />
+					<div className="h-px bg-inferay-border" />
 					{/* Opacity */}
 					<div>
-						<h4 className="mb-2 text-[10px] font-semibold text-surgent-text-2">
+						<h4 className="mb-2 text-[10px] font-semibold text-inferay-text-2">
 							OPACITY
 						</h4>
 						<div className="flex items-center gap-2">
@@ -301,7 +301,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 								onChange={(e) => onOpacityChange(Number(e.target.value))}
 								className="w-32"
 							/>
-							<span className="font-mono text-[10px] text-surgent-text-2">
+							<span className="font-mono text-[10px] text-inferay-text-2">
 								{Math.round(opacity * 100)}%
 							</span>
 						</div>

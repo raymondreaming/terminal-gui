@@ -182,7 +182,7 @@ export function Inferay() {
 					}}
 				>
 					{/* Window Chrome */}
-					<div className="bg-surgent-bg px-3 py-1.5 flex items-center">
+					<div className="bg-inferay-bg px-3 py-1.5 flex items-center">
 						<div className="flex gap-1.5">
 							<div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
 							<div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
@@ -191,9 +191,9 @@ export function Inferay() {
 					</div>
 
 					{/* App Layout */}
-					<div className="flex h-[630px] bg-surgent-bg">
+					<div className="flex h-[630px] bg-inferay-bg">
 						{/* Icon Sidebar - Minimal */}
-						<aside className="w-10 flex flex-col border-r border-surgent-border bg-surgent-bg shrink-0">
+						<aside className="w-10 flex flex-col border-r border-inferay-border bg-inferay-bg shrink-0">
 							{/* Logo */}
 							<div className="flex h-8 items-center justify-center">
 								<img
@@ -207,8 +207,8 @@ export function Inferay() {
 									onClick={() => setView("prompts")}
 									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "prompts"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+											? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+											: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 									}`}
 									title="Prompts"
 								>
@@ -218,8 +218,8 @@ export function Inferay() {
 									onClick={() => setView("workspaces")}
 									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "workspaces"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+											? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+											: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 									}`}
 									title="Workspaces"
 								>
@@ -229,8 +229,8 @@ export function Inferay() {
 									onClick={() => setView("images")}
 									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "images"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+											? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+											: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 									}`}
 									title="Image Studio"
 								>
@@ -240,8 +240,8 @@ export function Inferay() {
 									onClick={() => setView("workflow")}
 									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "workflow"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+											? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+											: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 									}`}
 									title="Workflow Builder"
 								>
@@ -251,8 +251,8 @@ export function Inferay() {
 									onClick={() => setView("repositories")}
 									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "repositories"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+											? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+											: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 									}`}
 									title="Repositories"
 								>
@@ -264,8 +264,8 @@ export function Inferay() {
 									onClick={() => setView("profile")}
 									className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${
 										view === "profile"
-											? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-											: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+											? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+											: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 									}`}
 									title="Profile"
 								>
@@ -277,7 +277,7 @@ export function Inferay() {
 						{/* Main Content */}
 						<div className="flex-1 flex flex-col min-w-0">
 							{/* Header */}
-							<div className="flex items-center gap-1.5 border-b border-surgent-border px-2 h-8">
+							<div className="flex items-center gap-1.5 border-b border-inferay-border px-2 h-8">
 								{/* View tabs */}
 								<div className="flex items-center gap-1.5">
 									{[
@@ -298,8 +298,8 @@ export function Inferay() {
 											}}
 											className={`flex items-center gap-1 h-6 px-2 rounded-md border text-[10px] font-medium transition-colors ${
 												view === tab.id
-													? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-													: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+													? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+													: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 											}`}
 										>
 											{tab.icon}
@@ -312,9 +312,9 @@ export function Inferay() {
 
 								{/* Branch indicator - only show in non-chat views */}
 								{view !== "chat" && (
-									<div className="hidden md:flex items-center gap-1 h-6 px-1.5 rounded-md bg-surgent-surface border border-surgent-border">
+									<div className="hidden md:flex items-center gap-1 h-6 px-1.5 rounded-md bg-inferay-surface border border-inferay-border">
 										<Icons.Branch />
-										<span className="text-[9px] font-mono text-surgent-text-2">
+										<span className="text-[9px] font-mono text-inferay-text-2">
 											main
 										</span>
 									</div>
@@ -322,10 +322,10 @@ export function Inferay() {
 
 								{/* View toggles - show in code and graph views */}
 								{(view === "code" || view === "graph") && (
-									<div className="flex items-center gap-0.5 h-6 px-1 rounded-md bg-surgent-surface border border-surgent-border">
+									<div className="flex items-center gap-0.5 h-6 px-1 rounded-md bg-inferay-surface border border-inferay-border">
 										<button
 											onClick={() => setShowSidebar(!showSidebar)}
-											className={`p-0.5 rounded transition-colors ${showSidebar ? "text-surgent-text" : "text-surgent-text-3 hover:text-surgent-text-2"}`}
+											className={`p-0.5 rounded transition-colors ${showSidebar ? "text-inferay-text" : "text-inferay-text-3 hover:text-inferay-text-2"}`}
 											title="Sidebar"
 										>
 											<Icons.Layers />
@@ -333,10 +333,10 @@ export function Inferay() {
 									</div>
 								)}
 
-								<div className="flex items-center h-6 px-1 rounded-md bg-surgent-surface border border-surgent-border">
+								<div className="flex items-center h-6 px-1 rounded-md bg-inferay-surface border border-inferay-border">
 									<button
 										onClick={() => setZenMode(!zenMode)}
-										className={`p-0.5 rounded transition-colors ${zenMode ? "text-surgent-accent" : "text-surgent-text-3 hover:text-surgent-text-2"}`}
+										className={`p-0.5 rounded transition-colors ${zenMode ? "text-inferay-accent" : "text-inferay-text-3 hover:text-inferay-text-2"}`}
 										title="Focus mode"
 									>
 										{zenMode ? <Icons.Collapse /> : <Icons.Expand />}
@@ -351,7 +351,7 @@ export function Inferay() {
 									<>
 										{/* Chat Panel - hidden in zen mode */}
 										{!zenMode && (
-											<section className="w-[300px] shrink-0 flex flex-col border-r border-surgent-border">
+											<section className="w-[300px] shrink-0 flex flex-col border-r border-inferay-border">
 												<ChatPanel
 													selectedModel={selectedModel}
 													onSelectModel={setSelectedModel}
@@ -371,8 +371,8 @@ export function Inferay() {
 														onClick={() => setShowMinimap(!showMinimap)}
 														className={`absolute top-2 right-2 p-1.5 rounded-md border transition-colors ${
 															showMinimap
-																? "bg-surgent-surface-2 border-surgent-border text-surgent-text"
-																: "bg-surgent-surface/80 border-surgent-border/50 text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface"
+																? "bg-inferay-surface-2 border-inferay-border text-inferay-text"
+																: "bg-inferay-surface/80 border-inferay-border/50 text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface"
 														}`}
 														title="Minimap"
 													>
@@ -433,37 +433,37 @@ export function Inferay() {
 							{/* Zen Mode Floating Panel */}
 							{zenMode && (
 								<div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-6">
-									<div className="rounded-2xl border border-surgent-border bg-surgent-surface backdrop-blur-xl shadow-2xl overflow-hidden">
+									<div className="rounded-2xl border border-inferay-border bg-inferay-surface backdrop-blur-xl shadow-2xl overflow-hidden">
 										{/* Combined context + status bar */}
-										<div className="flex items-center gap-2 px-4 py-2 border-b border-surgent-border/30">
+										<div className="flex items-center gap-2 px-4 py-2 border-b border-inferay-border/30">
 											{/* Model indicator */}
 											<div className="flex items-center gap-1.5">
 												<span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-												<span className="text-[10px] font-medium text-surgent-text-2">
+												<span className="text-[10px] font-medium text-inferay-text-2">
 													Opus 4.7
 												</span>
 											</div>
-											<span className="text-surgent-text-3/50">/</span>
+											<span className="text-inferay-text-3/50">/</span>
 											{/* Project path */}
-											<div className="flex items-center gap-1 text-surgent-text-3">
+											<div className="flex items-center gap-1 text-inferay-text-3">
 												<Icons.Folder />
 												<span className="text-[10px] font-mono">
 													projects/my-app
 												</span>
 											</div>
-											<span className="text-surgent-text-3/50">/</span>
+											<span className="text-inferay-text-3/50">/</span>
 											{/* Branch */}
-											<div className="flex items-center gap-1 text-surgent-text-3">
+											<div className="flex items-center gap-1 text-inferay-text-3">
 												<Icons.Branch />
 												<span className="text-[10px] font-mono">main</span>
 											</div>
 											<span className="flex-1" />
 											{/* Thinking + time */}
 											<ThinkingIndicator />
-											<span className="text-[10px] tabular-nums text-surgent-text-3">
+											<span className="text-[10px] tabular-nums text-inferay-text-3">
 												0:42
 											</span>
-											<button className="flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] bg-surgent-error/10 text-surgent-error border border-surgent-error/30 hover:bg-surgent-error/20 transition-colors">
+											<button className="flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] bg-inferay-error/10 text-inferay-error border border-inferay-error/30 hover:bg-inferay-error/20 transition-colors">
 												<Icons.Pause />
 												Stop
 											</button>
@@ -474,9 +474,9 @@ export function Inferay() {
 											<input
 												type="text"
 												placeholder="What would you like to do next?"
-												className="flex-1 bg-transparent text-[13px] text-surgent-text outline-none placeholder:text-surgent-text-3"
+												className="flex-1 bg-transparent text-[13px] text-inferay-text outline-none placeholder:text-inferay-text-3"
 											/>
-											<button className="p-2 rounded-lg text-surgent-text-3 hover:bg-surgent-surface-2 hover:text-surgent-text transition-colors">
+											<button className="p-2 rounded-lg text-inferay-text-3 hover:bg-inferay-surface-2 hover:text-inferay-text transition-colors">
 												<Icons.Plus />
 											</button>
 										</div>

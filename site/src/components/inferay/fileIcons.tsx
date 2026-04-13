@@ -74,7 +74,7 @@ export const fileIconColors: Record<FileIconType, string> = {
 	json: "text-amber-400",
 	test: "text-green-400",
 	config: "text-gray-400",
-	default: "text-surgent-text-3",
+	default: "text-inferay-text-3",
 };
 
 // File icon component

@@ -25,10 +25,10 @@ export function ChatPanel({
 	return (
 		<div className="flex h-full flex-col">
 			{/* Header */}
-			<div className="shrink-0 flex items-center gap-1.5 px-1.5 py-1 border-b border-surgent-border">
+			<div className="shrink-0 flex items-center gap-1.5 px-1.5 py-1 border-b border-inferay-border">
 				<ModelSelector selectedModel={selectedModel} onSelect={onSelectModel} />
 				<span className="flex-1" />
-				<div className="flex items-center gap-1 text-surgent-text-3">
+				<div className="flex items-center gap-1 text-inferay-text-3">
 					<Icons.Folder />
 					<span className="text-[8px] font-mono truncate max-w-[100px]">
 						projects/my-app
@@ -42,20 +42,20 @@ export function ChatPanel({
 					<div key={i}>
 						{msg.role === "user" ? (
 							<div className="flex justify-end">
-								<p className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-surgent-accent/20 text-[11px] text-surgent-text leading-relaxed">
+								<p className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-inferay-accent/20 text-[11px] text-inferay-text leading-relaxed">
 									{msg.content}
 								</p>
 							</div>
 						) : (
 							<div className="space-y-2">
-								<p className="text-[11px] text-surgent-text-2 leading-relaxed">
+								<p className="text-[11px] text-inferay-text-2 leading-relaxed">
 									{msg.content}
 								</p>
 								{msg.tool && (
-									<div className="rounded-md border border-surgent-border overflow-hidden">
-										<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-surgent-border">
+									<div className="rounded-md border border-inferay-border overflow-hidden">
+										<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-inferay-border">
 											<span
-												className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-surgent-text-3`}
+												className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-inferay-text-3`}
 											>
 												<Icons.Chevron />
 											</span>
@@ -66,7 +66,7 @@ export function ChatPanel({
 											) : (
 												<Icons.File />
 											)}
-											<span className="flex-1 text-[8px] font-mono text-surgent-text-2 truncate">
+											<span className="flex-1 text-[8px] font-mono text-inferay-text-2 truncate">
 												{msg.tool.file || msg.tool.command || msg.tool.query}
 											</span>
 											{msg.inlineDiff && (
@@ -98,38 +98,38 @@ export function ChatPanel({
 			</div>
 
 			{/* Activity bar */}
-			<div className="shrink-0 px-2 py-1 flex items-center gap-1.5 border-t border-surgent-border bg-surgent-bg">
-				<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surgent-surface-2 border border-surgent-border">
-					<span className="text-surgent-text-3">
+			<div className="shrink-0 px-2 py-1 flex items-center gap-1.5 border-t border-inferay-border bg-inferay-bg">
+				<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-inferay-surface-2 border border-inferay-border">
+					<span className="text-inferay-text-3">
 						<Icons.Edit />
 					</span>
-					<span className="text-[8px] text-surgent-text-2">Editing...</span>
+					<span className="text-[8px] text-inferay-text-2">Editing...</span>
 				</div>
 				<span className="flex-1" />
-				<span className="text-[8px] tabular-nums text-surgent-text-3">
+				<span className="text-[8px] tabular-nums text-inferay-text-3">
 					0:42
 				</span>
-				<button className="p-0.5 rounded-md border border-surgent-border bg-surgent-surface text-surgent-text-3 hover:bg-surgent-surface-2">
+				<button className="p-0.5 rounded-md border border-inferay-border bg-inferay-surface text-inferay-text-3 hover:bg-inferay-surface-2">
 					<Icons.Pause />
 				</button>
 			</div>
 
 			{/* Input */}
-			<div className="shrink-0 border-t border-surgent-border p-1.5">
+			<div className="shrink-0 border-t border-inferay-border p-1.5">
 				<div
-					className={`flex items-center gap-1.5 bg-surgent-surface rounded-lg border px-2 py-1.5 transition-colors ${inputFocused ? "border-surgent-accent/50" : "border-surgent-border"}`}
+					className={`flex items-center gap-1.5 bg-inferay-surface rounded-lg border px-2 py-1.5 transition-colors ${inputFocused ? "border-inferay-accent/50" : "border-inferay-border"}`}
 				>
-					<button className="shrink-0 p-0.5 rounded text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors">
+					<button className="shrink-0 p-0.5 rounded text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors">
 						<Icons.Plus />
 					</button>
 					<input
 						type="text"
 						placeholder="Message Claude..."
-						className="flex-1 bg-transparent text-[10px] text-surgent-text outline-none placeholder:text-surgent-text-3"
+						className="flex-1 bg-transparent text-[10px] text-inferay-text outline-none placeholder:text-inferay-text-3"
 						onFocus={() => setInputFocused(true)}
 						onBlur={() => setInputFocused(false)}
 					/>
-					<kbd className="px-1 py-0.5 rounded text-[7px] bg-surgent-bg border border-surgent-border text-surgent-text-3">
+					<kbd className="px-1 py-0.5 rounded text-[7px] bg-inferay-bg border border-inferay-border text-inferay-text-3">
 						↵
 					</kbd>
 				</div>
@@ -201,7 +201,7 @@ export function VerticalChatPanel({
 				return {
 					icon: <Icons.Check />,
 					label: "Done",
-					color: "text-surgent-text-3",
+					color: "text-inferay-text-3",
 				};
 		}
 	};
@@ -209,15 +209,15 @@ export function VerticalChatPanel({
 
 	return (
 		<div
-			className={`flex-1 min-w-[260px] max-w-[380px] flex flex-col border-r border-surgent-border last:border-r-0 ${isActive ? "bg-surgent-bg" : "bg-surgent-bg/50"}`}
+			className={`flex-1 min-w-[260px] max-w-[380px] flex flex-col border-r border-inferay-border last:border-r-0 ${isActive ? "bg-inferay-bg" : "bg-inferay-bg/50"}`}
 			onClick={onSelect}
 		>
 			{/* Header */}
 			<div
-				className={`shrink-0 flex items-center gap-1.5 px-1.5 py-1 border-b border-surgent-border transition-colors cursor-pointer ${
+				className={`shrink-0 flex items-center gap-1.5 px-1.5 py-1 border-b border-inferay-border transition-colors cursor-pointer ${
 					isActive
-						? "bg-surgent-bg"
-						: "bg-surgent-bg/50 hover:bg-surgent-surface/50"
+						? "bg-inferay-bg"
+						: "bg-inferay-bg/50 hover:bg-inferay-surface/50"
 				}`}
 			>
 				{/* Model selector */}
@@ -230,7 +230,7 @@ export function VerticalChatPanel({
 				<span className="flex-1" />
 				{/* Directory info */}
 				{directory && (
-					<div className="flex items-center gap-1 text-surgent-text-3">
+					<div className="flex items-center gap-1 text-inferay-text-3">
 						<Icons.Folder />
 						<span className="text-[8px] font-mono truncate max-w-[100px]">
 							{directory.replace("~/", "")}
@@ -245,20 +245,20 @@ export function VerticalChatPanel({
 					<div key={i}>
 						{msg.role === "user" ? (
 							<div className="flex justify-end">
-								<p className="max-w-[90%] px-3 py-2 rounded-2xl rounded-br-sm bg-surgent-accent/20 text-[11px] text-surgent-text leading-relaxed">
+								<p className="max-w-[90%] px-3 py-2 rounded-2xl rounded-br-sm bg-inferay-accent/20 text-[11px] text-inferay-text leading-relaxed">
 									{msg.content}
 								</p>
 							</div>
 						) : (
 							<div className="space-y-2">
-								<p className="text-[11px] text-surgent-text-2 leading-relaxed">
+								<p className="text-[11px] text-inferay-text-2 leading-relaxed">
 									{msg.content}
 								</p>
 								{msg.tool && (
-									<div className="rounded-md border border-surgent-border overflow-hidden">
-										<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-surgent-border">
+									<div className="rounded-md border border-inferay-border overflow-hidden">
+										<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-inferay-border">
 											<span
-												className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-surgent-text-3`}
+												className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-inferay-text-3`}
 											>
 												<Icons.Chevron />
 											</span>
@@ -269,7 +269,7 @@ export function VerticalChatPanel({
 											) : (
 												<Icons.File />
 											)}
-											<span className="flex-1 text-[8px] font-mono text-surgent-text-2 truncate">
+											<span className="flex-1 text-[8px] font-mono text-inferay-text-2 truncate">
 												{msg.tool.file || msg.tool.command || msg.tool.query}
 											</span>
 											{msg.inlineDiff && (
@@ -302,43 +302,43 @@ export function VerticalChatPanel({
 
 			{/* Activity bar */}
 			{status && status !== "complete" && (
-				<div className="shrink-0 px-2 py-1 flex items-center gap-1.5 border-t border-surgent-border bg-surgent-bg">
-					<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surgent-surface-2 border border-surgent-border">
+				<div className="shrink-0 px-2 py-1 flex items-center gap-1.5 border-t border-inferay-border bg-inferay-bg">
+					<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-inferay-surface-2 border border-inferay-border">
 						<span className={statusInfo.color}>{statusInfo.icon}</span>
-						<span className="text-[8px] text-surgent-text-2">
+						<span className="text-[8px] text-inferay-text-2">
 							{statusInfo.label}
 						</span>
 					</div>
 					{(statusFile || statusQuery) && (
-						<span className="text-[8px] font-mono text-surgent-text-3 truncate">
+						<span className="text-[8px] font-mono text-inferay-text-3 truncate">
 							{statusFile || statusQuery}
 						</span>
 					)}
 					<span className="flex-1" />
 					{time && (
-						<span className="text-[8px] tabular-nums text-surgent-text-3">
+						<span className="text-[8px] tabular-nums text-inferay-text-3">
 							{time}
 						</span>
 					)}
-					<button className="p-0.5 rounded-md border border-surgent-border bg-surgent-surface text-surgent-text-3 hover:bg-surgent-surface-2">
+					<button className="p-0.5 rounded-md border border-inferay-border bg-inferay-surface text-inferay-text-3 hover:bg-inferay-surface-2">
 						<Icons.Pause />
 					</button>
 				</div>
 			)}
 
 			{/* Input */}
-			<div className="shrink-0 p-1.5 border-t border-surgent-border">
+			<div className="shrink-0 p-1.5 border-t border-inferay-border">
 				<div
-					className={`flex items-center gap-1.5 bg-surgent-surface rounded-lg border px-2 py-1.5 transition-colors ${inputFocused ? "border-surgent-accent/50" : "border-surgent-border"}`}
+					className={`flex items-center gap-1.5 bg-inferay-surface rounded-lg border px-2 py-1.5 transition-colors ${inputFocused ? "border-inferay-accent/50" : "border-inferay-border"}`}
 				>
 					<input
 						type="text"
 						placeholder="Message..."
-						className="flex-1 bg-transparent text-[10px] text-surgent-text outline-none placeholder:text-surgent-text-3"
+						className="flex-1 bg-transparent text-[10px] text-inferay-text outline-none placeholder:text-inferay-text-3"
 						onFocus={() => setInputFocused(true)}
 						onBlur={() => setInputFocused(false)}
 					/>
-					<kbd className="px-1 py-0.5 rounded text-[7px] bg-surgent-bg border border-surgent-border text-surgent-text-3">
+					<kbd className="px-1 py-0.5 rounded text-[7px] bg-inferay-bg border border-inferay-border text-inferay-text-3">
 						↵
 					</kbd>
 				</div>
@@ -366,16 +366,16 @@ function NewChatPanel({
 	];
 
 	return (
-		<div className="flex-1 min-w-[280px] max-w-[400px] flex flex-col border-r border-surgent-border bg-surgent-bg">
+		<div className="flex-1 min-w-[280px] max-w-[400px] flex flex-col border-r border-inferay-border bg-inferay-bg">
 			{/* Header */}
-			<div className="shrink-0 flex items-center gap-2 px-2 py-1 border-b border-surgent-border bg-surgent-bg">
+			<div className="shrink-0 flex items-center gap-2 px-2 py-1 border-b border-inferay-border bg-inferay-bg">
 				<Icons.Plus />
-				<span className="flex-1 text-[9px] font-medium text-surgent-text">
+				<span className="flex-1 text-[9px] font-medium text-inferay-text">
 					New Chat
 				</span>
 				<button
 					onClick={onCancel}
-					className="p-1 rounded-md text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text transition-colors"
+					className="p-1 rounded-md text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -385,7 +385,7 @@ function NewChatPanel({
 			<div className="flex-1 overflow-y-auto p-4 space-y-4">
 				{/* Model Selection */}
 				<div className="space-y-1.5">
-					<label className="text-[10px] font-medium text-surgent-text-2">
+					<label className="text-[10px] font-medium text-inferay-text-2">
 						Model
 					</label>
 					<div className="space-y-1">
@@ -395,8 +395,8 @@ function NewChatPanel({
 								onClick={() => setSelectedModel(model.id)}
 								className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-colors ${
 									selectedModel === model.id
-										? "border-surgent-accent/50 bg-surgent-surface-2"
-										: "border-surgent-border bg-surgent-surface hover:bg-surgent-surface-2"
+										? "border-inferay-accent/50 bg-inferay-surface-2"
+										: "border-inferay-border bg-inferay-surface hover:bg-inferay-surface-2"
 								}`}
 							>
 								<span
@@ -404,15 +404,15 @@ function NewChatPanel({
 									style={{ backgroundColor: model.color }}
 								/>
 								<span
-									className={`flex-1 text-left text-[11px] font-medium ${selectedModel === model.id ? "text-surgent-text" : "text-surgent-text-2"}`}
+									className={`flex-1 text-left text-[11px] font-medium ${selectedModel === model.id ? "text-inferay-text" : "text-inferay-text-2"}`}
 								>
 									{model.name}
 								</span>
-								<span className="text-[9px] text-surgent-text-3">
+								<span className="text-[9px] text-inferay-text-3">
 									{model.provider}
 								</span>
 								{selectedModel === model.id && (
-									<span className="text-surgent-accent">
+									<span className="text-inferay-accent">
 										<Icons.Check />
 									</span>
 								)}
@@ -423,7 +423,7 @@ function NewChatPanel({
 
 				{/* Directory Selection */}
 				<div className="space-y-1.5">
-					<label className="text-[10px] font-medium text-surgent-text-2">
+					<label className="text-[10px] font-medium text-inferay-text-2">
 						Working Directory
 					</label>
 					<div className="space-y-1">
@@ -433,25 +433,25 @@ function NewChatPanel({
 								onClick={() => setDirectory(dir)}
 								className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
 									directory === dir
-										? "border-surgent-accent/50 bg-surgent-surface-2"
-										: "border-surgent-border bg-surgent-surface hover:bg-surgent-surface-2"
+										? "border-inferay-accent/50 bg-inferay-surface-2"
+										: "border-inferay-border bg-inferay-surface hover:bg-inferay-surface-2"
 								}`}
 							>
 								<Icons.Folder />
 								<span
-									className={`flex-1 text-left text-[10px] font-mono truncate ${directory === dir ? "text-surgent-text" : "text-surgent-text-2"}`}
+									className={`flex-1 text-left text-[10px] font-mono truncate ${directory === dir ? "text-inferay-text" : "text-inferay-text-2"}`}
 								>
 									{dir}
 								</span>
 								{directory === dir && (
-									<span className="text-surgent-accent">
+									<span className="text-inferay-accent">
 										<Icons.Check />
 									</span>
 								)}
 							</button>
 						))}
 					</div>
-					<button className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-surgent-border text-surgent-text-3 hover:border-surgent-accent/50 hover:text-surgent-text-2 transition-colors">
+					<button className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-inferay-border text-inferay-text-3 hover:border-inferay-accent/50 hover:text-inferay-text-2 transition-colors">
 						<Icons.Plus />
 						<span className="text-[10px]">Browse...</span>
 					</button>
@@ -459,16 +459,16 @@ function NewChatPanel({
 			</div>
 
 			{/* Footer Actions */}
-			<div className="shrink-0 p-3 border-t border-surgent-border flex items-center gap-2">
+			<div className="shrink-0 p-3 border-t border-inferay-border flex items-center gap-2">
 				<button
 					onClick={onCancel}
-					className="flex-1 py-2 rounded-lg border border-surgent-border text-[10px] font-medium text-surgent-text-2 hover:bg-surgent-surface transition-colors"
+					className="flex-1 py-2 rounded-lg border border-inferay-border text-[10px] font-medium text-inferay-text-2 hover:bg-inferay-surface transition-colors"
 				>
 					Cancel
 				</button>
 				<button
 					onClick={() => onCreate({ model: selectedModel, directory })}
-					className="flex-1 py-2 rounded-lg bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-surface transition-colors"
+					className="flex-1 py-2 rounded-lg bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-surface transition-colors"
 				>
 					Create Chat
 				</button>
@@ -506,7 +506,7 @@ export function ChatGridView({
 	};
 
 	return (
-		<div className="flex-1 flex bg-surgent-bg overflow-hidden">
+		<div className="flex-1 flex bg-inferay-bg overflow-hidden">
 			{/* Existing chat panels */}
 			{chats.map((thread: any, idx: number) => (
 				<VerticalChatPanel

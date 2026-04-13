@@ -63,10 +63,10 @@ const SectionHeader = ({
 	border: string;
 }) => (
 	<div
-		className={`px-3 py-1.5 flex items-center gap-1.5 ${border} border-surgent-border`}
+		className={`px-3 py-1.5 flex items-center gap-1.5 ${border} border-inferay-border`}
 	>
 		{icon}
-		<span className="text-[9px] text-surgent-text-3 uppercase tracking-wider font-medium">
+		<span className="text-[9px] text-inferay-text-3 uppercase tracking-wider font-medium">
 			{label}
 		</span>
 		{count > 0 && <span className={`text-[9px] ${color}`}>{count}</span>}
@@ -81,7 +81,7 @@ const DropdownMenu = ({
 	className?: string;
 }) => (
 	<div
-		className={`absolute top-full mt-1 z-50 rounded-lg border border-surgent-border bg-surgent-surface shadow-lg overflow-hidden ${className}`}
+		className={`absolute top-full mt-1 z-50 rounded-lg border border-inferay-border bg-inferay-surface shadow-lg overflow-hidden ${className}`}
 	>
 		{children}
 	</div>
@@ -206,16 +206,16 @@ export const PopoutHeader = memo(function PopoutHeader(
 	};
 
 	return (
-		<div className="relative shrink-0 flex h-14 items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2 pt-2 sm:px-3">
+		<div className="relative shrink-0 flex h-14 items-center gap-1.5 border-b border-inferay-border bg-inferay-bg px-2 pt-2 sm:px-3">
 			<IconButton
 				size="sm"
 				onClick={onRestore}
 				title="Restore to main window"
-				className="relative z-10 text-surgent-text-2 hover:text-surgent-text"
+				className="relative z-10 text-inferay-text-2 hover:text-inferay-text"
 			>
 				<IconArrowLeft size={14} />
 			</IconButton>
-			<div className="relative z-10 h-3 w-px bg-surgent-border" />
+			<div className="relative z-10 h-3 w-px bg-inferay-border" />
 
 			{/* Group selector */}
 			<div className="relative z-10" ref={refs.groupMenu}>
@@ -230,7 +230,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 						{groups.map((g) => (
 							<div
 								key={g.id}
-								className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${g.id === selectedGroupId ? "bg-surgent-surface-2" : "hover:bg-surgent-surface-2"}`}
+								className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${g.id === selectedGroupId ? "bg-inferay-surface-2" : "hover:bg-inferay-surface-2"}`}
 							>
 								{editingGroupId === g.id ? (
 									<input
@@ -242,7 +242,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 											if (e.key === "Escape") setEditingGroupId(null);
 										}}
 										onClick={(e) => e.stopPropagation()}
-										className="flex-1 bg-transparent text-xs text-surgent-text outline-none border-0"
+										className="flex-1 bg-transparent text-xs text-inferay-text outline-none border-0"
 									/>
 								) : (
 									<button
@@ -256,17 +256,17 @@ export const PopoutHeader = memo(function PopoutHeader(
 										{g.id === selectedGroupId ? (
 											<IconFolderOpen
 												size={12}
-												className="text-surgent-text-3"
+												className="text-inferay-text-3"
 											/>
 										) : (
-											<IconFolder size={12} className="text-surgent-text-3" />
+											<IconFolder size={12} className="text-inferay-text-3" />
 										)}
 										<span
-											className={`text-xs ${g.id === selectedGroupId ? "text-surgent-text" : "text-surgent-text-2"}`}
+											className={`text-xs ${g.id === selectedGroupId ? "text-inferay-text" : "text-inferay-text-2"}`}
 										>
 											{g.name}
 										</span>
-										<span className="text-[10px] text-surgent-text-3">
+										<span className="text-[10px] text-inferay-text-3">
 											({g.panes.length})
 										</span>
 									</button>
@@ -278,7 +278,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 										setEditingGroupId(g.id);
 										setEditingGroupName(g.name);
 									}}
-									className="p-1 rounded hover:bg-surgent-surface-3 text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
+									className="p-1 rounded hover:bg-inferay-surface-3 text-inferay-text-3 hover:text-inferay-text-2 transition-colors"
 								>
 									<IconPencil size={10} />
 								</button>
@@ -289,21 +289,21 @@ export const PopoutHeader = memo(function PopoutHeader(
 											e.stopPropagation();
 											onRemoveGroup(g.id);
 										}}
-										className="p-1 rounded hover:bg-red-500/20 text-surgent-text-3 hover:text-red-400 transition-colors"
+										className="p-1 rounded hover:bg-red-500/20 text-inferay-text-3 hover:text-red-400 transition-colors"
 									>
 										<IconTrash size={10} />
 									</button>
 								)}
 							</div>
 						))}
-						<div className="border-t border-surgent-border">
+						<div className="border-t border-inferay-border">
 							<button
 								type="button"
 								onClick={() => {
 									onAddGroup(`Group ${groups.length + 1}`);
 									closeMenu("groupMenu");
 								}}
-								className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-surgent-text-3 hover:bg-surgent-surface-2 hover:text-surgent-text-2 transition-colors"
+								className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-inferay-text-3 hover:bg-inferay-surface-2 hover:text-inferay-text-2 transition-colors"
 							>
 								<IconPlus size={10} />
 								<span>New Group</span>
@@ -312,7 +312,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 					</DropdownMenu>
 				)}
 			</div>
-			<div className="relative z-10 h-3 w-px bg-surgent-border" />
+			<div className="relative z-10 h-3 w-px bg-inferay-border" />
 
 			{/* Pane tabs */}
 			<div className="relative z-10 flex items-center gap-1 overflow-x-auto flex-1 min-w-0 scrollbar-none">
@@ -327,7 +327,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 								className={`shrink-0 ${si.iconColor} ${si.isActive ? "animate-pulse" : ""}`}
 							/>
 						) : (
-							<IconTerminal size={13} className="text-surgent-text-2" />
+							<IconTerminal size={13} className="text-inferay-text-2" />
 						);
 					return (
 						<button
@@ -337,7 +337,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") onSelectPane(pane.id);
 							}}
-							className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors shrink-0 cursor-pointer ${isSelected ? "bg-surgent-surface-2 text-surgent-text" : "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"}`}
+							className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors shrink-0 cursor-pointer ${isSelected ? "bg-inferay-surface-2 text-inferay-text" : "text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"}`}
 						>
 							{paneIcon}
 							<span className="text-xs font-medium max-w-[80px] truncate">
@@ -349,7 +349,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 									e.stopPropagation();
 									onRemovePane(pane.id);
 								}}
-								className="rounded p-0.5 hover:bg-surgent-surface-2 text-surgent-text-3 hover:text-surgent-text transition-colors"
+								className="rounded p-0.5 hover:bg-inferay-surface-2 text-inferay-text-3 hover:text-inferay-text transition-colors"
 							>
 								<IconX size={10} />
 							</button>
@@ -370,30 +370,30 @@ export const PopoutHeader = memo(function PopoutHeader(
 					{menus.servicesMenu && (
 						<DropdownMenu className="right-0 min-w-[200px]">
 							<SectionHeader
-								icon={<IconGlobe size={11} className="text-surgent-accent" />}
+								icon={<IconGlobe size={11} className="text-inferay-accent" />}
 								label="Ports"
 								count={ports.length}
-								color="text-surgent-accent"
+								color="text-inferay-accent"
 								border="border-b"
 							/>
 							{ports.length === 0 ? (
-								<div className="px-3 py-1.5 text-[10px] text-surgent-text-3">
+								<div className="px-3 py-1.5 text-[10px] text-inferay-text-3">
 									None running
 								</div>
 							) : (
 								ports.map((p) => (
 									<div
 										key={`${p.port}-${p.pid}`}
-										className="flex items-center gap-2 px-3 py-1.5 hover:bg-surgent-surface-2 transition-colors group"
+										className="flex items-center gap-2 px-3 py-1.5 hover:bg-inferay-surface-2 transition-colors group"
 									>
 										<IconCircle
 											size={8}
-											className="text-surgent-accent fill-surgent-accent shrink-0"
+											className="text-inferay-accent fill-inferay-accent shrink-0"
 										/>
-										<span className="text-[11px] font-medium text-surgent-text shrink-0">
+										<span className="text-[11px] font-medium text-inferay-text shrink-0">
 											:{p.port}
 										</span>
-										<span className="text-[10px] text-surgent-text-3 truncate min-w-0">
+										<span className="text-[10px] text-inferay-text-3 truncate min-w-0">
 											{p.name}
 										</span>
 										<div className="flex items-center gap-0.5 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -431,7 +431,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 					/>
 					{menus.layoutMenu && (
 						<DropdownMenu className="right-0 p-2">
-							<span className="text-[9px] text-surgent-text-3 uppercase tracking-wider font-medium">
+							<span className="text-[9px] text-inferay-text-3 uppercase tracking-wider font-medium">
 								Columns
 							</span>
 							<div className="flex gap-1 mt-1">
@@ -440,7 +440,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 										type="button"
 										key={n}
 										onClick={() => onColumnsChange(n)}
-										className={`w-6 h-6 text-[10px] rounded transition-colors flex items-center justify-center ${columns === n ? "bg-surgent-accent text-white" : "bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3"}`}
+										className={`w-6 h-6 text-[10px] rounded transition-colors flex items-center justify-center ${columns === n ? "bg-inferay-accent text-white" : "bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3"}`}
 									>
 										{n}
 									</button>
@@ -469,7 +469,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 										onAddPane(kind);
 										closeMenu("newMenu");
 									}}
-									className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+									className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 								>
 									{getAgentIcon(kind, 12)}
 									<span>{getAgentDefinition(kind).label}</span>

@@ -78,10 +78,10 @@ export function GraphView() {
 					{graphNodes.map((node) => (
 						<div
 							key={node.id}
-							className={`absolute flex items-center gap-1.5 px-2 py-1 rounded-md border border-surgent-border transition-all cursor-pointer ${
+							className={`absolute flex items-center gap-1.5 px-2 py-1 rounded-md border border-inferay-border transition-all cursor-pointer ${
 								selectedNode === node.id
-									? "bg-surgent-surface-2"
-									: "bg-surgent-surface"
+									? "bg-inferay-surface-2"
+									: "bg-inferay-surface"
 							}`}
 							style={{ left: node.x, top: node.y }}
 							onMouseEnter={() => setHoveredNode(node.id)}
@@ -89,7 +89,7 @@ export function GraphView() {
 							onClick={() => setSelectedNode(node.id)}
 						>
 							<NodeStatusIcon type={node.type} />
-							<span className="text-[9px] font-mono text-surgent-text whitespace-nowrap">
+							<span className="text-[9px] font-mono text-inferay-text whitespace-nowrap">
 								{node.label}
 							</span>
 						</div>

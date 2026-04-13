@@ -24,9 +24,9 @@ interface PromptDetailPanelProps {
 }
 
 const label =
-	"text-[9px] font-medium uppercase tracking-[0.08em] text-surgent-text-3";
+	"text-[9px] font-medium uppercase tracking-[0.08em] text-inferay-text-3";
 const inputCls =
-	"mt-1 w-full rounded-md bg-transparent border border-surgent-border px-2 py-1.5 text-[11px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-text-3";
+	"mt-1 w-full rounded-md bg-transparent border border-inferay-border px-2 py-1.5 text-[11px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-text-3";
 const MONO_FONT = '11px "Geist Mono", "SF Mono", Menlo, Consolas, monospace';
 
 function AutoTextarea({
@@ -58,7 +58,7 @@ function AutoTextarea({
 			value={value}
 			onChange={(e) => onChange(e.target.value)}
 			placeholder={placeholder}
-			className="mt-1 w-full rounded-md bg-surgent-surface border border-surgent-border p-3 font-mono text-[11px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-text-3 resize-none leading-[18px]"
+			className="mt-1 w-full rounded-md bg-inferay-surface border border-inferay-border p-3 font-mono text-[11px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-text-3 resize-none leading-[18px]"
 			style={{ minHeight: 100, maxHeight: 300 }}
 		/>
 	);
@@ -86,13 +86,13 @@ export function PromptDetailPanel({
 	const isEditMode = isCreatingNew || isEditing;
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg overflow-hidden">
+		<div className="flex h-full flex-col bg-inferay-bg overflow-hidden">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-4 h-10">
+			<div className="flex items-center justify-between border-b border-inferay-border px-4 h-10">
 				<div className="flex items-center gap-2">
 					{isEditMode ? (
 						<div className="flex items-center gap-0.5">
-							<span className="text-surgent-text-3 font-mono text-[11px]">
+							<span className="text-inferay-text-3 font-mono text-[11px]">
 								/
 							</span>
 							<input
@@ -105,21 +105,21 @@ export function PromptDetailPanel({
 									)
 								}
 								placeholder="command"
-								className="w-24 rounded-md bg-surgent-surface py-1 px-1.5 text-[11px] font-mono text-surgent-text outline-none focus:border-surgent-text-3 placeholder:text-surgent-text-3"
+								className="w-24 rounded-md bg-inferay-surface py-1 px-1.5 text-[11px] font-mono text-inferay-text outline-none focus:border-inferay-text-3 placeholder:text-inferay-text-3"
 							/>
 						</div>
 					) : selectedPrompt ? (
-						<span className="text-[11px] font-mono text-surgent-text">
+						<span className="text-[11px] font-mono text-inferay-text">
 							/{selectedPrompt.command}
 						</span>
 					) : null}
 					{selectedPrompt?.isBuiltIn && !isCreatingNew && (
-						<span className="text-[7px] text-surgent-text-3/50 bg-surgent-text/[0.04] px-1 py-0.5 rounded">
+						<span className="text-[7px] text-inferay-text-3/50 bg-inferay-text/[0.04] px-1 py-0.5 rounded">
 							built-in
 						</span>
 					)}
 					{isCreatingNew && (
-						<span className="text-[7px] text-surgent-text-3 bg-surgent-text/[0.06] px-1 py-0.5 rounded">
+						<span className="text-[7px] text-inferay-text-3 bg-inferay-text/[0.06] px-1 py-0.5 rounded">
 							new
 						</span>
 					)}
@@ -130,7 +130,7 @@ export function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onCancelEditing}
-								className="h-6 px-2 rounded text-[10px] text-surgent-text-3 hover:bg-surgent-text/[0.05]"
+								className="h-6 px-2 rounded text-[10px] text-inferay-text-3 hover:bg-inferay-text/[0.05]"
 							>
 								Cancel
 							</button>
@@ -138,7 +138,7 @@ export function PromptDetailPanel({
 								type="button"
 								onClick={() => onSave(false)}
 								disabled={isSaving}
-								className="h-6 px-2 rounded text-[10px] text-surgent-text bg-surgent-text/[0.08] hover:bg-surgent-text/[0.12]"
+								className="h-6 px-2 rounded text-[10px] text-inferay-text bg-inferay-text/[0.08] hover:bg-inferay-text/[0.12]"
 							>
 								{isSaving ? "..." : "Create"}
 							</button>
@@ -148,7 +148,7 @@ export function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onCancelEditing}
-								className="h-6 px-2 rounded text-[10px] text-surgent-text-3 hover:bg-surgent-text/[0.05]"
+								className="h-6 px-2 rounded text-[10px] text-inferay-text-3 hover:bg-inferay-text/[0.05]"
 							>
 								Cancel
 							</button>
@@ -156,7 +156,7 @@ export function PromptDetailPanel({
 								type="button"
 								onClick={() => onSave(true)}
 								disabled={isSaving}
-								className="h-6 px-2 rounded text-[10px] text-surgent-text bg-surgent-text/[0.08] hover:bg-surgent-text/[0.12]"
+								className="h-6 px-2 rounded text-[10px] text-inferay-text bg-inferay-text/[0.08] hover:bg-inferay-text/[0.12]"
 							>
 								{isSaving ? "..." : "Save"}
 							</button>
@@ -166,7 +166,7 @@ export function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onStartEditing}
-								className="h-6 w-6 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-text/[0.05]"
+								className="h-6 w-6 rounded flex items-center justify-center text-inferay-text-3 hover:bg-inferay-text/[0.05]"
 							>
 								<IconPencil size={12} />
 							</button>
@@ -174,7 +174,7 @@ export function PromptDetailPanel({
 								<button
 									type="button"
 									onClick={onDelete}
-									className="h-6 w-6 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-text/[0.05]"
+									className="h-6 w-6 rounded flex items-center justify-center text-inferay-text-3 hover:bg-inferay-text/[0.05]"
 								>
 									<IconTrash size={12} />
 								</button>
@@ -184,7 +184,7 @@ export function PromptDetailPanel({
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-6 w-6 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-text/[0.05]"
+						className="h-6 w-6 rounded flex items-center justify-center text-inferay-text-3 hover:bg-inferay-text/[0.05]"
 					>
 						<IconX size={12} />
 					</button>
@@ -205,7 +205,7 @@ export function PromptDetailPanel({
 								className={inputCls}
 							/>
 						) : (
-							<p className="mt-1 text-[11px] text-surgent-text">
+							<p className="mt-1 text-[11px] text-inferay-text">
 								{selectedPrompt?.name}
 							</p>
 						)}
@@ -225,7 +225,7 @@ export function PromptDetailPanel({
 								))}
 							</select>
 						) : (
-							<p className="mt-1 text-[11px] text-surgent-text-2">
+							<p className="mt-1 text-[11px] text-inferay-text-2">
 								{selectedPrompt?.category}
 							</p>
 						)}
@@ -243,7 +243,7 @@ export function PromptDetailPanel({
 							className={`${inputCls} resize-none`}
 						/>
 					) : (
-						<p className="mt-1 text-[11px] text-surgent-text-2 leading-relaxed">
+						<p className="mt-1 text-[11px] text-inferay-text-2 leading-relaxed">
 							{selectedPrompt?.description}
 						</p>
 					)}
@@ -253,7 +253,7 @@ export function PromptDetailPanel({
 					<span className={label}>
 						Template
 						{isEditMode && (
-							<span className="ml-1 normal-case font-normal text-surgent-text-3/50">
+							<span className="ml-1 normal-case font-normal text-inferay-text-3/50">
 								use {"{args}"} for input
 							</span>
 						)}
@@ -265,7 +265,7 @@ export function PromptDetailPanel({
 							placeholder="Enter prompt template..."
 						/>
 					) : (
-						<div className="mt-1 rounded-md bg-surgent-surface border border-surgent-border p-3 font-mono text-[11px] text-surgent-text-2 whitespace-pre-wrap leading-[18px] max-h-[300px] overflow-y-auto">
+						<div className="mt-1 rounded-md bg-inferay-surface border border-inferay-border p-3 font-mono text-[11px] text-inferay-text-2 whitespace-pre-wrap leading-[18px] max-h-[300px] overflow-y-auto">
 							{selectedPrompt?.promptTemplate}
 						</div>
 					)}
@@ -286,25 +286,25 @@ export function PromptDetailPanel({
 							{selectedPrompt.tags.map((tag) => (
 								<span
 									key={tag}
-									className="rounded bg-surgent-text/[0.04] px-1.5 py-0.5 text-[9px] text-surgent-text-3"
+									className="rounded bg-inferay-text/[0.04] px-1.5 py-0.5 text-[9px] text-inferay-text-3"
 								>
 									{tag}
 								</span>
 							))}
 						</div>
 					) : (
-						<p className="mt-1 text-[9px] text-surgent-text-3/40">No tags</p>
+						<p className="mt-1 text-[9px] text-inferay-text-3/40">No tags</p>
 					)}
 				</div>
 
 				{!isEditMode && selectedPrompt && (
-					<p className="text-[9px] text-surgent-text-3/40 tabular-nums">
+					<p className="text-[9px] text-inferay-text-3/40 tabular-nums">
 						{selectedPrompt.executionCount} uses
 					</p>
 				)}
 
 				{formError && (
-					<p className="text-[10px] text-surgent-error">{formError}</p>
+					<p className="text-[10px] text-inferay-error">{formError}</p>
 				)}
 			</div>
 		</div>

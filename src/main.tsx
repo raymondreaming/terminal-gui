@@ -57,8 +57,8 @@ const root = createRoot(rootElement);
 root.render(
 	<ErrorBoundary>
 		<HashRouter>
-			<div className="flex h-screen flex-col bg-surgent-bg">
-				<div className="electrobun-webkit-app-region-drag h-6 shrink-0 bg-surgent-bg" />
+			<div className="flex h-screen flex-col bg-inferay-bg">
+				<div className="electrobun-webkit-app-region-drag h-6 shrink-0 bg-inferay-bg" />
 				<div className="flex min-h-0 flex-1">
 					<Sidebar />
 					<div className="flex min-w-0 flex-1 flex-col overflow-hidden">

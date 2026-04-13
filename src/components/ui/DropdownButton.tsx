@@ -141,26 +141,26 @@ export function DropdownButton({
 					fullWidth ? "w-full" : ""
 				} ${
 					open
-						? "border-surgent-accent/40 bg-surgent-text/[0.08] text-surgent-text"
-						: "border-surgent-border bg-surgent-surface hover:border-surgent-border text-surgent-text-2"
+						? "border-inferay-accent/40 bg-inferay-text/[0.08] text-inferay-text"
+						: "border-inferay-border bg-inferay-surface hover:border-inferay-border text-inferay-text-2"
 				} ${buttonClassName}`}
 			>
 				{icon}
 				<span
-					className={`${fullWidth ? "flex-1 truncate text-left" : ""} ${selected ? "text-surgent-text" : "text-surgent-text-3"} ${labelClassName}`}
+					className={`${fullWidth ? "flex-1 truncate text-left" : ""} ${selected ? "text-inferay-text" : "text-inferay-text-3"} ${labelClassName}`}
 				>
 					{selected?.label || placeholder}
 				</span>
 				<IconChevronDown
 					size={10}
-					className={`shrink-0 text-surgent-text-3 transition-transform ${open ? "rotate-180" : ""}`}
+					className={`shrink-0 text-inferay-text-3 transition-transform ${open ? "rotate-180" : ""}`}
 				/>
 			</button>
 			{open &&
 				createPortal(
 					<div
 						ref={menuRef}
-						className="fixed z-50 rounded-xl border border-surgent-border bg-surgent-surface/95 shadow-2xl backdrop-blur-xl overflow-hidden"
+						className="fixed z-50 rounded-xl border border-inferay-border bg-inferay-surface/95 shadow-2xl backdrop-blur-xl overflow-hidden"
 						style={{
 							top: pos.top,
 							left: pos.left,
@@ -169,14 +169,14 @@ export function DropdownButton({
 						}}
 					>
 						{showSearch && (
-							<div className="border-b border-surgent-border px-2 py-1.5">
+							<div className="border-b border-inferay-border px-2 py-1.5">
 								<input
 									ref={searchRef}
 									type="text"
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
 									placeholder="Search..."
-									className="w-full rounded-md border border-surgent-border/50 bg-surgent-surface/50 px-2.5 py-1.5 text-xs text-surgent-text placeholder-surgent-text-3 outline-none focus:border-surgent-accent/40"
+									className="w-full rounded-md border border-inferay-border/50 bg-inferay-surface/50 px-2.5 py-1.5 text-xs text-inferay-text placeholder-inferay-text-3 outline-none focus:border-inferay-accent/40"
 									onKeyDown={(e) => {
 										if (e.key === "Escape") {
 											setOpen(false);
@@ -190,7 +190,7 @@ export function DropdownButton({
 							style={{ maxHeight: pos.maxH - (showSearch ? 42 : 2) }}
 						>
 							{filtered.length === 0 ? (
-								<p className="px-3 py-4 text-center text-xs text-surgent-text-3">
+								<p className="px-3 py-4 text-center text-xs text-inferay-text-3">
 									{search ? "No matches" : emptyLabel}
 								</p>
 							) : (
@@ -214,21 +214,21 @@ export function DropdownButton({
 											}}
 											className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
 												opt.id === value
-													? "bg-surgent-accent/15 text-surgent-text"
-													: "text-surgent-text-3 hover:bg-surgent-text/5 hover:text-surgent-text"
+													? "bg-inferay-accent/15 text-inferay-text"
+													: "text-inferay-text-3 hover:bg-inferay-text/5 hover:text-inferay-text"
 											}`}
 										>
 											{opt.id === value && (
 												<IconCheck
 													size={10}
-													className="shrink-0 text-surgent-accent"
+													className="shrink-0 text-inferay-accent"
 												/>
 											)}
 											{!opt.icon && opt.id !== value && (
 												<div className="w-[18px] shrink-0" />
 											)}
 											{opt.icon && opt.id !== value && (
-												<span className="shrink-0 text-surgent-text-3">
+												<span className="shrink-0 text-inferay-text-3">
 													{opt.icon}
 												</span>
 											)}
@@ -240,15 +240,15 @@ export function DropdownButton({
 															opt.detail.includes("★")
 																? "bg-amber-500/15 text-amber-400"
 																: opt.detail.includes("Best")
-																	? "bg-surgent-accent/15 text-surgent-accent"
-																	: "bg-surgent-text/[0.06] text-surgent-text-3"
+																	? "bg-inferay-accent/15 text-inferay-accent"
+																	: "bg-inferay-text/[0.06] text-inferay-text-3"
 														}`}
 													>
 														{opt.detail}
 													</span>
 												)}
 												{opt.status && (
-													<span className="ml-2 text-[10px] text-surgent-text-3">
+													<span className="ml-2 text-[10px] text-inferay-text-3">
 														{opt.status}
 													</span>
 												)}

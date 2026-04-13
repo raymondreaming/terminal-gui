@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "surgent",
+      "name": "inferay",
       "dependencies": {
         "@anthropic-ai/claude-agent-sdk": "^0.2.88",
         "@chenglou/pretext": "^0.0.2",

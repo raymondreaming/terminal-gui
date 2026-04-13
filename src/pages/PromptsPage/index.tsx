@@ -182,9 +182,9 @@ export function PromptsPage() {
 	});
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Toolbar — matches Terminal/Git page style */}
-			<div className="shrink-0 flex items-center gap-2 px-3 h-12 border-b border-surgent-border bg-surgent-bg">
+			<div className="shrink-0 flex items-center gap-2 px-3 h-12 border-b border-inferay-border bg-inferay-bg">
 				<FilterDropdown filter={filter} onFilterChange={setFilter} />
 
 				<div className="relative">
@@ -198,7 +198,7 @@ export function PromptsPage() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						className="absolute left-2 top-1/2 -translate-y-1/2 text-surgent-text-3 pointer-events-none"
+						className="absolute left-2 top-1/2 -translate-y-1/2 text-inferay-text-3 pointer-events-none"
 					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
@@ -208,11 +208,11 @@ export function PromptsPage() {
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Search..."
-						className="h-7 w-44 rounded-lg border border-surgent-border bg-surgent-surface pl-7 pr-2 text-[11px] text-surgent-text placeholder-surgent-text-3 outline-none"
+						className="h-7 w-44 rounded-lg border border-inferay-border bg-inferay-surface pl-7 pr-2 text-[11px] text-inferay-text placeholder-inferay-text-3 outline-none"
 					/>
 				</div>
 
-				<span className="text-[9px] tabular-nums text-surgent-text-3">
+				<span className="text-[9px] tabular-nums text-inferay-text-3">
 					{filtered.length}
 				</span>
 
@@ -221,7 +221,7 @@ export function PromptsPage() {
 				<button
 					type="button"
 					onClick={startCreate}
-					className="flex items-center gap-1 h-7 rounded-lg border border-surgent-border bg-surgent-surface px-2.5 text-[11px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+					className="flex items-center gap-1 h-7 rounded-lg border border-inferay-border bg-inferay-surface px-2.5 text-[11px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 				>
 					<svg
 						aria-hidden="true"
@@ -246,10 +246,10 @@ export function PromptsPage() {
 					{filtered.length === 0 ? (
 						<div className="flex items-center justify-center h-full">
 							<div className="text-center">
-								<p className="text-[11px] text-surgent-text-3 mb-1">
+								<p className="text-[11px] text-inferay-text-3 mb-1">
 									{search ? "No prompts found" : "No prompts yet"}
 								</p>
-								<p className="text-[9px] text-surgent-text-3/50">
+								<p className="text-[9px] text-inferay-text-3/50">
 									{search
 										? "Try a different search"
 										: "Create your first prompt"}
@@ -269,28 +269,28 @@ export function PromptsPage() {
 										onClick={() => selectPrompt(prompt)}
 										className={`text-left rounded-lg border p-3 transition-colors ${
 											isActive
-												? "border-surgent-accent/30 bg-surgent-text/[0.04]"
-												: "border-surgent-border hover:bg-surgent-text/[0.03] hover:border-surgent-border-bold"
+												? "border-inferay-accent/30 bg-inferay-text/[0.04]"
+												: "border-inferay-border hover:bg-inferay-text/[0.03] hover:border-inferay-border-bold"
 										}`}
 									>
 										<div className="flex items-center gap-2 mb-1.5">
-											<span className="text-[10px] font-mono font-medium text-surgent-text">
+											<span className="text-[10px] font-mono font-medium text-inferay-text">
 												/{prompt.command}
 											</span>
 											{prompt.isBuiltIn && (
-												<span className="text-[7px] text-surgent-text-3/50 bg-surgent-text/[0.04] px-1 py-0.5 rounded">
+												<span className="text-[7px] text-inferay-text-3/50 bg-inferay-text/[0.04] px-1 py-0.5 rounded">
 													built-in
 												</span>
 											)}
 										</div>
-										<p className="text-[10px] text-surgent-text-2 mb-1 truncate">
+										<p className="text-[10px] text-inferay-text-2 mb-1 truncate">
 											{prompt.name}
 										</p>
-										<p className="text-[9px] text-surgent-text-3 line-clamp-2 leading-relaxed">
+										<p className="text-[9px] text-inferay-text-3 line-clamp-2 leading-relaxed">
 											{prompt.description}
 										</p>
 										{prompt.executionCount > 0 && (
-											<p className="mt-2 text-[8px] tabular-nums text-surgent-text-3/40">
+											<p className="mt-2 text-[8px] tabular-nums text-inferay-text-3/40">
 												{prompt.executionCount} uses
 											</p>
 										)}
@@ -303,7 +303,7 @@ export function PromptsPage() {
 
 				{/* Detail panel */}
 				{(selectedPrompt || form.isCreating) && (
-					<div className="w-[420px] shrink-0 border-l border-surgent-border overflow-y-auto bg-surgent-bg">
+					<div className="w-[420px] shrink-0 border-l border-inferay-border overflow-y-auto bg-inferay-bg">
 						<PromptDetailPanel
 							selectedPrompt={selectedPrompt}
 							isCreatingNew={form.isCreating}
@@ -374,7 +374,7 @@ function FilterDropdown({
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
-				className="flex items-center gap-1.5 h-7 rounded-lg border border-surgent-border bg-surgent-surface px-2.5 text-[11px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+				className="flex items-center gap-1.5 h-7 rounded-lg border border-inferay-border bg-inferay-surface px-2.5 text-[11px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 			>
 				{activeLabel}
 				<svg
@@ -392,7 +392,7 @@ function FilterDropdown({
 				</svg>
 			</button>
 			{open && (
-				<div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] rounded-lg border border-surgent-border bg-surgent-surface p-1 shadow-2xl">
+				<div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] rounded-lg border border-inferay-border bg-inferay-surface p-1 shadow-2xl">
 					{FILTER_OPTIONS.map((opt) => (
 						<button
 							type="button"
@@ -403,8 +403,8 @@ function FilterDropdown({
 							}}
 							className={`w-full text-left rounded-md px-2.5 py-1.5 text-[10px] transition-colors ${
 								filter === opt.value
-									? "bg-surgent-text/[0.06] text-surgent-text"
-									: "text-surgent-text-3 hover:bg-surgent-text/[0.03] hover:text-surgent-text-2"
+									? "bg-inferay-text/[0.06] text-inferay-text"
+									: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
 							}`}
 						>
 							{opt.label}

@@ -126,7 +126,8 @@ export async function resolveInteractiveAgentCommand(
 		: process.env.SHELL || "/bin/zsh";
 
 	if (kind === "terminal") {
-		return { ok: true, cmd: isWin ? [userShell] : [userShell, "-l"] };
+		// Use interactive shell without loading rc files to avoid startup garbage
+		return { ok: true, cmd: isWin ? [userShell] : [userShell, "-i"] };
 	}
 
 	if (kind === "claude") {

@@ -68,6 +68,8 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 				cursor: theme.cursor,
 			},
 			allowProposedApi: true,
+			scrollback: 1000,
+			scrollOnUserInput: true,
 		});
 		const fitAddon = new FitAddon();
 		term.loadAddon(fitAddon);
@@ -75,6 +77,21 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 		term.open(containerRef.current);
 		termRef.current = term;
 		fitAddonRef.current = fitAddon;
+
+		// Force hide scrollbar after terminal opens
+		requestAnimationFrame(() => {
+			const viewport = containerRef.current?.querySelector(".xterm-viewport");
+			if (viewport instanceof HTMLElement) {
+				viewport.style.overflow = "hidden";
+				viewport.style.scrollbarWidth = "none";
+				viewport.style.msOverflowStyle = "none";
+			}
+			// Also hide scrollbar on the terminal element itself
+			const xtermElement = containerRef.current?.querySelector(".xterm");
+			if (xtermElement instanceof HTMLElement) {
+				xtermElement.style.overflow = "hidden";
+			}
+		});
 		let reconnectCleanup: (() => void) | null = null;
 		requestAnimationFrame(() => {
 			fitAddon.fit();
@@ -195,17 +212,17 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 				style={{ backgroundColor: theme.bg }}
 			>
 				<div
-					className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b bg-surgent-text/[0.02]"
+					className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b bg-inferay-text/[0.02]"
 					style={{ borderColor: theme.separator }}
 				>
-					<span className="text-surgent-text-3">
+					<span className="text-inferay-text-3">
 						{isAgentChatPane ? (
 							getAgentIcon(pane.agentKind, 10)
 						) : (
 							<IconTerminal size={10} />
 						)}
 					</span>
-					<span className="text-[10px] font-medium text-surgent-text-2">
+					<span className="text-[9px] font-medium text-inferay-text-2">
 						{isAgentChatPane ? `${paneLabel} ›` : ""} New{" "}
 						{isAgentChatPane ? "Session" : paneLabel}
 					</span>
@@ -216,7 +233,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 							e.stopPropagation();
 							onClose(pane.id, true);
 						}}
-						className="flex items-center justify-center h-4 w-4 rounded transition-colors text-surgent-text-3 hover:text-red-400 hover:bg-red-500/15"
+						className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-red-400 hover:bg-red-500/15"
 						title="Close pane"
 					>
 						<svg
@@ -259,7 +276,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			style={{ backgroundColor: theme.bg }}
 		>
 			<div
-				className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b bg-surgent-text/[0.02] cursor-grab active:cursor-grabbing select-none"
+				className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b bg-inferay-text/[0.02] cursor-grab active:cursor-grabbing select-none"
 				style={{ borderColor: theme.separator }}
 				draggable={paneIndex != null && !!onHeaderDragStart}
 				onDragStart={(e) => {
@@ -275,7 +292,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 				onDragEnd={onHeaderDragEnd}
 			>
 				<span
-					className={isSelected ? "text-surgent-accent" : "text-surgent-text-3"}
+					className={isSelected ? "text-inferay-accent" : "text-inferay-text-3"}
 				>
 					{isAgentChatPane ? (
 						getAgentIcon(pane.agentKind, 10)
@@ -284,15 +301,15 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					)}
 				</span>
 				<span
-					className={`font-medium ${isSelected ? "text-surgent-text-2" : "text-surgent-text-3"} text-[10px]`}
+					className={`font-medium ${isSelected ? "text-inferay-text-2" : "text-inferay-text-3"} text-[9px]`}
 				>
 					{getAgentDefinition(pane.agentKind).label}
 				</span>
 				{pane.cwd && (
 					<>
-						<span className="text-[10px] text-surgent-text-3">›</span>
+						<span className="text-[9px] text-inferay-text-3">›</span>
 						<span
-							className={`font-medium ${isSelected ? "text-surgent-text" : "text-surgent-text-3"} text-[10px] truncate`}
+							className={`font-medium ${isSelected ? "text-inferay-text" : "text-inferay-text-3"} text-[9px] truncate`}
 							title={pane.cwd}
 						>
 							{pane.cwd.split("/").pop() || pane.cwd}
@@ -301,7 +318,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 				)}
 				<span className="flex-1" />
 				{isSelected && (
-					<div className="h-1.5 w-1.5 rounded-full bg-surgent-accent" />
+					<div className="h-1.5 w-1.5 rounded-full bg-inferay-accent" />
 				)}
 				<button
 					type="button"
@@ -309,7 +326,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						e.stopPropagation();
 						onClose(pane.id);
 					}}
-					className="flex items-center justify-center h-4 w-4 rounded transition-colors text-surgent-text-3 hover:text-red-400 hover:bg-red-500/15"
+					className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-red-400 hover:bg-red-500/15"
 					title="Close pane"
 				>
 					<svg
@@ -328,10 +345,12 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			</div>
 			<div
 				ref={containerRef}
-				className="min-h-0 flex-1 overflow-hidden px-0.5"
+				className="min-h-0 flex-1"
 				style={{
 					display: isAgentChatPane ? "none" : undefined,
 					pointerEvents: isSelected ? "auto" : "none",
+					overflow: "hidden",
+					padding: 0,
 				}}
 				onClick={() => termRef.current?.focus()}
 				onKeyDown={(e) => {

@@ -27,8 +27,8 @@ function RefBadge({ ref: refName }: { ref: string }) {
 		refName.startsWith("origin/") || (!refName.includes("tag:") && !isHead);
 	const isTag = refName.startsWith("tag:");
 
-	let bg = "bg-surgent-text/10";
-	let text = "text-surgent-text-2";
+	let bg = "bg-inferay-text/10";
+	let text = "text-inferay-text-2";
 	let displayName = refName;
 
 	if (isHead) {
@@ -78,7 +78,7 @@ const WipRow = memo(function WipRow({
 	return (
 		<div
 			className={`group flex items-center h-8 px-2 cursor-pointer transition-colors ${
-				selected ? "bg-surgent-accent/15" : "hover:bg-surgent-text/5"
+				selected ? "bg-inferay-accent/15" : "hover:bg-inferay-text/5"
 			}`}
 			onClick={onClick}
 		>
@@ -111,7 +111,7 @@ const WipRow = memo(function WipRow({
 
 				{/* File count */}
 				{fileCount > 0 && (
-					<span className="text-[10px] text-surgent-text-3">
+					<span className="text-[10px] text-inferay-text-3">
 						{fileCount} file{fileCount !== 1 ? "s" : ""} changed
 					</span>
 				)}
@@ -119,7 +119,7 @@ const WipRow = memo(function WipRow({
 
 			{/* Stats placeholder */}
 			<div className="shrink-0 flex items-center gap-1 ml-2 text-[9px] tabular-nums">
-				<span className="text-surgent-text-3/60">uncommitted</span>
+				<span className="text-inferay-text-3/60">uncommitted</span>
 			</div>
 		</div>
 	);
@@ -145,7 +145,7 @@ const CommitRow = memo(function CommitRow({
 	return (
 		<div
 			className={`group flex items-center h-8 px-2 cursor-pointer transition-colors ${
-				selected ? "bg-surgent-accent/15" : "hover:bg-surgent-text/5"
+				selected ? "bg-inferay-accent/15" : "hover:bg-inferay-text/5"
 			}`}
 			onClick={onClick}
 		>
@@ -171,7 +171,7 @@ const CommitRow = memo(function CommitRow({
 			{/* Commit info */}
 			<div className="flex-1 min-w-0 flex items-center gap-2">
 				{/* Hash */}
-				<span className="shrink-0 font-mono text-[10px] text-surgent-accent">
+				<span className="shrink-0 font-mono text-[10px] text-inferay-accent">
 					{commit.hash}
 				</span>
 
@@ -182,7 +182,7 @@ const CommitRow = memo(function CommitRow({
 							<RefBadge key={i} ref={ref} />
 						))}
 						{commit.refs.length > 3 && (
-							<span className="text-[9px] text-surgent-text-3">
+							<span className="text-[9px] text-inferay-text-3">
 								+{commit.refs.length - 3}
 							</span>
 						)}
@@ -190,17 +190,17 @@ const CommitRow = memo(function CommitRow({
 				)}
 
 				{/* Message */}
-				<span className="truncate text-[11px] text-surgent-text-2 group-hover:text-surgent-text">
+				<span className="truncate text-[11px] text-inferay-text-2 group-hover:text-inferay-text">
 					{commit.message}
 				</span>
 			</div>
 
 			{/* Author & date */}
 			<div className="shrink-0 flex items-center gap-3 ml-2">
-				<span className="text-[10px] text-surgent-text-3 truncate max-w-[80px]">
+				<span className="text-[10px] text-inferay-text-3 truncate max-w-[80px]">
 					{commit.author}
 				</span>
-				<span className="text-[10px] text-surgent-text-3/60 tabular-nums">
+				<span className="text-[10px] text-inferay-text-3/60 tabular-nums">
 					{commit.date}
 				</span>
 			</div>
@@ -275,7 +275,7 @@ export const CommitGraph = memo(function CommitGraph({
 	if (!commits.length && !hasWip) {
 		return (
 			<div className={`flex items-center justify-center py-8 ${className}`}>
-				<p className="text-[11px] text-surgent-text-3">No commits</p>
+				<p className="text-[11px] text-inferay-text-3">No commits</p>
 			</div>
 		);
 	}

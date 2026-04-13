@@ -47,21 +47,21 @@ const APP_THEME_IDS = {
 export type AppThemeId = (typeof APP_THEME_IDS)[keyof typeof APP_THEME_IDS];
 
 const CSS_VAR_MAP: Record<keyof AppThemeColors, string> = {
-	bg: "--color-surgent-bg",
-	surface: "--color-surgent-surface",
-	surface2: "--color-surgent-surface-2",
-	surface3: "--color-surgent-surface-3",
-	border: "--color-surgent-border",
-	borderBold: "--color-surgent-border-bold",
-	accent: "--color-surgent-accent",
-	accentHover: "--color-surgent-accent-hover",
-	success: "--color-surgent-success",
-	warning: "--color-surgent-warning",
-	error: "--color-surgent-error",
-	info: "--color-surgent-info",
-	text: "--color-surgent-text",
-	text2: "--color-surgent-text-2",
-	text3: "--color-surgent-text-3",
+	bg: "--color-inferay-bg",
+	surface: "--color-inferay-surface",
+	surface2: "--color-inferay-surface-2",
+	surface3: "--color-inferay-surface-3",
+	border: "--color-inferay-border",
+	borderBold: "--color-inferay-border-bold",
+	accent: "--color-inferay-accent",
+	accentHover: "--color-inferay-accent-hover",
+	success: "--color-inferay-success",
+	warning: "--color-inferay-warning",
+	error: "--color-inferay-error",
+	info: "--color-inferay-info",
+	text: "--color-inferay-text",
+	text2: "--color-inferay-text-2",
+	text3: "--color-inferay-text-3",
 };
 
 // Compact theme data: [id, name, bg, surface, surface2, surface3, border, borderBold, accent, accentHover, success, warning, error, info, text, text2, text3, light?]
@@ -316,9 +316,9 @@ export const APP_THEMES = THEME_DATA.map(makeTheme) as [
 const DEFAULT_THEME = makeTheme(THEME_DATA[0]);
 const DEFAULT_COLORS: AppThemeColors = DEFAULT_THEME.colors;
 
-const APP_THEME_STORAGE_KEY = "surgent-app-theme-id" as const;
+const APP_THEME_STORAGE_KEY = "inferay-app-theme-id" as const;
 
-const APP_CUSTOM_THEME_KEY = "surgent-app-custom-theme" as const;
+const APP_CUSTOM_THEME_KEY = "inferay-app-custom-theme" as const;
 
 export function loadAppThemeId(): AppThemeId {
 	try {

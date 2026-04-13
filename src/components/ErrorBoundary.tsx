@@ -16,8 +16,8 @@ export class ErrorBoundary extends Component<
 	render() {
 		if (this.state.hasError) {
 			return (
-				<div className="flex h-screen items-center justify-center bg-surgent-bg">
-					<p className="text-sm text-surgent-text-2">Reconnecting...</p>
+				<div className="flex h-screen items-center justify-center bg-inferay-bg">
+					<p className="text-sm text-inferay-text-2">Reconnecting...</p>
 				</div>
 			);
 		}

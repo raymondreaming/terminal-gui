@@ -22,7 +22,7 @@ function PaneIcon({
 	size: number;
 }) {
 	if (pane.agentKind === "terminal") {
-		return <IconTerminal size={size} className="text-surgent-text-2" />;
+		return <IconTerminal size={size} className="text-inferay-text-2" />;
 	}
 	const info = getStatusInfo(status);
 	return (
@@ -56,7 +56,7 @@ export const AgentSidebar = memo(function AgentSidebar({
 					<button
 						type="button"
 						onClick={onCollapse}
-						className="electrobun-webkit-app-region-no-drag flex items-center gap-1.5 px-1 text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
+						className="electrobun-webkit-app-region-no-drag flex items-center gap-1.5 px-1 text-inferay-text-3 hover:text-inferay-text-2 transition-colors"
 					>
 						<IconPanelLeft size={12} className="rotate-180" />
 						<span className="text-[9px] font-bold tracking-widest uppercase">
@@ -77,7 +77,7 @@ export const AgentSidebar = memo(function AgentSidebar({
 								if (e.key === "Enter" || e.key === " ") onSelectPane(pane.id);
 							}}
 							className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors mb-0.5 cursor-pointer ${
-								isSelected ? "bg-surgent-surface-2" : "hover:bg-surgent-surface"
+								isSelected ? "bg-inferay-surface-2" : "hover:bg-inferay-surface"
 							}`}
 						>
 							<div className="shrink-0">
@@ -86,7 +86,7 @@ export const AgentSidebar = memo(function AgentSidebar({
 							<div className="min-w-0 flex-1">
 								<p
 									className={`truncate text-[11px] font-medium ${
-										isSelected ? "text-surgent-text" : "text-surgent-text-2"
+										isSelected ? "text-inferay-text" : "text-inferay-text-2"
 									}`}
 									title={pane.cwd}
 								>
@@ -126,16 +126,16 @@ export const CollapsedAgentBar = memo(function CollapsedAgentBar({
 	onExpand: () => void;
 }) {
 	return (
-		<div className="shrink-0 flex items-center gap-1 px-2 py-1 border-b border-surgent-border bg-surgent-bg">
+		<div className="shrink-0 flex items-center gap-1 px-2 py-1 border-b border-inferay-border bg-inferay-bg">
 			<button
 				type="button"
 				onClick={onExpand}
-				className="flex items-center justify-center h-6 w-6 rounded-md hover:bg-surgent-surface transition-colors"
+				className="flex items-center justify-center h-6 w-6 rounded-md hover:bg-inferay-surface transition-colors"
 				title="Expand Agents"
 			>
-				<IconPanelLeft size={10} className="text-surgent-text-3" />
+				<IconPanelLeft size={10} className="text-inferay-text-3" />
 			</button>
-			<div className="h-3 w-px bg-surgent-border mx-0.5" />
+			<div className="h-3 w-px bg-inferay-border mx-0.5" />
 			<div className="flex items-center gap-0.5 overflow-x-auto">
 				{panes.map((pane) => {
 					const isSelected = pane.id === selectedPaneId;
@@ -148,8 +148,8 @@ export const CollapsedAgentBar = memo(function CollapsedAgentBar({
 							onClick={() => onSelectPane(pane.id)}
 							className={`flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors ${
 								isSelected
-									? "bg-surgent-surface-2 text-surgent-text"
-									: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+									? "bg-inferay-surface-2 text-inferay-text"
+									: "text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 							}`}
 							title={`${name}${pane.agentKind !== "terminal" ? ` - ${getStatusInfo(s).label}` : ""}`}
 						>

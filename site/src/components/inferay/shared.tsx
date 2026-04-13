@@ -33,19 +33,19 @@ export function ModelSelector({
 		<div className="relative">
 			<button
 				onClick={() => setOpen(!open)}
-				className="flex items-center gap-1.5 h-5 px-1.5 rounded-md border border-surgent-border bg-surgent-surface hover:bg-surgent-surface-2 transition-colors"
+				className="flex items-center gap-1.5 h-5 px-1.5 rounded-md border border-inferay-border bg-inferay-surface hover:bg-inferay-surface-2 transition-colors"
 			>
 				<span
 					className="w-1.5 h-1.5 rounded-full"
 					style={{ backgroundColor: current.color }}
 				/>
-				<span className="text-[9px] font-medium text-surgent-text">
+				<span className="text-[9px] font-medium text-inferay-text">
 					{current.name}
 				</span>
 				<Icons.Chevron />
 			</button>
 			{open && (
-				<div className="absolute top-full mt-1 left-0 w-36 rounded-md border border-surgent-border bg-surgent-surface shadow-xl z-50">
+				<div className="absolute top-full mt-1 left-0 w-36 rounded-md border border-inferay-border bg-inferay-surface shadow-xl z-50">
 					{models.map((model) => (
 						<button
 							key={model.id}
@@ -53,16 +53,16 @@ export function ModelSelector({
 								onSelect(model.id);
 								setOpen(false);
 							}}
-							className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left hover:bg-surgent-surface-2 first:rounded-t-md last:rounded-b-md ${model.id === selectedModel ? "bg-surgent-surface-2" : ""}`}
+							className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left hover:bg-inferay-surface-2 first:rounded-t-md last:rounded-b-md ${model.id === selectedModel ? "bg-inferay-surface-2" : ""}`}
 						>
 							<span
 								className="w-1.5 h-1.5 rounded-full"
 								style={{ backgroundColor: model.color }}
 							/>
-							<span className="text-[9px] font-medium text-surgent-text">
+							<span className="text-[9px] font-medium text-inferay-text">
 								{model.name}
 							</span>
-							<span className="text-[8px] text-surgent-text-3 ml-auto">
+							<span className="text-[8px] text-inferay-text-3 ml-auto">
 								{model.provider}
 							</span>
 						</button>
@@ -90,19 +90,19 @@ export function CommandBar({ onClose }: { onClose: () => void }) {
 			onClick={onClose}
 		>
 			<div
-				className="w-full max-w-lg rounded-xl border border-surgent-border bg-surgent-bg shadow-2xl overflow-hidden"
+				className="w-full max-w-lg rounded-xl border border-inferay-border bg-inferay-bg shadow-2xl overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<div className="flex items-center gap-3 px-4 py-3 border-b border-surgent-border">
+				<div className="flex items-center gap-3 px-4 py-3 border-b border-inferay-border">
 					<Icons.Search />
 					<input
 						autoFocus
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="Type a command or search..."
-						className="flex-1 bg-transparent text-sm text-surgent-text outline-none placeholder:text-surgent-text-3"
+						className="flex-1 bg-transparent text-sm text-inferay-text outline-none placeholder:text-inferay-text-3"
 					/>
-					<kbd className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surgent-surface border border-surgent-border text-surgent-text-3">
+					<kbd className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-inferay-surface border border-inferay-border text-inferay-text-3">
 						ESC
 					</kbd>
 				</div>
@@ -112,13 +112,13 @@ export function CommandBar({ onClose }: { onClose: () => void }) {
 						.map((cmd, i) => (
 							<button
 								key={i}
-								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surgent-surface-2 transition-colors"
+								className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-inferay-surface-2 transition-colors"
 							>
-								<span className="text-surgent-text-3">{cmd.icon}</span>
-								<span className="flex-1 text-left text-[12px] text-surgent-text">
+								<span className="text-inferay-text-3">{cmd.icon}</span>
+								<span className="flex-1 text-left text-[12px] text-inferay-text">
 									{cmd.label}
 								</span>
-								<kbd className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-surgent-surface border border-surgent-border text-surgent-text-3">
+								<kbd className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-inferay-surface border border-inferay-border text-inferay-text-3">
 									{cmd.shortcut}
 								</kbd>
 							</button>
@@ -132,12 +132,12 @@ export function CommandBar({ onClose }: { onClose: () => void }) {
 // Thinking Indicator (AI processing)
 export function ThinkingIndicator() {
 	return (
-		<div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surgent-accent/10 border border-surgent-accent/20">
+		<div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-inferay-accent/10 border border-inferay-accent/20">
 			<div className="flex gap-0.5">
 				{[0, 1, 2].map((i) => (
 					<div
 						key={i}
-						className="w-1 h-1 rounded-full bg-surgent-accent animate-bounce"
+						className="w-1 h-1 rounded-full bg-inferay-accent animate-bounce"
 						style={{
 							animationDuration: "0.6s",
 							animationDelay: `${i * 0.1}s`,
@@ -145,7 +145,7 @@ export function ThinkingIndicator() {
 					/>
 				))}
 			</div>
-			<span className="text-[10px] text-surgent-accent font-medium">
+			<span className="text-[10px] text-inferay-accent font-medium">
 				Editing file...
 			</span>
 		</div>
@@ -155,7 +155,7 @@ export function ThinkingIndicator() {
 // Minimap
 export function Minimap() {
 	return (
-		<div className="w-20 shrink-0 bg-surgent-bg/50 border-l border-surgent-border overflow-hidden">
+		<div className="w-20 shrink-0 bg-inferay-bg/50 border-l border-inferay-border overflow-hidden">
 			<div className="h-full relative">
 				{[...Array(40)].map((_, i) => (
 					<div
@@ -170,7 +170,7 @@ export function Minimap() {
 						}}
 					/>
 				))}
-				<div className="absolute top-2 left-0 right-0 h-16 border border-surgent-accent/30 bg-surgent-accent/5 rounded" />
+				<div className="absolute top-2 left-0 right-0 h-16 border border-inferay-accent/30 bg-inferay-accent/5 rounded" />
 			</div>
 		</div>
 	);

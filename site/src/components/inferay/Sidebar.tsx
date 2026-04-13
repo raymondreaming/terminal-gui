@@ -153,19 +153,19 @@ function TreeNodeRow({
 				}}
 				className={`w-full flex items-center gap-1 py-0.5 rounded-sm transition-colors group/row ${
 					!isFolder && selectedFile === node.name
-						? "bg-surgent-surface-2 text-surgent-text"
-						: "hover:bg-surgent-surface/50 text-surgent-text-2"
+						? "bg-inferay-surface-2 text-inferay-text"
+						: "hover:bg-inferay-surface/50 text-inferay-text-2"
 				}`}
 				style={{ paddingLeft }}
 			>
 				{isFolder ? (
 					<>
 						<span
-							className={`text-surgent-text-3 transition-transform ${expanded ? "rotate-90" : ""}`}
+							className={`text-inferay-text-3 transition-transform ${expanded ? "rotate-90" : ""}`}
 						>
 							<Icons.Chevron />
 						</span>
-						<span className="text-surgent-text-3">
+						<span className="text-inferay-text-3">
 							{expanded ? <Icons.FolderOpen /> : <Icons.Folder />}
 						</span>
 						<span className="flex-1 truncate text-[9px] text-left">
@@ -184,7 +184,7 @@ function TreeNodeRow({
 							onClick={(e) => {
 								e.stopPropagation();
 							}}
-							className="opacity-0 group-hover/row:opacity-100 w-4 h-4 flex items-center justify-center text-surgent-text-3 hover:text-surgent-text transition-all"
+							className="opacity-0 group-hover/row:opacity-100 w-4 h-4 flex items-center justify-center text-inferay-text-3 hover:text-inferay-text transition-all"
 						>
 							{isStaged ? "−" : "+"}
 						</button>
@@ -236,23 +236,23 @@ function FileGroupTree({
 			{/* Group header */}
 			<button
 				onClick={onToggle}
-				className="w-full flex items-center gap-1 px-1.5 py-1 rounded-md hover:bg-surgent-surface/50 transition-colors group"
+				className="w-full flex items-center gap-1 px-1.5 py-1 rounded-md hover:bg-inferay-surface/50 transition-colors group"
 			>
 				<span
-					className={`transition-transform text-surgent-text-3 ${expanded ? "rotate-90" : ""}`}
+					className={`transition-transform text-inferay-text-3 ${expanded ? "rotate-90" : ""}`}
 				>
 					<Icons.Chevron />
 				</span>
-				<span className="flex-1 text-left text-[9px] font-medium text-surgent-text-2">
+				<span className="flex-1 text-left text-[9px] font-medium text-inferay-text-2">
 					{title}
 				</span>
-				<span className="text-[8px] text-surgent-text-3">{fileCount}</span>
+				<span className="text-[8px] text-inferay-text-3">{fileCount}</span>
 				{/* Stage/Unstage All button */}
 				<button
 					onClick={(e) => {
 						e.stopPropagation();
 					}}
-					className="opacity-0 group-hover:opacity-100 px-1 py-0.5 rounded text-[7px] text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-all"
+					className="opacity-0 group-hover:opacity-100 px-1 py-0.5 rounded text-[7px] text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-all"
 				>
 					{isStaged ? "−" : "+"}
 				</button>
@@ -312,23 +312,23 @@ function FileGroupPath({
 			{/* Group header */}
 			<button
 				onClick={onToggle}
-				className="w-full flex items-center gap-1 px-1.5 py-1 rounded-md hover:bg-surgent-surface/50 transition-colors group"
+				className="w-full flex items-center gap-1 px-1.5 py-1 rounded-md hover:bg-inferay-surface/50 transition-colors group"
 			>
 				<span
-					className={`transition-transform text-surgent-text-3 ${expanded ? "rotate-90" : ""}`}
+					className={`transition-transform text-inferay-text-3 ${expanded ? "rotate-90" : ""}`}
 				>
 					<Icons.Chevron />
 				</span>
-				<span className="flex-1 text-left text-[9px] font-medium text-surgent-text-2">
+				<span className="flex-1 text-left text-[9px] font-medium text-inferay-text-2">
 					{title}
 				</span>
-				<span className="text-[8px] text-surgent-text-3">{files.length}</span>
+				<span className="text-[8px] text-inferay-text-3">{files.length}</span>
 				{/* Stage/Unstage All button */}
 				<button
 					onClick={(e) => {
 						e.stopPropagation();
 					}}
-					className="opacity-0 group-hover:opacity-100 px-1 py-0.5 rounded text-[7px] text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-all"
+					className="opacity-0 group-hover:opacity-100 px-1 py-0.5 rounded text-[7px] text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-all"
 				>
 					{isStaged ? "−" : "+"}
 				</button>
@@ -343,14 +343,14 @@ function FileGroupPath({
 							onClick={() => onSelectFile(file.name)}
 							className={`w-full flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm transition-colors group/file ${
 								selectedFile === file.name
-									? "bg-surgent-surface-2 text-surgent-text"
-									: "hover:bg-surgent-surface/50 text-surgent-text-2"
+									? "bg-inferay-surface-2 text-inferay-text"
+									: "hover:bg-inferay-surface/50 text-inferay-text-2"
 							}`}
 						>
 							<FileStatusIcon status={file.status} />
 							<div className="flex-1 min-w-0 text-left">
 								<div className="truncate text-[9px] font-mono">{file.name}</div>
-								<div className="truncate text-[8px] text-surgent-text-3">
+								<div className="truncate text-[8px] text-inferay-text-3">
 									{file.path}
 								</div>
 							</div>
@@ -359,7 +359,7 @@ function FileGroupPath({
 								onClick={(e) => {
 									e.stopPropagation();
 								}}
-								className="opacity-0 group-hover/file:opacity-100 w-4 h-4 flex items-center justify-center text-surgent-text-3 hover:text-surgent-text transition-all shrink-0"
+								className="opacity-0 group-hover/file:opacity-100 w-4 h-4 flex items-center justify-center text-inferay-text-3 hover:text-inferay-text transition-all shrink-0"
 							>
 								{isStaged ? "−" : "+"}
 							</button>
@@ -389,15 +389,15 @@ export function UnifiedSidebar({
 	const totalChanges = stagedCount + unstagedCount;
 
 	return (
-		<div className="w-52 shrink-0 flex flex-col border-l border-surgent-border bg-surgent-bg">
+		<div className="w-52 shrink-0 flex flex-col border-l border-inferay-border bg-inferay-bg">
 			{/* Tab header */}
 			<div className="flex items-center gap-0.5 p-1">
 				<button
 					onClick={() => setActiveTab("activity")}
 					className={`flex items-center gap-0.5 h-5 px-1.5 rounded-md border text-[8px] font-medium transition-colors ${
 						activeTab === "activity"
-							? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-							: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+							? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+							: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 					}`}
 				>
 					<span className="scale-75">
@@ -409,15 +409,15 @@ export function UnifiedSidebar({
 					onClick={() => setActiveTab("changes")}
 					className={`flex items-center gap-0.5 h-5 px-1.5 rounded-md border text-[8px] font-medium transition-colors ${
 						activeTab === "changes"
-							? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-							: "border-transparent text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+							? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+							: "border-transparent text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 					}`}
 				>
 					<span className="scale-75">
 						<Icons.Git />
 					</span>
 					Git
-					<span className="px-0.5 rounded-full bg-surgent-surface text-[7px] text-surgent-text-3">
+					<span className="px-0.5 rounded-full bg-inferay-surface text-[7px] text-inferay-text-3">
 						{totalChanges}
 					</span>
 				</button>
@@ -429,8 +429,8 @@ export function UnifiedSidebar({
 							onClick={() => setViewMode("path")}
 							className={`h-5 px-1.5 rounded-md border text-[8px] transition-colors ${
 								viewMode === "path"
-									? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-									: "border-transparent text-surgent-text-3 hover:text-surgent-text-2"
+									? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+									: "border-transparent text-inferay-text-3 hover:text-inferay-text-2"
 							}`}
 						>
 							Path
@@ -439,8 +439,8 @@ export function UnifiedSidebar({
 							onClick={() => setViewMode("tree")}
 							className={`h-5 px-1.5 rounded-md border text-[8px] transition-colors ${
 								viewMode === "tree"
-									? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-									: "border-transparent text-surgent-text-3 hover:text-surgent-text-2"
+									? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+									: "border-transparent text-inferay-text-3 hover:text-inferay-text-2"
 							}`}
 						>
 							Tree
@@ -454,19 +454,19 @@ export function UnifiedSidebar({
 				<div className="flex-1 overflow-auto p-1.5 space-y-1">
 					{/* Session timeline - conversations */}
 					<div className="mb-2">
-						<div className="text-[8px] font-medium text-surgent-text-3 px-1 mb-1">
+						<div className="text-[8px] font-medium text-inferay-text-3 px-1 mb-1">
 							Conversations
 						</div>
 						{sessionTimeline.map((item, idx) => (
 							<div
 								key={idx}
-								className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-surgent-surface/50 transition-colors"
+								className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-inferay-surface/50 transition-colors"
 							>
 								<div
 									className={`w-3 h-3 rounded-full flex items-center justify-center shrink-0 ${
 										item.status === "checkpoint"
-											? "bg-surgent-accent/20 border border-surgent-accent"
-											: "bg-surgent-surface border border-surgent-border"
+											? "bg-inferay-accent/20 border border-inferay-accent"
+											: "bg-inferay-surface border border-inferay-border"
 									}`}
 								>
 									{item.status === "checkpoint" ? (
@@ -475,15 +475,15 @@ export function UnifiedSidebar({
 										<Icons.Check />
 									)}
 								</div>
-								<span className="flex-1 truncate text-[8px] text-surgent-text">
+								<span className="flex-1 truncate text-[8px] text-inferay-text">
 									{item.summary}
 								</span>
 								{item.changes && (
-									<span className="text-[7px] px-1 rounded-full bg-surgent-accent/10 text-surgent-accent shrink-0">
+									<span className="text-[7px] px-1 rounded-full bg-inferay-accent/10 text-inferay-accent shrink-0">
 										{item.changes}
 									</span>
 								)}
-								<span className="text-[7px] text-surgent-text-3 shrink-0">
+								<span className="text-[7px] text-inferay-text-3 shrink-0">
 									{item.time}
 								</span>
 							</div>
@@ -492,18 +492,18 @@ export function UnifiedSidebar({
 
 					{/* Recent activity - tool actions */}
 					<div>
-						<div className="text-[8px] font-medium text-surgent-text-3 px-1 mb-1">
+						<div className="text-[8px] font-medium text-inferay-text-3 px-1 mb-1">
 							Recent Actions
 						</div>
 						{activityTimeline.map((item, i) => (
 							<div
 								key={i}
-								className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-surgent-surface/50 transition-colors"
+								className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-inferay-surface/50 transition-colors"
 							>
-								<span className="text-[8px] tabular-nums text-surgent-text-3 shrink-0">
+								<span className="text-[8px] tabular-nums text-inferay-text-3 shrink-0">
 									{item.time}
 								</span>
-								<span className="text-surgent-text-2">
+								<span className="text-inferay-text-2">
 									{item.type === "edit" ? (
 										<Icons.Edit />
 									) : item.type === "bash" ? (
@@ -514,7 +514,7 @@ export function UnifiedSidebar({
 										<Icons.Eye />
 									)}
 								</span>
-								<span className="flex-1 truncate text-[8px] text-surgent-text font-mono">
+								<span className="flex-1 truncate text-[8px] text-inferay-text font-mono">
 									{item.file || item.command || item.query}
 								</span>
 							</div>
@@ -573,19 +573,19 @@ export function UnifiedSidebar({
 					</div>
 
 					{/* Commit section */}
-					<div className="p-1.5 border-t border-surgent-border space-y-1.5">
+					<div className="p-1.5 border-t border-inferay-border space-y-1.5">
 						<input
 							type="text"
 							placeholder="Summary"
-							className="w-full px-2 py-1 rounded-md bg-surgent-surface border border-surgent-border text-[9px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-accent/50 transition-colors"
+							className="w-full px-2 py-1 rounded-md bg-inferay-surface border border-inferay-border text-[9px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-accent/50 transition-colors"
 						/>
 						<textarea
 							placeholder="Description (optional)"
-							className="w-full h-10 px-2 py-1 rounded-md bg-surgent-surface border border-surgent-border text-[9px] text-surgent-text placeholder:text-surgent-text-3 resize-none outline-none focus:border-surgent-accent/50 transition-colors"
+							className="w-full h-10 px-2 py-1 rounded-md bg-inferay-surface border border-inferay-border text-[9px] text-inferay-text placeholder:text-inferay-text-3 resize-none outline-none focus:border-inferay-accent/50 transition-colors"
 						/>
 						<button
 							disabled={stagedCount === 0}
-							className="w-full flex items-center justify-center gap-1 py-1.5 rounded-md bg-surgent-surface-2 border border-surgent-border text-[9px] font-medium text-surgent-text hover:bg-surgent-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							className="w-full flex items-center justify-center gap-1 py-1.5 rounded-md bg-inferay-surface-2 border border-inferay-border text-[9px] font-medium text-inferay-text hover:bg-inferay-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<Icons.Check />
 							Commit ({stagedCount})

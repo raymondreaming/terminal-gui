@@ -33,7 +33,7 @@ export function DiffLine({
 	return (
 		<div className="flex h-[15px]" style={bgStyle}>
 			<span
-				className="w-8 px-1 text-right text-surgent-text-3 select-none shrink-0"
+				className="w-8 px-1 text-right text-inferay-text-3 select-none shrink-0"
 				style={{ lineHeight: "15px", fontSize: "9px" }}
 			>
 				{lineNum ?? ""}
@@ -46,7 +46,7 @@ export function DiffLine({
 				/>
 			) : (
 				<span
-					className="flex-1 pr-1.5 whitespace-pre font-mono overflow-hidden text-surgent-text"
+					className="flex-1 pr-1.5 whitespace-pre font-mono overflow-hidden text-inferay-text"
 					style={{ lineHeight: "15px", fontSize: "9px" }}
 				>
 					{type !== "empty" ? content : ""}
@@ -90,7 +90,7 @@ export function ShikiDiffViewer({ filePath }: { filePath: string }) {
 							highlightedHtml={highlightMap.get(row.left.content)}
 						/>
 					</div>
-					<div className="w-px shrink-0 bg-surgent-border" />
+					<div className="w-px shrink-0 bg-inferay-border" />
 					<div className="flex-1 min-w-0">
 						<DiffLine
 							lineNum={row.right.num}
@@ -151,7 +151,7 @@ export function InlineDiffBlock({
 							dangerouslySetInnerHTML={{ __html: highlighted.get(idx)! }}
 						/>
 					) : (
-						<span className="flex-1 whitespace-pre pr-1.5 overflow-hidden text-[8px] font-mono text-surgent-text">
+						<span className="flex-1 whitespace-pre pr-1.5 overflow-hidden text-[8px] font-mono text-inferay-text">
 							{line.content}
 						</span>
 					)}

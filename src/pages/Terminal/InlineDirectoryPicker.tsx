@@ -172,7 +172,7 @@ export function InlineDirectoryPicker({
 		return path;
 	};
 	return (
-		<div className="w-[320px] bg-surgent-surface rounded-lg border border-surgent-border overflow-hidden shadow-lg">
+		<div className="w-[320px] bg-inferay-surface rounded-lg border border-inferay-border overflow-hidden shadow-lg">
 			<div className="px-1.5 pt-1.5 pb-1.5">
 				<input
 					ref={inputRef}
@@ -185,13 +185,13 @@ export function InlineDirectoryPicker({
 					autoCorrect="off"
 					autoCapitalize="off"
 					spellCheck={false}
-					className="w-full bg-surgent-bg rounded px-2 py-1.5 text-xs text-surgent-text placeholder:text-surgent-text-3 outline-none border border-surgent-border"
+					className="w-full bg-inferay-bg rounded px-2 py-1.5 text-xs text-inferay-text placeholder:text-inferay-text-3 outline-none border border-inferay-border"
 				/>
 			</div>
 			{/* List - fixed height for 4 items to prevent layout shift */}
 			<div className="h-[164px] overflow-y-auto">
 				{displayList.length === 0 ? (
-					<div className="flex items-center justify-center h-full text-xs text-surgent-text-3">
+					<div className="flex items-center justify-center h-full text-xs text-inferay-text-3">
 						Nothing matching found
 					</div>
 				) : (
@@ -202,12 +202,12 @@ export function InlineDirectoryPicker({
 							onClick={() => onSelect(pick.path)}
 							className={`w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors ${
 								i === selectedIndex
-									? "bg-surgent-accent/15 text-surgent-text"
-									: "text-surgent-text-2 hover:bg-surgent-surface-2"
+									? "bg-inferay-accent/15 text-inferay-text"
+									: "text-inferay-text-2 hover:bg-inferay-surface-2"
 							}`}
 						>
 							<span
-								className={`shrink-0 ${i === selectedIndex ? "text-surgent-accent" : "text-surgent-text-3"}`}
+								className={`shrink-0 ${i === selectedIndex ? "text-inferay-accent" : "text-inferay-text-3"}`}
 							>
 								{pick.isGitRepo ? (
 									<IconGitBranch size={12} />
@@ -219,13 +219,13 @@ export function InlineDirectoryPicker({
 								<span className="block truncate text-xs font-medium">
 									{pick.name}
 								</span>
-								<span className="block truncate text-[9px] text-surgent-text-3">
+								<span className="block truncate text-[9px] text-inferay-text-3">
 									{shortenPath(pick.path)}
 								</span>
 							</div>
 							<IconChevronRight
 								size={10}
-								className="text-surgent-text-3 shrink-0"
+								className="text-inferay-text-3 shrink-0"
 							/>
 						</button>
 					))
@@ -233,7 +233,7 @@ export function InlineDirectoryPicker({
 			</div>
 			{loading && (
 				<div className="absolute right-3 top-3">
-					<div className="w-3 h-3 border border-surgent-text-3 border-t-transparent rounded-full animate-spin" />
+					<div className="w-3 h-3 border border-inferay-text-3 border-t-transparent rounded-full animate-spin" />
 				</div>
 			)}
 		</div>
