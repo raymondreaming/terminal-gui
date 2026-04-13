@@ -53,7 +53,6 @@ interface ClaudeChatViewProps {
 	showInput?: boolean;
 	theme?: TerminalTheme;
 	agentKind?: AgentKind;
-	systemPrompt?: string;
 	onStatusChange?: (paneId: string, status: string) => void;
 }
 
@@ -526,7 +525,6 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 			showInput = true,
 			theme,
 			agentKind = "claude",
-			systemPrompt,
 			onStatusChange,
 		},
 		ref
@@ -977,10 +975,9 @@ export const ClaudeChatView = forwardRef<ClaudeChatHandle, ClaudeChatViewProps>(
 					cwd,
 					sessionId,
 					agentKind,
-					systemPrompt: systemPrompt || undefined,
 				});
 			},
-			[paneId, cwd, agentKind, systemPrompt, setLoadingState]
+			[paneId, cwd, agentKind, setLoadingState]
 		);
 
 		// Extract tool activities from messages (same logic as ChatStatusBar)

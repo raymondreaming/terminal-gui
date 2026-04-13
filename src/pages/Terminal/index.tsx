@@ -33,12 +33,10 @@ import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { wsClient } from "../../lib/websocket.ts";
-import { AgentPicker } from "./AgentPicker.tsx";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
 import { NewSessionButtons } from "./NewSessionButtons.tsx";
-import { NotesSidebar } from "./NotesSidebar.tsx";
 import { PopoutHeader } from "./PopoutHeader.tsx";
 import { TerminalGrid } from "./TerminalGrid.tsx";
 import { TerminalSettingsPanel } from "./TerminalSettingsPanel.tsx";
@@ -125,7 +123,6 @@ type GroupAction =
 	| { type: "addGroup"; group: TerminalGroupModel }
 	| { type: "removeGroup"; groupId: string }
 	| { type: "renameGroup"; groupId: string; name: string }
-	| { type: "renamePane"; groupId: string; paneId: string; name: string }
 	| {
 			type: "reorderPanes";
 			groupId: string;
@@ -205,19 +202,6 @@ function groupsReducer(
 			return state.map((g) =>
 				g.id === action.groupId ? { ...g, name: action.name } : g
 			);
-		case "renamePane":
-			return state.map((g) =>
-				g.id === action.groupId
-					? {
-							...g,
-							panes: g.panes.map((p) =>
-								p.id === action.paneId
-									? { ...p, name: action.name || undefined }
-									: p
-							),
-						}
-					: g
-			);
 		case "reorderPanes":
 			return state.map((g) => {
 				if (g.id !== action.groupId) return g;
@@ -266,9 +250,7 @@ export function TerminalPage({
 		agentSessions: true,
 		claudeProcesses: true,
 		git: true,
-		notes: true,
 	});
-	const [groupNotes, setGroupNotes] = useState("");
 	const toggleSection = useCallback(
 		(key: keyof typeof sidebarSections) =>
 			setSidebarSections((prev) => ({ ...prev, [key]: !prev[key] })),
@@ -282,31 +264,6 @@ export function TerminalPage({
 	const [agentStatuses, setAgentStatuses] = useState<Map<string, string>>(
 		new Map()
 	);
-	const [paneUsages, setPaneUsages] = useState<
-		Map<
-			string,
-			{
-				totalCostUsd: number;
-				totalInputTokens: number;
-				totalOutputTokens: number;
-			}
-		>
-	>(new Map());
-	useEffect(() => {
-		return wsClient.onMessage((msg) => {
-			if (msg.type === "chat:usage" && msg.paneId) {
-				setPaneUsages((prev) => {
-					const next = new Map(prev);
-					next.set(msg.paneId as string, {
-						totalCostUsd: (msg.totalCostUsd as number) ?? 0,
-						totalInputTokens: (msg.totalInputTokens as number) ?? 0,
-						totalOutputTokens: (msg.totalOutputTokens as number) ?? 0,
-					});
-					return next;
-				});
-			}
-		});
-	}, []);
 	const { ports: runningPorts, killPort, openInBrowser } = useRunningPorts();
 	useAgentSessions();
 	const {
@@ -507,11 +464,12 @@ export function TerminalPage({
 	);
 	const addGroup = useCallback(
 		(name: string) => {
+			const pane = createTerminalPane("terminal");
 			const group: TerminalGroupModel = {
 				id: createGroupId(),
 				name: name || `Group ${groups.length + 1}`,
-				panes: [],
-				selectedPaneId: null,
+				panes: [pane],
+				selectedPaneId: pane.id,
 				columns: DEFAULT_COLUMNS,
 				rows: DEFAULT_ROWS,
 			};
@@ -551,13 +509,6 @@ export function TerminalPage({
 		if (!name.trim()) return;
 		groupsDispatch({ type: "renameGroup", groupId, name });
 	}, []);
-	const renamePane = useCallback(
-		(paneId: string, name: string) =>
-			withSelectedGroup((groupId) =>
-				groupsDispatch({ type: "renamePane", groupId, paneId, name })
-			),
-		[withSelectedGroup]
-	);
 	const handleChatRef = useCallback(
 		(paneId: string, handle: ClaudeChatHandle | null) => {
 			if (handle) chatRefs.current.set(paneId, handle);
@@ -601,7 +552,19 @@ export function TerminalPage({
 				<div className="flex-1 overflow-y-auto">
 					{!currentGroup || currentGroup.panes.length === 0 ? (
 						<div className="flex h-full items-center justify-center">
-							<AgentPicker onSelect={handleAddPane} />
+							<div className="flex w-full max-w-sm flex-col items-center gap-4 px-6 text-center">
+								<TerminalEmptyStateBrand />
+								<div>
+									<p className="text-sm text-surgent-text-2">
+										Start a new terminal or agent session
+									</p>
+								</div>
+								<NewSessionButtons
+									labelPrefix="New"
+									layout="column"
+									onAddPane={handleAddPane}
+								/>
+							</div>
 						</div>
 					) : (
 						<TerminalGrid
@@ -619,11 +582,7 @@ export function TerminalPage({
 							onDirectoryCancel={removePane}
 							onChatRef={handleChatRef}
 							onAgentStatusChange={handleAgentStatusChange}
-							onRenamePane={renamePane}
-							paneUsages={paneUsages}
-							systemPrompt={groupNotes}
 							onReorderPanes={reorderPanes}
-							onAddPane={handleAddPane}
 						/>
 					)}
 				</div>
@@ -796,7 +755,17 @@ export function TerminalPage({
 							className={`relative flex-1 flex flex-col ${layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
-								<AgentPicker onSelect={handleAddPane} />
+								<EmptyState
+									icon={<TerminalEmptyStateBrand />}
+									description="Start a new terminal or agent session"
+									action={
+										<NewSessionButtons
+											labelPrefix="New"
+											layout="column"
+											onAddPane={handleAddPane}
+										/>
+									}
+								/>
 							) : (
 								<TerminalGrid
 									panes={currentGroup.panes}
@@ -813,11 +782,7 @@ export function TerminalPage({
 									onDirectoryCancel={removePane}
 									onChatRef={handleChatRef}
 									onAgentStatusChange={handleAgentStatusChange}
-									onRenamePane={renamePane}
-									paneUsages={paneUsages}
-									systemPrompt={groupNotes}
 									onReorderPanes={reorderPanes}
-									onAddPane={handleAddPane}
 								/>
 							)}
 							{showSettings && (
@@ -913,12 +878,6 @@ export function TerminalPage({
 									onKillAll={killAllClaudeProcesses}
 									expanded={sidebarSections.claudeProcesses}
 									onToggle={() => toggleSection("claudeProcesses")}
-								/>
-								<NotesSidebar
-									groupId={selectedGroupId}
-									expanded={sidebarSections.notes}
-									onToggle={() => toggleSection("notes")}
-									onNotesChange={setGroupNotes}
 								/>
 							</div>
 						)}

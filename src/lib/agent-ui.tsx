@@ -1,6 +1,5 @@
 import {
 	IconAnthropic,
-	IconCpu,
 	IconOpenAI,
 	IconTerminal,
 } from "../components/ui/Icons.tsx";
@@ -15,6 +14,5 @@ export function getAgentIcon(kind: AgentKind, size = 12, className?: string) {
 	const iconKey: AgentIconKey = getAgentDefinition(kind).iconKey;
 	if (iconKey === "anthropic") return <IconAnthropic {...props} />;
 	if (iconKey === "openai") return <IconOpenAI {...props} />;
-	if (iconKey === "local") return <IconCpu {...props} />;
 	return <IconTerminal {...props} />;
 }

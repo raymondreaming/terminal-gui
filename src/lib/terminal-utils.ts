@@ -110,7 +110,6 @@ export type PaneType = AgentKind;
 export interface TerminalPaneModel {
 	readonly id: PaneId;
 	title: string;
-	name?: string;
 	readonly agentKind: AgentKind;
 	readonly isClaude: boolean;
 	readonly paneType?: PaneType;
@@ -185,9 +184,6 @@ export function getPaneTitle(
 	paneOrAgentKind: TerminalPaneModel | AgentKind,
 	cwd?: string
 ): string {
-	if (typeof paneOrAgentKind !== "string" && paneOrAgentKind.name) {
-		return paneOrAgentKind.name;
-	}
 	const agentKind =
 		typeof paneOrAgentKind === "string"
 			? paneOrAgentKind
@@ -215,11 +211,12 @@ export function createTerminalPane(
 }
 
 export function createDefaultGroup(): TerminalGroupModel {
+	const pane = createTerminalPane("claude");
 	return {
 		id: createGroupId(),
 		name: "Default",
-		panes: [],
-		selectedPaneId: null,
+		panes: [pane],
+		selectedPaneId: pane.id,
 		columns: DEFAULT_COLUMNS,
 		rows: DEFAULT_ROWS,
 	};

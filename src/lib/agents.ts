@@ -1,6 +1,6 @@
-export type ChatAgentKind = "claude" | "codex" | "local";
+export type ChatAgentKind = "claude" | "codex";
 export type AgentKind = "terminal" | ChatAgentKind;
-export type AgentIconKey = "terminal" | "anthropic" | "openai" | "local";
+export type AgentIconKey = "terminal" | "anthropic" | "openai";
 
 export interface NativeSlashCommand {
 	readonly name: string;
@@ -74,28 +74,16 @@ export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 		supportsResume: true,
 		nativeSlashCommands: [],
 	},
-	local: {
-		kind: "local",
-		label: "Local Model",
-		paneTitle: "Local",
-		description: "Local models (coming soon)",
-		iconKey: "local",
-		supportsChat: true,
-		supportsInteractiveTerminal: false,
-		supportsResume: false,
-		nativeSlashCommands: [],
-	},
 } as const;
 
 export const NEW_PANE_AGENT_KINDS = [
 	"terminal",
 	"claude",
 	"codex",
-	"local",
 ] as const satisfies readonly AgentKind[];
 
 export function isChatAgentKind(kind: AgentKind): kind is ChatAgentKind {
-	return kind === "claude" || kind === "codex" || kind === "local";
+	return kind === "claude" || kind === "codex";
 }
 
 export function getAgentDefinition(kind: AgentKind): AgentDefinition {

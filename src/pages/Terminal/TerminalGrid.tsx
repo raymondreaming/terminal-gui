@@ -1,12 +1,10 @@
 import type React from "react";
 import { memo, useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
-import type { AgentKind } from "../../lib/agents.ts";
 import type {
 	TerminalPaneModel,
 	TerminalTheme,
 } from "../../lib/terminal-utils.ts";
-import { AgentPicker } from "./AgentPicker.tsx";
 import { TerminalPaneView } from "./TerminalPaneView.tsx";
 
 interface TerminalGridProps {
@@ -24,18 +22,7 @@ interface TerminalGridProps {
 	onDirectoryCancel: (paneId: string) => void;
 	onChatRef: (paneId: string, handle: ClaudeChatHandle | null) => void;
 	onAgentStatusChange?: (paneId: string, status: string) => void;
-	onRenamePane?: (paneId: string, name: string) => void;
-	paneUsages?: Map<
-		string,
-		{
-			totalCostUsd: number;
-			totalInputTokens: number;
-			totalOutputTokens: number;
-		}
-	>;
-	systemPrompt?: string;
 	onReorderPanes?: (fromIndex: number, toIndex: number) => void;
-	onAddPane?: (kind: AgentKind) => void;
 }
 
 const paneViewProps = (
@@ -56,9 +43,6 @@ const paneViewProps = (
 	onDirectoryCancel: p.onDirectoryCancel,
 	chatRef: p.onChatRef,
 	onAgentStatusChange: p.onAgentStatusChange,
-	onRenamePane: p.onRenamePane,
-	usage: p.paneUsages?.get(pane.id),
-	systemPrompt: p.systemPrompt,
 	paneIndex: idx,
 	onHeaderDragStart: onDragStart,
 	onHeaderDragEnd: onDragEnd,
@@ -67,8 +51,7 @@ const paneViewProps = (
 export const TerminalGrid = memo(function TerminalGrid(
 	props: TerminalGridProps
 ) {
-	const { panes, columns, rows, layoutMode, theme, onReorderPanes, onAddPane } =
-		props;
+	const { panes, columns, rows, layoutMode, theme, onReorderPanes } = props;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [containerHeight, setContainerHeight] = useState(0);
 	const dragIndexRef = useRef<number | null>(null);
@@ -154,20 +137,11 @@ export const TerminalGrid = memo(function TerminalGrid(
 						/>
 					</div>
 				))}
-				{onAddPane && (
-					<div
-						className="shrink-0 h-full flex overflow-y-auto border-r border-surgent-border"
-						style={{ width: 400 }}
-					>
-						<AgentPicker onSelect={onAddPane} />
-					</div>
-				)}
 			</div>
 		);
 	}
 
-	const totalItems = panes.length + (onAddPane ? 1 : 0);
-	const totalGridRows = Math.ceil(totalItems / columns);
+	const totalGridRows = Math.ceil(panes.length / columns);
 	const availableHeight = containerHeight;
 	const rowHeight =
 		availableHeight > 0 ? Math.floor(availableHeight / rows) : 400;
@@ -201,11 +175,6 @@ export const TerminalGrid = memo(function TerminalGrid(
 					/>
 				</div>
 			))}
-			{onAddPane && (
-				<div className="flex overflow-y-auto border border-surgent-border">
-					<AgentPicker onSelect={onAddPane} />
-				</div>
-			)}
 		</div>
 	);
 });
