@@ -15,7 +15,7 @@ case "${1:-}" in
 		trap 'kill 0' EXIT INT TERM
 		bunx concurrently --kill-others \
 			"bun --watch scripts/build-renderer.ts" \
-			"TERMINAL_GUI_APP_ROOT=$ROOT $ELECTROBUN dev" &
+			"bun run scripts/watch-server.ts" &
 		wait
 		;;
 	*)

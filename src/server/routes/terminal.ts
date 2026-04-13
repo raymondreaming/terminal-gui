@@ -3,7 +3,10 @@ import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import type { ServerWebSocket } from "bun";
 import type { AgentKind } from "../../lib/agents.ts";
-import { resolveInteractiveAgentCommand } from "../agents/terminal-command.ts";
+import {
+	createClaudeEnv,
+	resolveInteractiveAgentCommand,
+} from "../agents/terminal-command.ts";
 import { PROJECT_ROOT } from "../lib/path-utils.ts";
 import {
 	badRequest,
@@ -126,9 +129,13 @@ export const TerminalService = {
 				},
 			});
 
+			const spawnEnv =
+				agentKind === "claude"
+					? { ...createClaudeEnv(), TERM: "xterm-256color" }
+					: { ...process.env, TERM: "xterm-256color" };
 			const proc = Bun.spawn(resolved.cmd, {
 				terminal,
-				env: { ...process.env, TERM: "xterm-256color" },
+				env: spawnEnv,
 				cwd: cwd || process.cwd(),
 			});
 

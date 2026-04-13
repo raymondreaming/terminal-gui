@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
 import type { AgentKind, ChatAgentKind } from "../../lib/agents.ts";
 
@@ -13,13 +13,33 @@ function withExecutableExtension(pathname: string): string {
 	return `${pathname}.cmd`;
 }
 
+// Scan nvm node version directories for a binary (handles GUI launch without NVM_BIN)
+function findInNvmVersions(binaryName: string): string | null {
+	const home = process.env.HOME;
+	if (!home) return null;
+	const versionsDir = join(home, ".nvm", "versions", "node");
+	try {
+		const versions = readdirSync(versionsDir);
+		// Check newest versions first (reverse sort)
+		for (const v of versions.sort().reverse()) {
+			const candidate = join(versionsDir, v, "bin", binaryName);
+			if (existsSync(candidate)) return candidate;
+		}
+	} catch {}
+	return null;
+}
+
 // ── Claude binary resolution ──
 
 function getClaudePathCandidates(): string[] {
 	const home = process.env.HOME;
+	const nvmBin = process.env.NVM_BIN;
 	const candidates = [
 		process.env.CLAUDE_PATH,
 		home ? join(home, ".bun", "bin", "claude") : null,
+		nvmBin ? join(nvmBin, "claude") : null,
+		findInNvmVersions("claude"),
+		home ? join(home, ".npm-global", "bin", "claude") : null,
 		"/usr/local/bin/claude",
 		"/opt/homebrew/bin/claude",
 	];
@@ -106,6 +126,24 @@ const availabilityCache: Partial<Record<ChatAgentKind, boolean>> = {};
 async function hasCli(kind: ChatAgentKind): Promise<boolean> {
 	const cached = availabilityCache[kind];
 	if (cached != null) return cached;
+
+	// First check our known candidate paths (handles nvm/bun installs not on Bun's PATH)
+	if (kind === "claude") {
+		for (const candidate of getClaudePathCandidates()) {
+			if (existsSync(candidate)) {
+				availabilityCache[kind] = true;
+				return true;
+			}
+		}
+	} else {
+		for (const candidate of getCodexPathCandidates()) {
+			if (existsSync(candidate)) {
+				availabilityCache[kind] = true;
+				return true;
+			}
+		}
+	}
+
 	const findCmd = isWin ? "where" : "which";
 	const binary = kind === "claude" ? "claude" : "codex";
 	try {
