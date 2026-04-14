@@ -170,5 +170,70 @@
 		"executionCount": 0,
 		"createdAt": 1774724650658,
 		"updatedAt": 1774724650658
+	},
+	{
+		"_id": "builtin-goodbot-analyze",
+		"name": "Architecture Analysis",
+		"description": "Run goodbot deep architecture analysis — dependency graph, SOLID checks, and health grade",
+		"command": "analyze",
+		"promptTemplate": "Run `goodbot analyze --json` on this project's working directory. If goodbot is not initialized yet (no `.goodbot/config.json`), first run `goodbot init --preset recommended --yes` to set it up.\n\nParse the JSON output and present a clear summary:\n1. **Health Grade** — the overall A+ to F grade and what's driving it\n2. **Dependency Issues** — circular dependencies, layer violations, barrel import violations\n3. **SOLID Violations** — SRP (files too large or too many concerns), DIP (concrete imports), ISP (fat barrels)\n4. **Stability Metrics** — modules with high instability or coupling\n5. **Actionable Recommendations** — the top 3 things to fix first, ordered by impact\n\nIf the `--json` flag fails, fall back to running `goodbot analyze` without it and summarize the text output instead. {args}",
+		"category": "architecture",
+		"tags": ["goodbot", "architecture", "analysis", "health"],
+		"isBuiltIn": true,
+		"executionCount": 0,
+		"createdAt": 1700000000000,
+		"updatedAt": 1700000000000
+	},
+	{
+		"_id": "builtin-goodbot-score",
+		"name": "Health Score",
+		"description": "Quick one-line architecture health grade (A+ to F) via goodbot",
+		"command": "score",
+		"promptTemplate": "Run `goodbot score` on this project's working directory to get the architecture health grade. If goodbot is not initialized yet (no `.goodbot/config.json`), first run `goodbot init --preset recommended --yes` to set it up.\n\nReport the grade and a one-sentence explanation of what it means. If the grade is C or below, suggest running `/analyze` for a detailed breakdown. {args}",
+		"category": "architecture",
+		"tags": ["goodbot", "health", "score", "quick"],
+		"isBuiltIn": true,
+		"executionCount": 0,
+		"createdAt": 1700000000000,
+		"updatedAt": 1700000000000
+	},
+	{
+		"_id": "builtin-goodbot-scan",
+		"name": "Project Scan",
+		"description": "Detect project framework, structure, layers, and verification commands via goodbot",
+		"command": "scan",
+		"promptTemplate": "Run `goodbot scan --analyze` on this project's working directory to detect the project's framework, language, directory structure, layers, and available verification commands (typecheck, lint, test, build).\n\nPresent the findings clearly:\n1. **Framework & Language** — what was detected\n2. **Project Structure** — source directories, layers, barrel files\n3. **Verification Commands** — available commands for typecheck, lint, test, format, build\n4. **Layer Architecture** — detected dependency layers and their ordering\n\nThis is a read-only scan — it does not modify any files. {args}",
+		"category": "architecture",
+		"tags": ["goodbot", "scan", "framework", "detection"],
+		"isBuiltIn": true,
+		"executionCount": 0,
+		"createdAt": 1700000000000,
+		"updatedAt": 1700000000000
+	},
+	{
+		"_id": "builtin-goodbot-fix",
+		"name": "Architecture Fix",
+		"description": "Auto-fix architecture violations — generate missing barrels, suggest file splits",
+		"command": "arch-fix",
+		"promptTemplate": "Run `goodbot fix --dry-run` on this project's working directory first to preview what changes goodbot would make. If goodbot is not initialized yet (no `.goodbot/config.json`), first run `goodbot init --preset recommended --yes` to set it up.\n\nShow me the proposed fixes:\n1. **Missing barrel files** that would be generated\n2. **File splits** suggested for files that are too large or have too many concerns\n3. **Import corrections** for barrel violation fixes\n\nAsk me to confirm before running `goodbot fix` without `--dry-run` to apply the changes. {args}",
+		"category": "architecture",
+		"tags": ["goodbot", "fix", "auto-fix", "architecture"],
+		"isBuiltIn": true,
+		"executionCount": 0,
+		"createdAt": 1700000000000,
+		"updatedAt": 1700000000000
+	},
+	{
+		"_id": "builtin-goodbot-guardrails",
+		"name": "Generate Guardrails",
+		"description": "Generate AI agent guardrail files (CLAUDE.md, .cursorrules, etc.) via goodbot",
+		"command": "guardrails",
+		"promptTemplate": "Run `goodbot generate --dry-run` on this project's working directory to preview what guardrail files would be generated. If goodbot is not initialized yet (no `.goodbot/config.json`), first run `goodbot init --preset recommended --yes` to set it up.\n\nShow what files would be created or updated:\n- CLAUDE.md\n- .cursorrules\n- .windsurfrules\n- AGENTS.md\n- CODING_GUIDELINES.md\n- .cursorignore\n\nList the key rules and conventions that would be included in each file. Ask me to confirm before running `goodbot generate` to actually write the files. {args}",
+		"category": "architecture",
+		"tags": ["goodbot", "guardrails", "generate", "claude-md"],
+		"isBuiltIn": true,
+		"executionCount": 0,
+		"createdAt": 1700000000000,
+		"updatedAt": 1700000000000
 	}
 ]
