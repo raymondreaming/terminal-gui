@@ -1,5 +1,8 @@
-import { execSync } from "node:child_process";
+import { exec } from "node:child_process";
 import { hostname, homedir, platform } from "node:os";
+import { promisify } from "node:util";
+
+const execAsync = promisify(exec);
 import { ConfigManager } from "../services/config-manager.ts";
 
 const configManager = new ConfigManager();
@@ -43,17 +46,19 @@ export function configRoutes() {
 				try {
 					let folderPath: string | null = null;
 					if (platform() === "darwin") {
-						const result = execSync(
+						const { stdout } = await execAsync(
 							`osascript -e 'POSIX path of (choose folder with prompt "Select a folder to add")'`,
-							{ encoding: "utf-8", timeout: 60000 }
-						).trim();
-						if (result) folderPath = result;
+							{ encoding: "utf-8", timeout: 120000 }
+						);
+						const trimmed = stdout.trim();
+						if (trimmed) folderPath = trimmed;
 					} else if (platform() === "win32") {
-						const result = execSync(
+						const { stdout } = await execAsync(
 							`powershell -Command "Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; if($f.ShowDialog() -eq 'OK'){$f.SelectedPath}"`,
-							{ encoding: "utf-8", timeout: 60000 }
-						).trim();
-						if (result) folderPath = result;
+							{ encoding: "utf-8", timeout: 120000 }
+						);
+						const trimmed = stdout.trim();
+						if (trimmed) folderPath = trimmed;
 					}
 					if (!folderPath) {
 						return Response.json({ folder: null });
