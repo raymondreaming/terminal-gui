@@ -223,9 +223,8 @@ export const TerminalService = {
 		const session = sessions.get(paneId);
 		if (!session) return { ok: false };
 		session.ws = ws;
-		// Don't send the old buffer - just reconnect
-		session.outputBuffer.drain(); // Clear it but don't send
-		return { ok: true };
+		const buffer = session.outputBuffer.drain();
+		return { ok: true, buffer: buffer || undefined };
 	},
 
 	listSessions() {

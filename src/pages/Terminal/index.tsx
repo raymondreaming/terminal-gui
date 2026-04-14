@@ -619,18 +619,12 @@ export function TerminalPage({
 		},
 		[]
 	);
-	const editorViewKey = useMemo(
-		() =>
-			groups
-				.map(
-					(group) =>
-						`${group.id}:${group.selectedPaneId ?? "none"}:${group.panes
-							.map((pane) => `${pane.id}:${pane.cwd ?? ""}`)
-							.join(",")}`
-				)
-				.join("|"),
-		[groups]
-	);
+	const editorViewKey = useMemo(() => {
+		if (!currentGroup) return "none";
+		return `${currentGroup.id}:${currentGroup.panes
+			.map((pane) => `${pane.id}:${pane.cwd ?? ""}`)
+			.join(",")}`;
+	}, [currentGroup]);
 	if (isPopout || (isStandalone && compactMode)) {
 		return (
 			<div className="flex h-screen flex-col bg-inferay-bg">
