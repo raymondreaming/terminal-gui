@@ -1,4 +1,5 @@
-import { hostname } from "node:os";
+import { execSync } from "node:child_process";
+import { hostname, homedir, platform } from "node:os";
 import { ConfigManager } from "../services/config-manager.ts";
 
 const configManager = new ConfigManager();
@@ -35,6 +36,39 @@ export function configRoutes() {
 				return Response.json({
 					folders: config.search_folders,
 				});
+			},
+		},
+		"/api/config/pick-folder": {
+			POST: async () => {
+				try {
+					let folderPath: string | null = null;
+					if (platform() === "darwin") {
+						const result = execSync(
+							`osascript -e 'POSIX path of (choose folder with prompt "Select a folder to add")'`,
+							{ encoding: "utf-8", timeout: 60000 }
+						).trim();
+						if (result) folderPath = result;
+					} else if (platform() === "win32") {
+						const result = execSync(
+							`powershell -Command "Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; if($f.ShowDialog() -eq 'OK'){$f.SelectedPath}"`,
+							{ encoding: "utf-8", timeout: 60000 }
+						).trim();
+						if (result) folderPath = result;
+					}
+					if (!folderPath) {
+						return Response.json({ folder: null });
+					}
+					// Convert to ~/relative if under home
+					const home = homedir();
+					const displayPath = folderPath.startsWith(home + "/")
+						? "~/" + folderPath.slice(home.length + 1)
+						: folderPath;
+					// Remove trailing slash
+					const cleaned = displayPath.replace(/\/+$/, "");
+					return Response.json({ folder: cleaned });
+				} catch {
+					return Response.json({ folder: null });
+				}
 			},
 		},
 		"/api/machine-id": {

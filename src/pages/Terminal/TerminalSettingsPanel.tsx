@@ -94,6 +94,16 @@ function SearchFoldersSection() {
 		[folders, saveFolders]
 	);
 
+	const browseFolder = useCallback(async () => {
+		try {
+			const res = await fetch("/api/config/pick-folder", { method: "POST" });
+			const { folder } = (await res.json()) as { folder: string | null };
+			if (folder && !folders.includes(folder)) {
+				saveFolders([...folders, folder]);
+			}
+		} catch {}
+	}, [folders, saveFolders]);
+
 	if (!loaded) return null;
 
 	return (
@@ -136,6 +146,13 @@ function SearchFoldersSection() {
 					</div>
 				))}
 			</div>
+			<button
+				type="button"
+				onClick={browseFolder}
+				className="w-full rounded border border-dashed border-inferay-border bg-inferay-bg px-2 py-1.5 text-[10px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors mb-1.5"
+			>
+				+ Browse Folder
+			</button>
 			<div className="flex gap-1.5">
 				<input
 					ref={inputRef}
