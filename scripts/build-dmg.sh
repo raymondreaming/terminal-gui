@@ -7,7 +7,8 @@ set -e
 
 APP_NAME="inferay"
 DMG_NAME="inferay-installer"
-BUILD_DIR="build/stable-macos-arm64"
+# Use dev build to avoid Electrobun self-extraction bug (blackboardsh/electrobun#359)
+BUILD_DIR="build/dev-macos-arm64"
 OUTPUT_DIR="artifacts"
 BACKGROUND="public/dmg-background.png"
 
@@ -15,9 +16,16 @@ echo "Building inferay..."
 
 # Build the app first
 npm run build
-bash scripts/electrobun.sh build --env=stable
+bash scripts/electrobun.sh build --env=dev
 
 echo "Creating polished DMG installer..."
+
+# Rename dev app bundle for distribution
+if [ -d "${BUILD_DIR}/inferay-dev.app" ] && [ ! -d "${BUILD_DIR}/${APP_NAME}.app" ]; then
+  mv "${BUILD_DIR}/inferay-dev.app" "${BUILD_DIR}/${APP_NAME}.app"
+  # Fix bundle name in Info.plist
+  /usr/libexec/PlistBuddy -c "Set :CFBundleName ${APP_NAME}" "${BUILD_DIR}/${APP_NAME}.app/Contents/Info.plist"
+fi
 
 # Remove old DMGs
 rm -f "${OUTPUT_DIR}/${DMG_NAME}.dmg"
