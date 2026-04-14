@@ -1,4 +1,5 @@
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { fetchJsonOr } from "../../lib/fetch-json.ts";
 import {
 	APP_THEMES,
 	type AppThemeId,
@@ -51,6 +52,129 @@ function ColorInput({
 				{value}
 			</span>
 		</label>
+	);
+}
+
+function SearchFoldersSection() {
+	const [folders, setFolders] = useState<string[]>([]);
+	const [newFolder, setNewFolder] = useState("");
+	const [loaded, setLoaded] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		fetchJsonOr<{ folders: string[] }>("/api/config/search-folders", {
+			folders: [],
+		}).then((data) => {
+			setFolders(data.folders);
+			setLoaded(true);
+		});
+	}, []);
+
+	const saveFolders = useCallback(async (next: string[]) => {
+		setFolders(next);
+		await fetch("/api/config/search-folders", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ folders: next }),
+		});
+	}, []);
+
+	const addFolder = useCallback(() => {
+		const trimmed = newFolder.trim();
+		if (!trimmed || folders.includes(trimmed)) return;
+		saveFolders([...folders, trimmed]);
+		setNewFolder("");
+		inputRef.current?.focus();
+	}, [newFolder, folders, saveFolders]);
+
+	const removeFolder = useCallback(
+		(idx: number) => {
+			saveFolders(folders.filter((_, i) => i !== idx));
+		},
+		[folders, saveFolders]
+	);
+
+	const browseFolder = useCallback(async () => {
+		try {
+			const res = await fetch("/api/config/pick-folder", { method: "POST" });
+			const { folder } = (await res.json()) as { folder: string | null };
+			if (folder && !folders.includes(folder)) {
+				saveFolders([...folders, folder]);
+			}
+		} catch {}
+	}, [folders, saveFolders]);
+
+	if (!loaded) return null;
+
+	return (
+		<div>
+			<h4 className="mb-2 text-[10px] font-semibold text-inferay-text-2">
+				SEARCH FOLDERS
+			</h4>
+			<p className="mb-2 text-[9px] text-inferay-text-3">
+				Directories to scan when searching for projects. Use ~/path for
+				home-relative paths.
+			</p>
+			<div className="space-y-1 max-h-32 overflow-y-auto mb-2">
+				{folders.map((folder, idx) => (
+					<div
+						key={folder}
+						className="flex items-center gap-1.5 rounded px-1.5 py-0.5 group hover:bg-inferay-surface-2"
+					>
+						<span className="flex-1 truncate font-mono text-[10px] text-inferay-text-2">
+							{folder}
+						</span>
+						<button
+							type="button"
+							onClick={() => removeFolder(idx)}
+							className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-4 w-4 rounded transition-opacity text-inferay-text-3 hover:text-red-400"
+							title="Remove"
+						>
+							<svg
+								aria-hidden
+								width="8"
+								height="8"
+								viewBox="0 0 8 8"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="1.5"
+								strokeLinecap="round"
+							>
+								<path d="M1 1l6 6M7 1l-6 6" />
+							</svg>
+						</button>
+					</div>
+				))}
+			</div>
+			<button
+				type="button"
+				onClick={browseFolder}
+				className="w-full rounded border border-dashed border-inferay-border bg-inferay-bg px-2 py-1.5 text-[10px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors mb-1.5"
+			>
+				+ Browse Folder
+			</button>
+			<div className="flex gap-1.5">
+				<input
+					ref={inputRef}
+					type="text"
+					value={newFolder}
+					onChange={(e) => setNewFolder(e.target.value)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") addFolder();
+					}}
+					placeholder="~/path/to/folder"
+					className="flex-1 rounded border border-inferay-border bg-inferay-bg px-2 py-1 text-[10px] text-inferay-text-2 outline-none placeholder:text-inferay-text-3"
+				/>
+				<button
+					type="button"
+					onClick={addFolder}
+					disabled={!newFolder.trim()}
+					className="rounded border border-inferay-border bg-inferay-bg px-2 py-1 text-[10px] text-inferay-text-2 hover:bg-inferay-surface-2 disabled:opacity-30"
+				>
+					Add
+				</button>
+			</div>
+		</div>
 	);
 }
 
@@ -291,6 +415,8 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 							</span>
 						</div>
 					</div>
+					<div className="h-px bg-inferay-border" />
+					<SearchFoldersSection />
 				</div>
 			</div>
 		</>

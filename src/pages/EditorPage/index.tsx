@@ -20,6 +20,7 @@ import {
 	IconGitBranch,
 	IconLayoutGrid,
 	IconLayoutRows,
+	IconSettings,
 } from "../../components/ui/Icons.tsx";
 import { ActivityIndicator } from "../../features/activity-feed/ActivityFeed.tsx";
 import { useActivityFeed } from "../../features/activity-feed/useActivityFeed.ts";
@@ -49,6 +50,7 @@ import {
 import { wsClient } from "../../lib/websocket.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { InlineDirectoryPicker } from "../Terminal/InlineDirectoryPicker.tsx";
+import { TerminalSettingsPanel } from "../Terminal/TerminalSettingsPanel.tsx";
 import {
 	EditorSidebar,
 	FileStatusIcon,
@@ -139,6 +141,7 @@ export function EditorPage() {
 	);
 	const [fileViewMode, setFileViewMode] = useState<"path" | "tree">("tree");
 	const [mainViewMode, setMainViewMode] = useState<"diff" | "graph">("diff");
+	const [showSettings, setShowSettings] = useState(false);
 	const chatRef = useRef<AgentChatHandle>(null);
 	const sidebarDragRef = useRef<{
 		startX: number;
@@ -147,6 +150,15 @@ export function EditorPage() {
 
 	const [sessionVersion, setSessionVersion] = useState(0);
 	const terminalState = useMemo(() => loadTerminalState(), [sessionVersion]);
+	const [appearance, setAppearance] = useState(() => {
+		const ts = loadTerminalState();
+		return {
+			themeId: ts?.themeId ?? mapAppThemeToTerminalTheme(loadAppThemeId()),
+			fontSize: ts?.fontSize ?? 13,
+			fontFamily: ts?.fontFamily ?? "SF Mono",
+			opacity: ts?.opacity ?? 1,
+		};
+	});
 	const allSessions = useMemo(
 		() => stableSessions(flattenSessions(terminalState?.groups ?? [])),
 		[terminalState]
@@ -295,6 +307,16 @@ export function EditorPage() {
 		window.addEventListener("terminal-shell-change", syncEditorShellState);
 		return () =>
 			window.removeEventListener("terminal-shell-change", syncEditorShellState);
+	}, []);
+
+	useEffect(() => {
+		const handleSettingsOpen = () => setShowSettings(true);
+		window.addEventListener("terminal-open-theme-panel", handleSettingsOpen);
+		return () =>
+			window.removeEventListener(
+				"terminal-open-theme-panel",
+				handleSettingsOpen
+			);
 	}, []);
 
 	useEffect(() => {
@@ -512,6 +534,21 @@ export function EditorPage() {
 		}
 	}, [session?.cwd, commitMessage, isCommitting, refresh]);
 
+	const handleAppearanceChange = useCallback(
+		(patch: Partial<typeof appearance>) => {
+			setAppearance((prev) => {
+				const next = { ...prev, ...patch };
+				const state = loadTerminalState();
+				if (state) {
+					saveTerminalState({ ...state, ...next });
+					window.dispatchEvent(new Event("terminal-shell-change"));
+				}
+				return next;
+			});
+		},
+		[]
+	);
+
 	const handleSidebarDragStart = useCallback(
 		(e: React.MouseEvent) => {
 			e.preventDefault();
@@ -674,6 +711,7 @@ export function EditorPage() {
 							activityEvents={activityEvents}
 							onSelectPane={setSelectedPaneId}
 							onClose={closePane}
+							onSettingsClick={() => setShowSettings(true)}
 						/>
 						<div className="flex-1 min-h-0">
 							<AgentChatView
@@ -794,6 +832,19 @@ export function EditorPage() {
 						</div>
 					</aside>
 				</div>
+			)}
+			{showSettings && (
+				<TerminalSettingsPanel
+					themeId={appearance.themeId}
+					fontSize={appearance.fontSize}
+					fontFamily={appearance.fontFamily}
+					opacity={appearance.opacity}
+					onThemeChange={(v) => handleAppearanceChange({ themeId: v })}
+					onFontSizeChange={(v) => handleAppearanceChange({ fontSize: v })}
+					onFontFamilyChange={(v) => handleAppearanceChange({ fontFamily: v })}
+					onOpacityChange={(v) => handleAppearanceChange({ opacity: v })}
+					onClose={() => setShowSettings(false)}
+				/>
 			)}
 		</div>
 	);
@@ -1351,12 +1402,14 @@ function AgentTopBar({
 	activityEvents,
 	onSelectPane,
 	onClose,
+	onSettingsClick,
 }: {
 	session: { paneId: string; cwd: string; agentKind: string };
 	sessions: Array<{ paneId: string; cwd: string; agentKind: string }>;
 	activityEvents: ToolActivity[];
 	onSelectPane: (id: string) => void;
 	onClose: (id: string) => void;
+	onSettingsClick?: () => void;
 }) {
 	return (
 		<div className={TOPBAR_CLASS}>
@@ -1395,6 +1448,16 @@ function AgentTopBar({
 			)}
 			<span className="flex-1" />
 			<ActivityIndicator events={activityEvents} />
+			{onSettingsClick && (
+				<button
+					type="button"
+					onClick={onSettingsClick}
+					className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-inferay-text-2"
+					title="Settings"
+				>
+					<IconSettings size={10} />
+				</button>
+			)}
 			<button
 				type="button"
 				onClick={() => onClose(session.paneId)}

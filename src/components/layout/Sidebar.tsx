@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { readStoredBoolean, writeStoredValue } from "../../lib/stored-json.ts";
-import { IconUser } from "../ui/Icons.tsx";
+import { IconSettings, IconUser } from "../ui/Icons.tsx";
 
 function IconBranch({
 	size = 15,
@@ -145,6 +145,17 @@ export function Sidebar() {
 				})}
 			</nav>
 			<div className="border-t border-inferay-border p-1.5">
+				<button
+					type="button"
+					onClick={() =>
+						window.dispatchEvent(new Event("terminal-open-theme-panel"))
+					}
+					className={`w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2 ${collapsed ? "justify-center !px-0" : ""}`}
+					title={collapsed ? "Settings" : undefined}
+				>
+					<IconSettings size={14} className="shrink-0" />
+					{!collapsed ? <span>Settings</span> : null}
+				</button>
 				<NavLink
 					to="/profile"
 					className={({ isActive }) =>

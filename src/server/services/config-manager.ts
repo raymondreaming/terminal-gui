@@ -7,12 +7,26 @@ const LOCAL_CONFIG_PATH = resolve(
 	"../../scripts/config.local.yaml"
 );
 
+const DEFAULT_SEARCH_FOLDERS = [
+	"~/Desktop",
+	"~/Documents",
+	"~/Projects",
+	"~/Developer",
+	"~/Code",
+	"~/Work",
+	"~/Sites",
+	"~/repos",
+	"~/src",
+	"~/dev",
+];
+
 const DEFAULT_CONFIG: Record<string, unknown> = {
 	openai: { api_key: "", model: "gpt-5.2" },
 	anthropic: { api_key: "", model: "claude-opus-4-6" },
 	build_agent: "claude",
 	fal: { api_key: "" },
 	paths: { template_dir: "../templates" },
+	search_folders: DEFAULT_SEARCH_FOLDERS,
 };
 
 export class ConfigManager {
@@ -51,7 +65,7 @@ export class ConfigManager {
 	async update(
 		updates: Record<string, unknown>
 	): Promise<Record<string, unknown>> {
-		const localOnlyKeys = new Set(["build_agent"]);
+		const localOnlyKeys = new Set(["build_agent", "search_folders"]);
 		const baseUpdates: Record<string, unknown> = {};
 		const localUpdates: Record<string, unknown> = {};
 

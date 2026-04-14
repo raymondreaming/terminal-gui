@@ -16,6 +16,9 @@ import {
 	writeJson,
 } from "../../lib/route-helpers.ts";
 import { ChatService } from "../services/claude-chat.ts";
+import { ConfigManager } from "../services/config-manager.ts";
+
+const configManager = new ConfigManager();
 
 const isWin = process.platform === "win32";
 
@@ -253,6 +256,29 @@ function isRealFolder(name: string): boolean {
 	return !excluded.some((ext) => name.toLowerCase().endsWith(ext));
 }
 
+async function getConfiguredSearchPaths(): Promise<string[]> {
+	const home = homedir();
+	const config = await configManager.load();
+	const folders = config.search_folders;
+	if (!Array.isArray(folders) || folders.length === 0) {
+		return [
+			resolve(home, "Desktop"),
+			resolve(home, "Documents"),
+			resolve(home, "Projects"),
+			resolve(home, "Developer"),
+			resolve(home, "Code"),
+			resolve(home, "Work"),
+			resolve(home, "Sites"),
+			resolve(home, "repos"),
+			resolve(home, "src"),
+			resolve(home, "dev"),
+		];
+	}
+	return folders.map((f: string) =>
+		f.startsWith("~/") ? resolve(home, f.slice(2)) : resolve(f)
+	);
+}
+
 async function listDirectories(
 	basePath: string
 ): Promise<Array<{ name: string; path: string }>> {
@@ -281,20 +307,8 @@ async function searchDirectories(
 	const containsMatches: DirEntry[] = [];
 
 	const home = homedir();
-	const searchPaths = [
-		home,
-		resolve(home, "Desktop"),
-		resolve(home, "Documents"),
-		resolve(home, "Projects"),
-		resolve(home, "Developer"),
-		resolve(home, "Code"),
-		resolve(home, "Work"),
-		resolve(home, "Sites"),
-		resolve(home, "repos"),
-		resolve(home, "src"),
-		resolve(home, "dev"),
-		resolve(PROJECT_ROOT, "apps"),
-	];
+	const configuredPaths = await getConfiguredSearchPaths();
+	const searchPaths = [home, ...configuredPaths, resolve(PROJECT_ROOT, "apps")];
 
 	const lowerQuery = query.toLowerCase();
 
@@ -342,19 +356,7 @@ async function searchDirectories(
 async function findQuickPicks(): Promise<
 	Array<{ name: string; path: string; isGitRepo: boolean }>
 > {
-	const home = homedir();
-	const commonPaths = [
-		"Desktop",
-		"Documents",
-		"Projects",
-		"Developer",
-		"Code",
-		"Work",
-		"Sites",
-		"repos",
-		"src",
-		"dev",
-	].map((label) => resolve(home, label));
+	const commonPaths = await getConfiguredSearchPaths();
 
 	const results: Array<{
 		name: string;
