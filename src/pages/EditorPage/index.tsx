@@ -142,13 +142,6 @@ export function EditorPage() {
 	const [fileViewMode, setFileViewMode] = useState<"path" | "tree">("tree");
 	const [mainViewMode, setMainViewMode] = useState<"diff" | "graph">("diff");
 	const [showSettings, setShowSettings] = useState(false);
-	const [appearance, setAppearance] = useState(() => ({
-		themeId:
-			terminalState?.themeId ?? mapAppThemeToTerminalTheme(loadAppThemeId()),
-		fontSize: terminalState?.fontSize ?? 13,
-		fontFamily: terminalState?.fontFamily ?? "SF Mono",
-		opacity: terminalState?.opacity ?? 1,
-	}));
 	const chatRef = useRef<AgentChatHandle>(null);
 	const sidebarDragRef = useRef<{
 		startX: number;
@@ -157,6 +150,15 @@ export function EditorPage() {
 
 	const [sessionVersion, setSessionVersion] = useState(0);
 	const terminalState = useMemo(() => loadTerminalState(), [sessionVersion]);
+	const [appearance, setAppearance] = useState(() => {
+		const ts = loadTerminalState();
+		return {
+			themeId: ts?.themeId ?? mapAppThemeToTerminalTheme(loadAppThemeId()),
+			fontSize: ts?.fontSize ?? 13,
+			fontFamily: ts?.fontFamily ?? "SF Mono",
+			opacity: ts?.opacity ?? 1,
+		};
+	});
 	const allSessions = useMemo(
 		() => stableSessions(flattenSessions(terminalState?.groups ?? [])),
 		[terminalState]
