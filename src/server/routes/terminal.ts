@@ -505,8 +505,7 @@ async function getRunningPorts(): Promise<RunningPort[]> {
 		}
 
 		return ports.sort((a, b) => a.port - b.port);
-	} catch (e) {
-		console.error("Failed to get running ports:", e);
+	} catch {
 		return [];
 	}
 }
@@ -600,8 +599,7 @@ async function getClaudeProcesses(): Promise<ClaudeProcess[]> {
 						) / 10,
 				};
 			});
-	} catch (e) {
-		console.error("Failed to get claude processes:", e);
+	} catch {
 		return [];
 	}
 }

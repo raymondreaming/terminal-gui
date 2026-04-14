@@ -12,21 +12,15 @@ import {
 	type CustomThemeColors,
 	type HexColor,
 	loadCustomTheme,
+	loadTerminalState,
 	saveCustomTheme,
-	TERMINAL_FONTS,
-	TERMINAL_THEMES,
+	saveTerminalState,
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
 
 interface TerminalSettingsPanelProps {
 	themeId: ThemeId;
-	fontSize: number;
-	fontFamily: string;
-	opacity: number;
 	onThemeChange: (id: ThemeId) => void;
-	onFontSizeChange: (size: number) => void;
-	onFontFamilyChange: (family: string) => void;
-	onOpacityChange: (opacity: number) => void;
 	onClose: () => void;
 }
 
@@ -52,6 +46,66 @@ function ColorInput({
 				{value}
 			</span>
 		</label>
+	);
+}
+
+function ThemeOrb({
+	theme,
+	selected,
+	onClick,
+	dashed,
+}: {
+	theme: {
+		id: string;
+		name: string;
+		colors: { accent: string; bg: string; surface: string };
+	};
+	selected: boolean;
+	onClick: () => void;
+	dashed?: boolean;
+}) {
+	const { accent, bg, surface } = theme.colors;
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all ${
+				selected
+					? "border-inferay-border-bold bg-inferay-surface/40"
+					: "border-transparent hover:bg-inferay-surface-2"
+			}`}
+		>
+			<div
+				className={`relative h-12 w-12 rounded-full ${dashed ? "border border-dashed border-inferay-border" : ""}`}
+				style={{ backgroundColor: bg }}
+			>
+				<div
+					className="absolute inset-0 rounded-full transition-transform group-hover:scale-105"
+					style={{
+						background: `radial-gradient(circle at 35% 35%, ${accent}ee, ${accent}88 40%, ${surface}44 70%, transparent 100%)`,
+						boxShadow: selected
+							? `0 0 16px 2px ${accent}60, inset 0 0 8px ${accent}30`
+							: `0 0 10px 1px ${accent}25`,
+					}}
+				/>
+				<div
+					className="absolute rounded-full"
+					style={{
+						top: "18%",
+						left: "22%",
+						width: "28%",
+						height: "22%",
+						background: `radial-gradient(ellipse at center, rgba(255,255,255,0.55), transparent 70%)`,
+						filter: "blur(1.5px)",
+					}}
+				/>
+			</div>
+			<span
+				className={`text-[9px] leading-none ${selected ? "font-semibold text-inferay-text" : "text-inferay-text-3"}`}
+			>
+				{theme.name}
+			</span>
+		</button>
 	);
 }
 
@@ -180,13 +234,7 @@ function SearchFoldersSection() {
 
 export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 	themeId,
-	fontSize,
-	fontFamily,
-	opacity,
 	onThemeChange,
-	onFontSizeChange,
-	onFontFamilyChange,
-	onOpacityChange,
 	onClose,
 }: TerminalSettingsPanelProps) {
 	const [appThemeId, setAppThemeId] = useState<AppThemeId>(loadAppThemeId);
@@ -196,7 +244,13 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 			setAppThemeId(id);
 			saveAppThemeId(id);
 			applyAppTheme(id);
-			onThemeChange(mapAppThemeToTerminalTheme(id));
+			const termThemeId = mapAppThemeToTerminalTheme(id);
+			onThemeChange(termThemeId);
+			const state = loadTerminalState();
+			if (state) {
+				saveTerminalState({ ...state, themeId: termThemeId });
+				window.dispatchEvent(new Event("terminal-shell-change"));
+			}
 		},
 		[onThemeChange]
 	);
@@ -207,7 +261,14 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 			setCustom((prev) => {
 				const next = { ...prev, ...patch };
 				saveCustomTheme(next);
-				if (themeId === "custom") onThemeChange("custom");
+				if (themeId === "custom") {
+					onThemeChange("custom");
+					const state = loadTerminalState();
+					if (state) {
+						saveTerminalState({ ...state, themeId: "custom" });
+						window.dispatchEvent(new Event("terminal-shell-change"));
+					}
+				}
 				return next;
 			});
 		},
@@ -225,7 +286,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 				className="fixed inset-0 bg-inferay-bg/30 z-[50]"
 				onClick={onClose}
 			/>
-			<div className="fixed right-3 top-14 z-[51] w-[330px] max-h-[calc(100vh-4rem)] overflow-y-auto rounded-xl border border-inferay-border bg-inferay-bg shadow-2xl">
+			<div className="fixed right-3 top-8 z-[51] w-[330px] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-xl border border-inferay-border bg-inferay-bg shadow-2xl">
 				<div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-inferay-border bg-inferay-bg rounded-t-xl">
 					<span className="text-[10px] font-bold tracking-widest text-inferay-text-3">
 						THEME
@@ -240,81 +301,29 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 				</div>
 				<div className="space-y-5 p-4 pb-6">
 					<div>
-						<div className="grid grid-cols-3 gap-1.5">
-							{APP_THEMES.map((t) => {
-								const termTheme = TERMINAL_THEMES.find(
-									(tt) => tt.id === mapAppThemeToTerminalTheme(t.id)
-								);
-								return (
-									<button
-										type="button"
-										key={t.id}
-										onClick={() => handleThemeChange(t.id)}
-										className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${
-											appThemeId === t.id
-												? "bg-inferay-accent/15 ring-1 ring-inferay-accent"
-												: "hover:bg-inferay-surface-2"
-										}`}
-									>
-										<div className="flex h-8 w-full rounded-md overflow-hidden border border-inferay-border/30">
-											<div
-												className="flex w-1/2 items-center justify-center"
-												style={{ backgroundColor: t.colors.bg }}
-											>
-												<div
-													className="h-1 w-1 rounded-full"
-													style={{ backgroundColor: t.colors.accent }}
-												/>
-											</div>
-											<div
-												className="flex w-1/2 items-center justify-center"
-												style={{
-													backgroundColor: termTheme?.bg ?? t.colors.bg,
-												}}
-											>
-												<div
-													className="h-0.5 w-4 rounded"
-													style={{
-														backgroundColor: termTheme?.fg ?? t.colors.text,
-													}}
-												/>
-											</div>
-										</div>
-										<span
-											className={`text-[9px] ${appThemeId === t.id ? "font-semibold text-inferay-text" : "text-inferay-text-2"}`}
-										>
-											{t.name}
-										</span>
-									</button>
-								);
-							})}
-
-							<button
-								type="button"
+						<div className="grid grid-cols-3 gap-2.5">
+							{APP_THEMES.map((t) => (
+								<ThemeOrb
+									key={t.id}
+									theme={t}
+									selected={appThemeId === t.id}
+									onClick={() => handleThemeChange(t.id)}
+								/>
+							))}
+							<ThemeOrb
+								theme={{
+									id: "custom",
+									name: "Custom",
+									colors: {
+										accent: custom.cursor,
+										surface: custom.bg,
+										bg: custom.bg,
+									},
+								}}
+								selected={isCustom}
 								onClick={() => handleThemeChange("custom")}
-								className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-colors ${isCustom ? "bg-inferay-accent/15 ring-1 ring-inferay-accent" : "hover:bg-inferay-surface-2"}`}
-							>
-								<div
-									className="flex h-8 w-full items-center justify-center rounded-md border border-dashed border-inferay-border"
-									style={{ backgroundColor: custom.bg }}
-								>
-									<div className="flex items-center gap-1">
-										<div
-											className="h-1 w-1 rounded-full"
-											style={{ backgroundColor: custom.cursor }}
-										/>
-										<div
-											className="h-0.5 w-6 rounded"
-											style={{ backgroundColor: custom.fg }}
-										/>
-									</div>
-								</div>
-								<span
-									className={`text-[9px] ${isCustom ? "font-semibold text-inferay-text" : "text-inferay-text-2"}`}
-								>
-									Custom
-								</span>
-							</button>
+								dashed
+							/>
 						</div>
 					</div>
 					{isCustom && (
@@ -360,61 +369,6 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 							</div>
 						</>
 					)}
-					<div className="h-px bg-inferay-border" />
-
-					<div>
-						<h4 className="mb-2 text-[10px] font-semibold text-inferay-text-2">
-							FONT
-						</h4>
-						<div className="flex items-center gap-3">
-							<select
-								value={fontFamily}
-								onChange={(e) => onFontFamilyChange(e.target.value)}
-								className="rounded-md border border-inferay-border bg-inferay-bg px-2 py-1 text-[11px] text-inferay-text-2 outline-none"
-							>
-								{TERMINAL_FONTS.map((f) => (
-									<option key={f} value={f}>
-										{f}
-									</option>
-								))}
-							</select>
-							<div className="flex items-center gap-1.5">
-								<input
-									type="range"
-									min={9}
-									max={24}
-									step={1}
-									value={fontSize}
-									onChange={(e) => onFontSizeChange(Number(e.target.value))}
-									className="w-20"
-								/>
-								<span className="font-mono text-[10px] text-inferay-text-2">
-									{fontSize}
-								</span>
-							</div>
-						</div>
-					</div>
-					<div className="h-px bg-inferay-border" />
-
-					<div>
-						<h4 className="mb-2 text-[10px] font-semibold text-inferay-text-2">
-							OPACITY
-						</h4>
-						<div className="flex items-center gap-2">
-							<input
-								type="range"
-								min={0.3}
-								max={1}
-								step={0.05}
-								value={opacity}
-								onChange={(e) => onOpacityChange(Number(e.target.value))}
-								className="w-32"
-							/>
-							<span className="font-mono text-[10px] text-inferay-text-2">
-								{Math.round(opacity * 100)}%
-							</span>
-						</div>
-					</div>
 					<div className="h-px bg-inferay-border" />
 					<SearchFoldersSection />
 				</div>

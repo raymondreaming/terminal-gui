@@ -32,6 +32,7 @@ export interface AppTheme {
 
 const APP_THEME_IDS = {
 	default: "default",
+	midnight: "midnight",
 	nord: "nord",
 	dracula: "dracula",
 	solarized: "solarized",
@@ -97,15 +98,15 @@ function makeTheme(t: ThemeTuple): AppTheme {
 const THEME_DATA = [
 	[
 		"default",
-		"Default Dark",
+		"Black",
 		"#000000",
-		"#1c1c1e",
-		"#2c2c2e",
-		"#3a3a3c",
+		"#0a0a0a",
+		"#141414",
+		"#1e1e1e",
 		"rgba(255, 255, 255, 0.08)",
 		"rgba(255, 255, 255, 0.15)",
-		"#007AFF",
-		"#0A84FF",
+		"#555555",
+		"#6a6a6a",
 		"#30D158",
 		"#FF9F0A",
 		"#FF453A",
@@ -113,6 +114,25 @@ const THEME_DATA = [
 		"#F5F5F7",
 		"rgba(255, 255, 255, 0.55)",
 		"rgba(255, 255, 255, 0.3)",
+	],
+	[
+		"midnight",
+		"Midnight",
+		"#0c0c0f",
+		"#151518",
+		"#1d1d22",
+		"#26262c",
+		"rgba(255, 255, 255, 0.07)",
+		"rgba(255, 255, 255, 0.13)",
+		"#7a7a8e",
+		"#9090a4",
+		"#30D158",
+		"#FF9F0A",
+		"#FF453A",
+		"#8a8aff",
+		"#e8e8ec",
+		"rgba(255, 255, 255, 0.50)",
+		"rgba(255, 255, 255, 0.28)",
 	],
 	[
 		"nord",
@@ -323,6 +343,7 @@ const APP_CUSTOM_THEME_KEY = "inferay-app-custom-theme" as const;
 
 const APP_TO_TERMINAL_THEME: Record<AppThemeId, ThemeId> = {
 	default: "default",
+	midnight: "midnight",
 	nord: "nord",
 	dracula: "dracula",
 	solarized: "solarized",

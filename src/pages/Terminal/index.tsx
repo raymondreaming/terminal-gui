@@ -456,11 +456,15 @@ export function TerminalPage({
 	);
 	useEffect(() => {
 		const handleShellChange = () => {
+			const saved = loadTerminalState();
+			if (saved?.themeId && saved.themeId !== themeId) {
+				setAppearance((prev) => ({ ...prev, themeId: saved.themeId }));
+			}
 			// Skip restore check if we have a pending save - this prevents undoing local changes
 			if (pendingSaveRef.current) {
 				return;
 			}
-			const savedState = loadTerminalState();
+			const savedState = saved;
 			if (savedState) {
 				const savedShellKey = JSON.stringify({
 					selectedGroupId: savedState.selectedGroupId,
@@ -513,7 +517,7 @@ export function TerminalPage({
 		window.addEventListener("terminal-shell-change", handleShellChange);
 		return () =>
 			window.removeEventListener("terminal-shell-change", handleShellChange);
-	}, [groups, mainView, restoreSavedState, selectedGroupId]);
+	}, [groups, mainView, restoreSavedState, selectedGroupId, themeId]);
 	useEffect(() => {
 		const handleThemeOpen = () => {
 			setShowSettings(true);
@@ -822,20 +826,8 @@ export function TerminalPage({
 							{showSettings && (
 								<TerminalSettingsPanel
 									themeId={themeId}
-									fontSize={fontSize}
-									fontFamily={fontFamily}
-									opacity={opacity}
 									onThemeChange={(v: ThemeId) =>
 										setAppearance((prev) => ({ ...prev, themeId: v }))
-									}
-									onFontSizeChange={(v: number) =>
-										setAppearance((prev) => ({ ...prev, fontSize: v }))
-									}
-									onFontFamilyChange={(v: string) =>
-										setAppearance((prev) => ({ ...prev, fontFamily: v }))
-									}
-									onOpacityChange={(v: number) =>
-										setAppearance((prev) => ({ ...prev, opacity: v }))
 									}
 									onClose={() => setShowSettings(false)}
 								/>

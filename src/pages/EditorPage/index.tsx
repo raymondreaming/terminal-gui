@@ -42,14 +42,11 @@ import {
 import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	getThemeById,
-	getPaneTitle,
 	loadTerminalState,
-	saveTerminalState,
 	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
-import { InlineDirectoryPicker } from "../Terminal/InlineDirectoryPicker.tsx";
 import { TerminalSettingsPanel } from "../Terminal/TerminalSettingsPanel.tsx";
 import {
 	EditorSidebar,
@@ -150,21 +147,15 @@ export function EditorPage() {
 
 	const [sessionVersion, setSessionVersion] = useState(0);
 	const terminalState = useMemo(() => loadTerminalState(), [sessionVersion]);
-	const [appearance, setAppearance] = useState(() => {
-		const ts = loadTerminalState();
-		return {
-			themeId: ts?.themeId ?? mapAppThemeToTerminalTheme(loadAppThemeId()),
-			fontSize: ts?.fontSize ?? 13,
-			fontFamily: ts?.fontFamily ?? "SF Mono",
-			opacity: ts?.opacity ?? 1,
-		};
-	});
+	const themeId =
+		terminalState?.themeId ?? mapAppThemeToTerminalTheme(loadAppThemeId());
 	const allSessions = useMemo(
 		() => stableSessions(flattenSessions(terminalState?.groups ?? [])),
 		[terminalState]
 	);
 	const sessions = useMemo(
-		() => allSessions.filter((s) => !closedPaneIds.has(s.paneId)),
+		() =>
+			allSessions.filter((s) => !closedPaneIds.has(s.paneId) && !s.pendingCwd),
 		[allSessions, closedPaneIds]
 	);
 	const { sessions: liveAgentSessions } = useAgentSessions();
@@ -177,13 +168,7 @@ export function EditorPage() {
 		[sessions]
 	);
 	const { projectMap } = useGitStatus(trackedDirs);
-	const theme = useMemo(
-		() =>
-			getThemeById(
-				terminalState?.themeId ?? mapAppThemeToTerminalTheme(loadAppThemeId())
-			),
-		[terminalState?.themeId]
-	);
+	const theme = useMemo(() => getThemeById(themeId), [themeId]);
 	const {
 		diff,
 		request,
@@ -230,6 +215,10 @@ export function EditorPage() {
 	useEffect(() => {
 		if (selectedPaneId) {
 			writeStoredValue("editor-selected-pane", selectedPaneId);
+		} else {
+			try {
+				localStorage.removeItem("editor-selected-pane");
+			} catch {}
 		}
 	}, [selectedPaneId]);
 
@@ -303,6 +292,7 @@ export function EditorPage() {
 	useEffect(() => {
 		const syncEditorShellState = () => {
 			setZenMode(loadZenMode());
+			setSessionVersion((v) => v + 1);
 		};
 		window.addEventListener("terminal-shell-change", syncEditorShellState);
 		return () =>
@@ -443,47 +433,6 @@ export function EditorPage() {
 		[selectedPaneId, sessions]
 	);
 
-	const handleDirectorySelect = useCallback((paneId: string, path: string) => {
-		const state = loadTerminalState();
-		if (!state) return;
-		saveTerminalState({
-			...state,
-			groups: state.groups.map((g) => ({
-				...g,
-				panes: g.panes.map((p) =>
-					p.id === paneId
-						? {
-								...p,
-								cwd: path,
-								pendingCwd: false,
-								title: getPaneTitle(p.agentKind, path),
-							}
-						: p
-				),
-			})),
-		});
-		setSessionVersion((v) => v + 1);
-		window.dispatchEvent(new Event("terminal-shell-change"));
-	}, []);
-
-	const handleDirectoryCancel = useCallback(
-		(paneId: string) => {
-			closePane(paneId);
-			const state = loadTerminalState();
-			if (!state) return;
-			saveTerminalState({
-				...state,
-				groups: state.groups.map((g) => ({
-					...g,
-					panes: g.panes.filter((p) => p.id !== paneId),
-				})),
-			});
-			setSessionVersion((v) => v + 1);
-			window.dispatchEvent(new Event("terminal-shell-change"));
-		},
-		[closePane]
-	);
-
 	const gitAction = useCallback(
 		async (endpoint: string, body: object) => {
 			await fetch(`/api/git/${endpoint}`, {
@@ -534,21 +483,6 @@ export function EditorPage() {
 		}
 	}, [session?.cwd, commitMessage, isCommitting, refresh]);
 
-	const handleAppearanceChange = useCallback(
-		(patch: Partial<typeof appearance>) => {
-			setAppearance((prev) => {
-				const next = { ...prev, ...patch };
-				const state = loadTerminalState();
-				if (state) {
-					saveTerminalState({ ...state, ...next });
-					window.dispatchEvent(new Event("terminal-shell-change"));
-				}
-				return next;
-			});
-		},
-		[]
-	);
-
 	const handleSidebarDragStart = useCallback(
 		(e: React.MouseEvent) => {
 			e.preventDefault();
@@ -582,13 +516,66 @@ export function EditorPage() {
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-inferay-bg">
 			{!session ? (
-				<EmptyState />
-			) : session.pendingCwd ? (
-				<div className="flex h-full items-center justify-center">
-					<InlineDirectoryPicker
-						onSelect={(path) => handleDirectorySelect(session.paneId, path)}
-						onCancel={() => handleDirectoryCancel(session.paneId)}
-					/>
+				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
+					<section className="flex min-h-0 min-w-0 flex-col border-r border-inferay-border">
+						<div className={TOPBAR_CLASS}>
+							<span className="text-[10px] font-medium text-inferay-text-3">
+								No active session
+							</span>
+							<span className="flex-1" />
+							<button
+								type="button"
+								onClick={() => setShowSettings(true)}
+								className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-inferay-text-2"
+								title="Settings"
+							>
+								<IconSettings size={10} />
+							</button>
+						</div>
+						<EmptyState />
+					</section>
+					<aside className="min-h-0 min-w-0 bg-inferay-bg flex flex-col">
+						<div className="flex min-h-0 flex-1 overflow-hidden">
+							<div className="min-h-0 min-w-0 flex-1 flex flex-col overflow-hidden">
+								<Placeholder label="No diff available" />
+							</div>
+							<div
+								className="flex shrink-0 flex-row border-l border-inferay-border bg-inferay-bg"
+								style={{ width: sidebarWidth }}
+							>
+								<div
+									className="w-1 cursor-ew-resize bg-transparent hover:bg-inferay-accent/30 transition-colors shrink-0"
+									onMouseDown={handleSidebarDragStart}
+								/>
+								<EditorSidebar
+									fileViewMode={fileViewMode}
+									onFileViewModeChange={setFileViewMode}
+									mainViewMode="diff"
+									modified={[]}
+									untracked={[]}
+									staged={[]}
+									selectedFile={null}
+									onSelectFile={() => {}}
+									onStageFile={() => {}}
+									onUnstageFile={() => {}}
+									onStageAll={() => {}}
+									onUnstageAll={() => {}}
+									hasProject={false}
+									selectedCommitHash={null}
+									commitDetailsLoading={false}
+									commitDetails={null}
+									files={[]}
+									branch={undefined}
+									commitMessage=""
+									onCommitMessageChange={setCommitMessage}
+									onCommit={() => {}}
+									isCommitting={false}
+									amendMode={false}
+									onAmendModeChange={setAmendMode}
+								/>
+							</div>
+						</div>
+					</aside>
 				</div>
 			) : zenMode ? (
 				/* ===== ZEN MODE LAYOUT ===== */
@@ -835,14 +822,8 @@ export function EditorPage() {
 			)}
 			{showSettings && (
 				<TerminalSettingsPanel
-					themeId={appearance.themeId}
-					fontSize={appearance.fontSize}
-					fontFamily={appearance.fontFamily}
-					opacity={appearance.opacity}
-					onThemeChange={(v) => handleAppearanceChange({ themeId: v })}
-					onFontSizeChange={(v) => handleAppearanceChange({ fontSize: v })}
-					onFontFamilyChange={(v) => handleAppearanceChange({ fontFamily: v })}
-					onOpacityChange={(v) => handleAppearanceChange({ opacity: v })}
+					themeId={themeId}
+					onThemeChange={() => setSessionVersion((v) => v + 1)}
 					onClose={() => setShowSettings(false)}
 				/>
 			)}

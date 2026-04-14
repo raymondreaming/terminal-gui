@@ -2,25 +2,11 @@ import { type ReactNode, useMemo, useState } from "react";
 import {
 	IconCamera,
 	IconLogOut,
-	IconPalette,
-	IconSettings,
 	IconUser,
 	IconZap,
 } from "../../components/ui/Icons.tsx";
-import {
-	APP_THEMES,
-	type AppThemeId,
-	applyAppTheme,
-	loadAppThemeId,
-	mapAppThemeToTerminalTheme,
-	saveAppThemeId,
-} from "../../lib/app-theme.ts";
-import {
-	loadTerminalState,
-	saveTerminalState,
-} from "../../lib/terminal-utils.ts";
 
-type ProfileTab = "profile" | "keys" | "preferences";
+type ProfileTab = "profile" | "keys";
 
 interface ProviderKey {
 	readonly id: string;
@@ -68,96 +54,16 @@ const INITIAL_KEYS: readonly ProviderKey[] = [
 	},
 ] as const;
 
-function ThemeCard({
-	active,
-	id,
-	name,
-	onClick,
-}: {
-	active: boolean;
-	id: AppThemeId;
-	name: string;
-	onClick: (id: AppThemeId) => void;
-}) {
-	const theme = APP_THEMES.find((item) => item.id === id);
-	if (!theme) return null;
-
-	return (
-		<button
-			type="button"
-			onClick={() => onClick(id)}
-			className={`flex min-w-0 flex-col gap-2 rounded-xl border p-2 text-left transition-colors ${
-				active
-					? "border-inferay-accent bg-inferay-accent/10"
-					: "border-inferay-border bg-inferay-surface/40 hover:bg-inferay-surface"
-			}`}
-		>
-			<div className="flex h-10 overflow-hidden rounded-lg border border-inferay-border/40">
-				<div
-					className="flex w-1/2 items-center justify-center"
-					style={{ backgroundColor: theme.colors.bg }}
-				>
-					<div
-						className="h-1.5 w-1.5 rounded-full"
-						style={{ backgroundColor: theme.colors.accent }}
-					/>
-				</div>
-				<div
-					className="flex w-1/2 items-center justify-center"
-					style={{ backgroundColor: theme.colors.surface2 }}
-				>
-					<div
-						className="h-1 w-8 rounded"
-						style={{ backgroundColor: theme.colors.text }}
-					/>
-				</div>
-			</div>
-			<div className="min-w-0">
-				<p
-					className={`truncate text-[10px] font-medium ${
-						active ? "text-inferay-text" : "text-inferay-text-2"
-					}`}
-				>
-					{name}
-				</p>
-				<p className="text-[8px] text-inferay-text-3">
-					{theme.light ? "Light theme" : "Dark theme"}
-				</p>
-			</div>
-		</button>
-	);
-}
-
 export function ProfilePage() {
 	const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
 	const [displayName, setDisplayName] = useState("User");
 	const [email, setEmail] = useState("user@example.com");
-	const [selectedTheme, setSelectedTheme] =
-		useState<AppThemeId>(loadAppThemeId);
 	const [keys] = useState<readonly ProviderKey[]>(INITIAL_KEYS);
-	const [defaultModel, setDefaultModel] = useState("Claude Opus");
-	const [autoSave, setAutoSave] = useState(true);
-	const [fontSize, setFontSize] = useState<"Small" | "Medium" | "Large">(
-		"Medium"
-	);
 
 	const connectedCount = useMemo(
 		() => keys.filter((provider) => provider.connected).length,
 		[keys]
 	);
-
-	const handleThemeSelect = (id: AppThemeId) => {
-		setSelectedTheme(id);
-		saveAppThemeId(id);
-		applyAppTheme(id);
-		const terminalState = loadTerminalState();
-		if (terminalState) {
-			saveTerminalState({
-				...terminalState,
-				themeId: mapAppThemeToTerminalTheme(id),
-			});
-		}
-	};
 
 	const tabs: {
 		readonly id: ProfileTab;
@@ -166,11 +72,6 @@ export function ProfilePage() {
 	}[] = [
 		{ id: "profile", label: "Profile", icon: <IconUser size={13} /> },
 		{ id: "keys", label: "API Keys", icon: <IconZap size={13} /> },
-		{
-			id: "preferences",
-			label: "Preferences",
-			icon: <IconSettings size={13} />,
-		},
 	];
 
 	return (
@@ -374,112 +275,6 @@ export function ProfilePage() {
 								</div>
 							))}
 						</div>
-					</div>
-				) : null}
-
-				{activeTab === "preferences" ? (
-					<div className="mx-auto flex max-w-4xl flex-col gap-5 px-6 py-5">
-						<div>
-							<h1 className="text-[13px] font-medium text-inferay-text">
-								Preferences
-							</h1>
-							<p className="mt-1 text-[9px] text-inferay-text-3">
-								Application settings and appearance.
-							</p>
-						</div>
-
-						<section className="rounded-xl border border-inferay-border bg-inferay-surface/20 p-4">
-							<p className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								General
-							</p>
-							<div className="mt-3 space-y-3">
-								<div className="flex items-center justify-between gap-4 border-b border-inferay-border pb-3">
-									<div>
-										<p className="text-[10px] text-inferay-text">
-											Default Model
-										</p>
-										<p className="text-[8px] text-inferay-text-3">
-											Model used for new conversations
-										</p>
-									</div>
-									<select
-										value={defaultModel}
-										onChange={(event) => setDefaultModel(event.target.value)}
-										className="h-8 rounded-lg border border-inferay-border bg-inferay-surface px-3 text-[9px] text-inferay-text outline-none"
-									>
-										<option>Claude Opus</option>
-										<option>Claude Sonnet</option>
-										<option>GPT-4.1</option>
-									</select>
-								</div>
-
-								<div className="flex items-center justify-between gap-4">
-									<div>
-										<p className="text-[10px] text-inferay-text">
-											Auto-save conversations
-										</p>
-										<p className="text-[8px] text-inferay-text-3">
-											Automatically save chat history
-										</p>
-									</div>
-									<button
-										type="button"
-										onClick={() => setAutoSave((current) => !current)}
-										className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors ${
-											autoSave ? "bg-inferay-accent" : "bg-inferay-surface-3"
-										}`}
-									>
-										<div
-											className={`h-5 w-5 rounded-full bg-black transition-transform ${
-												autoSave ? "translate-x-4" : "translate-x-0"
-											}`}
-										/>
-									</button>
-								</div>
-							</div>
-						</section>
-
-						<section className="rounded-xl border border-inferay-border bg-inferay-surface/20 p-4">
-							<div className="flex items-center gap-2">
-								<IconPalette size={13} className="text-inferay-text-2" />
-								<p className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-									Theme
-								</p>
-							</div>
-							<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-								{APP_THEMES.map((theme) => (
-									<ThemeCard
-										key={theme.id}
-										active={selectedTheme === theme.id}
-										id={theme.id}
-										name={theme.name}
-										onClick={handleThemeSelect}
-									/>
-								))}
-							</div>
-						</section>
-
-						<section className="rounded-xl border border-inferay-border bg-inferay-surface/20 p-4">
-							<p className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Font Size
-							</p>
-							<div className="mt-3 flex flex-wrap gap-2">
-								{(["Small", "Medium", "Large"] as const).map((size) => (
-									<button
-										type="button"
-										key={size}
-										onClick={() => setFontSize(size)}
-										className={`h-8 rounded-lg border px-3 text-[9px] font-medium transition-colors ${
-											fontSize === size
-												? "border-inferay-accent bg-inferay-accent/10 text-inferay-accent"
-												: "border-inferay-border bg-inferay-surface text-inferay-text-3 hover:bg-inferay-surface-2 hover:text-inferay-text-2"
-										}`}
-									>
-										{size}
-									</button>
-								))}
-							</div>
-						</section>
 					</div>
 				) : null}
 			</div>

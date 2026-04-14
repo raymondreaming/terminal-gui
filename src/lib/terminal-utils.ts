@@ -19,6 +19,7 @@ export interface TerminalTheme {
 
 const THEME_IDS = {
 	default: "default",
+	midnight: "midnight",
 	dracula: "dracula",
 	monokai: "monokai",
 	nord: "nord",
@@ -47,7 +48,8 @@ const TERM_THEME_DATA: [
 	HexColor,
 	HexColor,
 ][] = [
-	["default", "Default Dark", "#000000", "#e5e5e5", "#007AFF", "#1a1a1e"],
+	["default", "Black", "#000000", "#e5e5e5", "#007AFF", "#111111"],
+	["midnight", "Midnight", "#0c0c0f", "#e8e8ec", "#5A8CFF", "#151518"],
 	["dracula", "Dracula", "#282a36", "#f8f8f2", "#f078a0", "#3a3c48"],
 	["monokai", "Monokai", "#272822", "#f8f8f2", "#f8f8f2", "#3a3a35"],
 	["nord", "Nord", "#2e3440", "#d8dee9", "#88c0d0", "#3e4450"],
