@@ -123,49 +123,49 @@ function QueueNode({
 			<div
 				className={`w-[280px] rounded-lg border transition-all ${
 					isSelected
-						? "border-surgent-accent ring-1 ring-surgent-accent/30"
+						? "border-inferay-accent ring-1 ring-inferay-accent/30"
 						: item.status === "running"
-							? "border-surgent-text-3"
+							? "border-inferay-text-3"
 							: item.status === "completed"
-								? "border-surgent-border"
+								? "border-inferay-border"
 								: item.status === "failed"
 									? "border-red-500/50"
-									: "border-surgent-border hover:border-surgent-text-3"
-				} bg-surgent-surface`}
+									: "border-inferay-border hover:border-inferay-text-3"
+				} bg-inferay-surface`}
 			>
 				{/* Header */}
-				<div className="flex items-center gap-2 px-3 py-2 border-b border-surgent-border/50">
+				<div className="flex items-center gap-2 px-3 py-2 border-b border-inferay-border/50">
 					{/* Status indicator */}
 					<div
 						className={`w-2 h-2 rounded-full ${
 							item.status === "completed"
 								? "bg-emerald-500"
 								: item.status === "running"
-									? "bg-surgent-text-2 animate-pulse"
+									? "bg-inferay-text-2 animate-pulse"
 									: item.status === "failed"
 										? "bg-red-500"
-										: "bg-surgent-text-3"
+										: "bg-inferay-text-3"
 						}`}
 					/>
 					{/* Index */}
-					<span className="text-[8px] font-mono text-surgent-text-3 tabular-nums">
+					<span className="text-[8px] font-mono text-inferay-text-3 tabular-nums">
 						{String(index + 1).padStart(2, "0")}
 					</span>
 					{/* Model */}
-					<span className="text-[8px] text-surgent-text-3">{model?.name}</span>
+					<span className="text-[8px] text-inferay-text-3">{model?.name}</span>
 					{/* Duration */}
 					{item.duration && (
-						<span className="ml-auto text-[8px] text-surgent-text-3 tabular-nums">
+						<span className="ml-auto text-[8px] text-inferay-text-3 tabular-nums">
 							{(item.duration / 1000).toFixed(1)}s
 						</span>
 					)}
 					{item.status === "running" && (
-						<span className="ml-auto text-[8px] text-surgent-text-3">
+						<span className="ml-auto text-[8px] text-inferay-text-3">
 							Processing...
 						</span>
 					)}
 					{item.status === "pending" && (
-						<Icons.Move className="ml-auto text-surgent-text-3" />
+						<Icons.Move className="ml-auto text-inferay-text-3" />
 					)}
 				</div>
 
@@ -174,8 +174,8 @@ function QueueNode({
 					<p
 						className={`text-[9px] leading-relaxed line-clamp-2 ${
 							item.status === "completed"
-								? "text-surgent-text-3"
-								: "text-surgent-text"
+								? "text-inferay-text-3"
+								: "text-inferay-text"
 						}`}
 					>
 						{item.prompt}
@@ -187,10 +187,10 @@ function QueueNode({
 					<div
 						className={`w-3 h-3 rounded-full border-2 ${
 							item.status === "completed"
-								? "bg-surgent-surface border-emerald-500"
+								? "bg-inferay-surface border-emerald-500"
 								: item.status === "running"
-									? "bg-surgent-surface border-surgent-text-3"
-									: "bg-surgent-bg border-surgent-border"
+									? "bg-inferay-surface border-inferay-text-3"
+									: "bg-inferay-bg border-inferay-border"
 						}`}
 					/>
 				</div>
@@ -201,8 +201,8 @@ function QueueNode({
 						<div
 							className={`w-3 h-3 rounded-full border-2 ${
 								item.status !== "pending"
-									? "bg-surgent-surface border-surgent-text-3"
-									: "bg-surgent-bg border-surgent-border"
+									? "bg-inferay-surface border-inferay-text-3"
+									: "bg-inferay-bg border-inferay-border"
 							}`}
 						/>
 					</div>
@@ -249,29 +249,29 @@ function QueueDetail({
 	const model = models[item.model];
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
 				<div className="flex items-center gap-2">
 					<div
 						className={`w-2 h-2 rounded-full ${
 							item.status === "completed"
 								? "bg-emerald-500"
 								: item.status === "running"
-									? "bg-surgent-text-2 animate-pulse"
+									? "bg-inferay-text-2 animate-pulse"
 									: item.status === "failed"
 										? "bg-red-500"
-										: "bg-surgent-text-3"
+										: "bg-inferay-text-3"
 						}`}
 					/>
-					<span className="text-[10px] font-medium text-surgent-text capitalize">
+					<span className="text-[10px] font-medium text-inferay-text capitalize">
 						{item.status}
 					</span>
 				</div>
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1 rounded text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -281,32 +281,32 @@ function QueueDetail({
 			<div className="flex-1 overflow-y-auto p-3 space-y-4">
 				{/* Prompt */}
 				<div>
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Prompt
 					</span>
-					<p className="mt-1.5 text-[10px] text-surgent-text leading-relaxed">
+					<p className="mt-1.5 text-[10px] text-inferay-text leading-relaxed">
 						{item.prompt}
 					</p>
 				</div>
 
 				{/* Model */}
 				<div>
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Model
 					</span>
 					<div className="mt-1.5 flex items-center gap-2">
-						<span className="text-[10px] text-surgent-text">{model?.name}</span>
+						<span className="text-[10px] text-inferay-text">{model?.name}</span>
 					</div>
 				</div>
 
 				{/* Output */}
 				{item.output && (
 					<div>
-						<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Output Preview
 						</span>
-						<div className="mt-1.5 p-2 rounded-md bg-surgent-surface border border-surgent-border">
-							<p className="text-[9px] text-surgent-text-2 leading-relaxed font-mono">
+						<div className="mt-1.5 p-2 rounded-md bg-inferay-surface border border-inferay-border">
+							<p className="text-[9px] text-inferay-text-2 leading-relaxed font-mono">
 								{item.output}
 							</p>
 						</div>
@@ -316,10 +316,10 @@ function QueueDetail({
 				{/* Duration */}
 				{item.duration && (
 					<div>
-						<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Duration
 						</span>
-						<p className="mt-1 text-[10px] text-surgent-text tabular-nums">
+						<p className="mt-1 text-[10px] text-inferay-text tabular-nums">
 							{(item.duration / 1000).toFixed(2)} seconds
 						</p>
 					</div>
@@ -327,7 +327,7 @@ function QueueDetail({
 			</div>
 
 			{/* Actions */}
-			<div className="shrink-0 p-3 border-t border-surgent-border">
+			<div className="shrink-0 p-3 border-t border-inferay-border">
 				{item.status === "pending" && (
 					<button
 						type="button"
@@ -341,7 +341,7 @@ function QueueDetail({
 					<button
 						type="button"
 						onClick={onRetry}
-						className="w-full h-7 rounded-md bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-accent hover:text-black hover:border-surgent-accent transition-colors"
+						className="w-full h-7 rounded-md bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-accent hover:text-black hover:border-inferay-accent transition-colors"
 					>
 						Retry
 					</button>
@@ -349,7 +349,7 @@ function QueueDetail({
 				{item.status === "completed" && (
 					<button
 						type="button"
-						className="w-full h-7 rounded-md bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-accent hover:text-black hover:border-surgent-accent transition-colors"
+						className="w-full h-7 rounded-md bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-accent hover:text-black hover:border-inferay-accent transition-colors"
 					>
 						View Full Output
 					</button>
@@ -377,16 +377,16 @@ function AddToQueuePanel({
 	};
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
-				<span className="text-[10px] font-medium text-surgent-text">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
+				<span className="text-[10px] font-medium text-inferay-text">
 					Add to Queue
 				</span>
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1 rounded text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -395,7 +395,7 @@ function AddToQueuePanel({
 			{/* Form */}
 			<div className="flex-1 overflow-y-auto p-3 space-y-3">
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Prompt
 					</label>
 					<textarea
@@ -403,12 +403,12 @@ function AddToQueuePanel({
 						onChange={(e) => setPrompt(e.target.value)}
 						placeholder="What should the AI do?"
 						rows={4}
-						className="mt-1 w-full rounded-md bg-surgent-surface border border-surgent-border px-2 py-1.5 text-[10px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-accent/50 resize-none"
+						className="mt-1 w-full rounded-md bg-inferay-surface border border-inferay-border px-2 py-1.5 text-[10px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-accent/50 resize-none"
 					/>
 				</div>
 
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Model
 					</label>
 					<div className="mt-1.5 flex gap-1.5">
@@ -419,8 +419,8 @@ function AddToQueuePanel({
 								onClick={() => setModel(id)}
 								className={`flex-1 h-7 rounded-md border text-[9px] font-medium transition-colors ${
 									model === id
-										? "border-surgent-accent bg-surgent-surface-2 text-surgent-text"
-										: "border-surgent-border text-surgent-text-3 hover:border-surgent-text-3"
+										? "border-inferay-accent bg-inferay-surface-2 text-inferay-text"
+										: "border-inferay-border text-inferay-text-3 hover:border-inferay-text-3"
 								}`}
 							>
 								{m.name}
@@ -431,12 +431,12 @@ function AddToQueuePanel({
 			</div>
 
 			{/* Footer */}
-			<div className="shrink-0 p-3 border-t border-surgent-border">
+			<div className="shrink-0 p-3 border-t border-inferay-border">
 				<button
 					type="button"
 					onClick={handleSubmit}
 					disabled={!prompt.trim()}
-					className="w-full h-7 rounded-md bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-accent hover:text-black hover:border-surgent-accent transition-colors disabled:opacity-50 disabled:hover:bg-surgent-surface-2 disabled:hover:text-surgent-text disabled:hover:border-surgent-border"
+					className="w-full h-7 rounded-md bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-accent hover:text-black hover:border-inferay-accent transition-colors disabled:opacity-50 disabled:hover:bg-inferay-surface-2 disabled:hover:text-inferay-text disabled:hover:border-inferay-border"
 				>
 					Add to Queue
 				</button>
@@ -492,11 +492,11 @@ export function Queue() {
 	const sortedQueue = [...queue].sort((a, b) => a.y - b.y);
 
 	return (
-		<div className="flex h-full w-full flex-col bg-surgent-bg">
+		<div className="flex h-full w-full flex-col bg-inferay-bg">
 			{/* Toolbar */}
-			<div className="shrink-0 flex items-center gap-3 px-3 h-9 border-b border-surgent-border">
-				<span className="text-[10px] font-medium text-surgent-text">Queue</span>
-				<span className="text-[8px] text-surgent-text-3 tabular-nums">
+			<div className="shrink-0 flex items-center gap-3 px-3 h-9 border-b border-inferay-border">
+				<span className="text-[10px] font-medium text-inferay-text">Queue</span>
+				<span className="text-[8px] text-inferay-text-3 tabular-nums">
 					{completedCount}/{queue.length} completed
 				</span>
 
@@ -508,8 +508,8 @@ export function Queue() {
 					onClick={() => setIsRunning(!isRunning)}
 					className={`flex items-center justify-center w-6 h-6 rounded-md border transition-colors ${
 						isRunning
-							? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-							: "border-surgent-border bg-surgent-surface text-surgent-text-3 hover:text-surgent-text-2"
+							? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+							: "border-inferay-border bg-inferay-surface text-inferay-text-3 hover:text-inferay-text-2"
 					}`}
 				>
 					{isRunning ? <Icons.Pause /> : <Icons.Play />}
@@ -517,7 +517,7 @@ export function Queue() {
 				<button
 					type="button"
 					onClick={() => setIsAdding(true)}
-					className="flex items-center gap-1 h-6 rounded-md border border-surgent-border bg-surgent-surface px-2 text-[9px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+					className="flex items-center gap-1 h-6 rounded-md border border-inferay-border bg-inferay-surface px-2 text-[9px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 				>
 					<Icons.Plus />
 					Add
@@ -572,7 +572,7 @@ export function Queue() {
 					<button
 						type="button"
 						onClick={() => setIsAdding(true)}
-						className="absolute rounded-lg border border-dashed border-surgent-border w-[280px] py-3 text-[9px] text-surgent-text-3 hover:border-surgent-text-3 hover:text-surgent-text-2 transition-colors"
+						className="absolute rounded-lg border border-dashed border-inferay-border w-[280px] py-3 text-[9px] text-inferay-text-3 hover:border-inferay-text-3 hover:text-inferay-text-2 transition-colors"
 						style={{
 							left: queue.length > 0 ? queue[queue.length - 1].x : 60,
 							top: queue.length > 0 ? queue[queue.length - 1].y + 100 : 60,
@@ -583,12 +583,12 @@ export function Queue() {
 
 					{/* Status indicator */}
 					{runningItem && (
-						<div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-surgent-surface border border-surgent-border">
-							<div className="w-2 h-2 rounded-full bg-surgent-text-2 animate-pulse" />
-							<span className="text-[9px] text-surgent-text truncate max-w-[200px]">
+						<div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-inferay-surface border border-inferay-border">
+							<div className="w-2 h-2 rounded-full bg-inferay-text-2 animate-pulse" />
+							<span className="text-[9px] text-inferay-text truncate max-w-[200px]">
 								{runningItem.prompt}
 							</span>
-							<span className="text-[8px] text-surgent-text-3 tabular-nums">
+							<span className="text-[8px] text-inferay-text-3 tabular-nums">
 								{pendingCount} remaining
 							</span>
 						</div>
@@ -597,7 +597,7 @@ export function Queue() {
 
 				{/* Detail panel */}
 				{selectedItem && !isAdding && (
-					<div className="w-[240px] shrink-0 border-l border-surgent-border">
+					<div className="w-[240px] shrink-0 border-l border-inferay-border">
 						<QueueDetail
 							item={selectedItem}
 							onClose={handleClose}
@@ -609,7 +609,7 @@ export function Queue() {
 
 				{/* Add panel */}
 				{isAdding && (
-					<div className="w-[240px] shrink-0 border-l border-surgent-border">
+					<div className="w-[240px] shrink-0 border-l border-inferay-border">
 						<AddToQueuePanel onClose={handleClose} onAdd={handleAdd} />
 					</div>
 				)}

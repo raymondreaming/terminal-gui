@@ -6,33 +6,29 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { ClaudeChatHandle } from "../../components/chat/ClaudeChatView.tsx";
-import { clearChatMessages } from "../../components/chat/ClaudeChatView.tsx";
+import type { AgentChatHandle } from "../../components/chat/AgentChatView.tsx";
+import { clearAgentChatMessages } from "../../components/chat/chat-session-store.ts";
+import { ProjectFileGraphView } from "../../components/graph/ProjectFileGraphView.tsx";
 import { Button } from "../../components/ui/Button.tsx";
-import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
 import { EmptyState } from "../../components/ui/EmptyState.tsx";
-import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconArrowLeft,
-	IconChevronDown,
 	IconCircle,
 	IconExternalLink,
-	IconFolder,
-	IconFolderOpen,
+	IconGitBranch,
 	IconGlobe,
-	IconLayoutGrid,
-	IconLayoutRows,
-	IconPalette,
-	IconPlus,
+	IconMessageCircle,
 	IconX,
 } from "../../components/ui/Icons.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
+import { useGitStatus } from "../../hooks/useGitStatus.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
+import { isChatAgentKind } from "../../lib/agents.ts";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { wsClient } from "../../lib/websocket.ts";
+import { ExperimentalPage } from "../ExperimentalPage/index.tsx";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
@@ -42,8 +38,6 @@ import { TerminalGrid } from "./TerminalGrid.tsx";
 import { TerminalSettingsPanel } from "./TerminalSettingsPanel.tsx";
 
 import "@xterm/xterm/css/xterm.css";
-
-import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
 
 import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
@@ -56,6 +50,7 @@ import {
 	DEFAULT_OPACITY,
 	DEFAULT_ROWS,
 	DEFAULT_THEME_ID,
+	cacheTerminalState,
 	getInitialGroups,
 	getPaneTitle,
 	getThemeById,
@@ -67,6 +62,8 @@ import {
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
 
+type MainViewMode = "editor" | "chat" | "graph";
+
 interface TerminalPageProps {
 	isPopout?: boolean;
 	isStandalone?: boolean;
@@ -74,7 +71,7 @@ interface TerminalPageProps {
 
 function wasPopoutRestored(): boolean {
 	try {
-		return sessionStorage.getItem("surgent-popout-restored") === "true";
+		return sessionStorage.getItem("inferay-popout-restored") === "true";
 	} catch {
 		return false;
 	}
@@ -82,22 +79,29 @@ function wasPopoutRestored(): boolean {
 
 function markPopoutRestored() {
 	try {
-		sessionStorage.setItem("surgent-popout-restored", "true");
+		sessionStorage.setItem("inferay-popout-restored", "true");
 	} catch {}
 }
 
 const logoUrl = resolveServerUrl("/logo.png");
 
-function _cwdLabel(cwd: string): string {
-	if (!cwd) return "unknown";
-	const parts = cwd.split("/");
-	return parts[parts.length - 1] || cwd;
-}
-
 function TerminalEmptyStateBrand() {
 	return (
-		<div className="rounded-2xl border border-surgent-border bg-surgent-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+		<div className="rounded-2xl border border-inferay-border bg-inferay-surface p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
 			<img src={logoUrl} alt="inferay logo" className="h-14 w-14 rounded-xl" />
+		</div>
+	);
+}
+
+function GraphEmptyState({ message }: { message: string }) {
+	return (
+		<div className="flex h-full items-center justify-center p-6">
+			<div className="max-w-sm text-center">
+				<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-inferay-border bg-inferay-surface text-inferay-text-3">
+					<IconGitBranch size={18} />
+				</div>
+				<p className="text-sm text-inferay-text">{message}</p>
+			</div>
 		</div>
 	);
 }
@@ -226,9 +230,16 @@ export function TerminalPage({
 	const [layoutMode, setLayoutMode] = useState<"grid" | "rows">(() =>
 		readStoredValue("terminal-layout-mode") === "grid" ? "grid" : "rows"
 	);
+	const [mainView, setMainView] = useState<MainViewMode>(() => {
+		const stored = readStoredValue("terminal-main-view");
+		return stored === "chat" || stored === "graph" ? stored : "editor";
+	});
 	useEffect(() => {
 		writeStoredValue("terminal-layout-mode", layoutMode);
 	}, [layoutMode]);
+	useEffect(() => {
+		writeStoredValue("terminal-main-view", mainView);
+	}, [mainView]);
 	const initialState = useMemo(() => loadTerminalState(), []);
 	const initGroups = useMemo(() => getInitialGroups(), []);
 	const [groups, groupsDispatch] = useReducer(groupsReducer, initGroups);
@@ -256,11 +267,9 @@ export function TerminalPage({
 			setSidebarSections((prev) => ({ ...prev, [key]: !prev[key] })),
 		[]
 	);
-	const [showNewMenu, setShowNewMenu] = useState(false);
 	const popoutWindowRef = useRef<Window | null>(null);
 	const broadcastChannel = useRef<BroadcastChannel | null>(null);
-	const newMenuRef = useRef<HTMLDivElement>(null);
-	const chatRefs = useRef<Map<string, ClaudeChatHandle>>(new Map());
+	const chatRefs = useRef<Map<string, AgentChatHandle>>(new Map());
 	const [agentStatuses, setAgentStatuses] = useState<Map<string, string>>(
 		new Map()
 	);
@@ -276,6 +285,41 @@ export function TerminalPage({
 		() => groups.find((g) => g.id === selectedGroupId),
 		[groups, selectedGroupId]
 	);
+	const chatPanes = useMemo(
+		() =>
+			currentGroup?.panes.filter((pane) => isChatAgentKind(pane.agentKind)) ??
+			[],
+		[currentGroup]
+	);
+	const graphCwds = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					(currentGroup?.panes ?? [])
+						.map((pane) => pane.cwd)
+						.filter((cwd): cwd is string => Boolean(cwd))
+				)
+			),
+		[currentGroup]
+	);
+	const [activeGraphCwd, setActiveGraphCwd] = useState<string | null>(null);
+	useEffect(() => {
+		const selectedPaneCwd =
+			currentGroup?.panes.find(
+				(pane) => pane.id === currentGroup.selectedPaneId
+			)?.cwd ?? null;
+		if (selectedPaneCwd && graphCwds.includes(selectedPaneCwd)) {
+			setActiveGraphCwd(selectedPaneCwd);
+			return;
+		}
+		setActiveGraphCwd((current) =>
+			current && graphCwds.includes(current) ? current : (graphCwds[0] ?? null)
+		);
+	}, [currentGroup, graphCwds]);
+	const { projectMap } = useGitStatus(graphCwds);
+	const activeGraphProject = activeGraphCwd
+		? (projectMap.get(activeGraphCwd) ?? null)
+		: null;
 	const restoreSavedState = useCallback(
 		(s: ReturnType<typeof loadTerminalState>) => {
 			setIsPoppedOut(false);
@@ -297,7 +341,7 @@ export function TerminalPage({
 	const cleanupPane = useCallback((paneId: string) => {
 		wsClient.send({ type: "terminal:destroy", paneId });
 		chatRefs.current.delete(paneId);
-		clearChatMessages(paneId);
+		clearAgentChatMessages(paneId);
 	}, []);
 	const withSelectedGroup = useCallback(
 		(fn: (groupId: string) => void) => {
@@ -379,6 +423,7 @@ export function TerminalPage({
 		fontFamily,
 		opacity,
 	});
+	const pendingSaveRef = useRef(false);
 	useEffect(() => {
 		latestStateRef.current = {
 			groups,
@@ -388,9 +433,15 @@ export function TerminalPage({
 			fontFamily,
 			opacity,
 		};
+		cacheTerminalState(latestStateRef.current);
 	}, [groups, selectedGroupId, themeId, fontSize, fontFamily, opacity]);
 	useEffect(() => {
-		const id = setTimeout(() => saveTerminalState(latestStateRef.current), 100);
+		pendingSaveRef.current = true;
+		const id = setTimeout(() => {
+			saveTerminalState(latestStateRef.current);
+			pendingSaveRef.current = false;
+			window.dispatchEvent(new Event("terminal-shell-change"));
+		}, 100);
 		return () => clearTimeout(id);
 	});
 	useEffect(
@@ -400,18 +451,73 @@ export function TerminalPage({
 		[]
 	);
 	useEffect(() => {
-		if (!showNewMenu) return;
-		const handleClick = (e: MouseEvent) => {
-			if (
-				newMenuRef.current &&
-				!newMenuRef.current.contains(e.target as Node)
-			) {
-				setShowNewMenu(false);
+		const handleShellChange = () => {
+			// Skip restore check if we have a pending save - this prevents undoing local changes
+			if (pendingSaveRef.current) {
+				return;
 			}
+			const savedState = loadTerminalState();
+			if (savedState) {
+				const savedShellKey = JSON.stringify({
+					selectedGroupId: savedState.selectedGroupId,
+					groups: savedState.groups.map((group) => ({
+						id: group.id,
+						name: group.name,
+						selectedPaneId: group.selectedPaneId,
+						columns: group.columns,
+						rows: group.rows,
+						panes: group.panes.map((pane) => ({
+							id: pane.id,
+							agentKind: pane.agentKind,
+							cwd: pane.cwd ?? null,
+							pendingCwd: pane.pendingCwd ?? false,
+							title: pane.title,
+						})),
+					})),
+				});
+				const currentShellKey = JSON.stringify({
+					selectedGroupId,
+					groups: groups.map((group) => ({
+						id: group.id,
+						name: group.name,
+						selectedPaneId: group.selectedPaneId,
+						columns: group.columns,
+						rows: group.rows,
+						panes: group.panes.map((pane) => ({
+							id: pane.id,
+							agentKind: pane.agentKind,
+							cwd: pane.cwd ?? null,
+							pendingCwd: pane.pendingCwd ?? false,
+							title: pane.title,
+						})),
+					})),
+				});
+				if (savedShellKey !== currentShellKey) {
+					restoreSavedState(savedState);
+				}
+			}
+			const storedView = readStoredValue("terminal-main-view");
+			const nextMainView =
+				storedView === "chat" || storedView === "graph" ? storedView : "editor";
+			if (nextMainView !== mainView) {
+				setMainView(nextMainView);
+			}
+			const nextLayoutMode =
+				readStoredValue("terminal-layout-mode") === "grid" ? "grid" : "rows";
+			setLayoutMode(nextLayoutMode);
 		};
-		document.addEventListener("mousedown", handleClick);
-		return () => document.removeEventListener("mousedown", handleClick);
-	}, [showNewMenu]);
+		window.addEventListener("terminal-shell-change", handleShellChange);
+		return () =>
+			window.removeEventListener("terminal-shell-change", handleShellChange);
+	}, [groups, mainView, restoreSavedState, selectedGroupId]);
+	useEffect(() => {
+		const handleThemeOpen = () => {
+			setShowSettings(true);
+		};
+		window.addEventListener("terminal-open-theme-panel", handleThemeOpen);
+		return () =>
+			window.removeEventListener("terminal-open-theme-panel", handleThemeOpen);
+	}, []);
 	const handleAgentStatusChange = useCallback(
 		(paneId: string, status: string) => {
 			setAgentStatuses((prev) => {
@@ -485,13 +591,6 @@ export function TerminalPage({
 			),
 		[withSelectedGroup]
 	);
-	const setGroupRows = useCallback(
-		(rows: number) =>
-			withSelectedGroup((groupId) =>
-				groupsDispatch({ type: "setRows", groupId, rows })
-			),
-		[withSelectedGroup]
-	);
 	const removeGroup = useCallback(
 		(groupId: string) => {
 			if (groups.length <= 1) return;
@@ -510,26 +609,27 @@ export function TerminalPage({
 		groupsDispatch({ type: "renameGroup", groupId, name });
 	}, []);
 	const handleChatRef = useCallback(
-		(paneId: string, handle: ClaudeChatHandle | null) => {
+		(paneId: string, handle: AgentChatHandle | null) => {
 			if (handle) chatRefs.current.set(paneId, handle);
 			else chatRefs.current.delete(paneId);
 		},
 		[]
 	);
-	const groupTabItems = useMemo(
+	const editorViewKey = useMemo(
 		() =>
-			groups.map((g) => ({
-				id: g.id,
-				name: g.name,
-				count: g.panes.length,
-				icon: <IconFolder size={12} />,
-				activeIcon: <IconFolderOpen size={12} />,
-			})),
+			groups
+				.map(
+					(group) =>
+						`${group.id}:${group.selectedPaneId ?? "none"}:${group.panes
+							.map((pane) => `${pane.id}:${pane.cwd ?? ""}`)
+							.join(",")}`
+				)
+				.join("|"),
 		[groups]
 	);
 	if (isPopout || (isStandalone && compactMode)) {
 		return (
-			<div className="flex h-screen flex-col bg-surgent-bg">
+			<div className="flex h-screen flex-col bg-inferay-bg">
 				<PopoutHeader
 					groups={groups}
 					currentGroup={currentGroup}
@@ -555,7 +655,7 @@ export function TerminalPage({
 							<div className="flex w-full max-w-sm flex-col items-center gap-4 px-6 text-center">
 								<TerminalEmptyStateBrand />
 								<div>
-									<p className="text-sm text-surgent-text-2">
+									<p className="text-sm text-inferay-text-2">
 										Start a new terminal or agent session
 									</p>
 								</div>
@@ -591,19 +691,19 @@ export function TerminalPage({
 	}
 	if (isPoppedOut) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
-				<div className="relative h-12 shrink-0 border-b border-surgent-border bg-surgent-bg"></div>
+			<div className="flex h-full flex-col bg-inferay-bg">
+				<div className="relative h-12 shrink-0 border-b border-inferay-border bg-inferay-bg"></div>
 				<div className="flex flex-1 items-center justify-center">
 					<div className="text-center">
 						<div className="mb-4 flex items-center justify-center">
-							<div className="rounded-full bg-surgent-surface p-4">
-								<IconExternalLink size={32} className="text-surgent-accent" />
+							<div className="rounded-full bg-inferay-surface p-4">
+								<IconExternalLink size={32} className="text-inferay-accent" />
 							</div>
 						</div>
-						<h2 className="text-lg font-medium text-surgent-text mb-2">
+						<h2 className="text-lg font-medium text-inferay-text mb-2">
 							Terminal in Separate Window
 						</h2>
-						<p className="text-sm text-surgent-text-3 mb-4">
+						<p className="text-sm text-inferay-text-3 mb-4">
 							The terminal is currently open in a pop-out window.
 						</p>
 						<Button variant="primary" onClick={handleRestore}>
@@ -617,146 +717,31 @@ export function TerminalPage({
 	}
 	return (
 		<div
-			className={`flex flex-col bg-surgent-bg ${isStandalone ? "h-screen" : "h-full"}`}
+			className={`flex flex-col bg-inferay-bg ${isStandalone ? "h-screen" : "h-full"}`}
 		>
 			<div className="relative flex flex-1 flex-col overflow-hidden">
-				<div
-					className={`electrobun-webkit-app-region-drag relative flex items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2 sm:gap-3 sm:px-3 ${isStandalone ? "py-1.5" : "h-12"}`}
-				>
-					<div className="electrobun-webkit-app-region-no-drag relative z-10 overflow-x-auto shrink-0">
-						<GroupTabs
-							items={groupTabItems}
-							activeId={selectedGroupId}
-							onSelect={setSelectedGroupId}
-							onRename={renameGroup}
-							onDelete={removeGroup}
-							onAdd={addGroup}
-							addLabel="Group"
-						/>
-					</div>
-					<div className="flex-1 min-w-0" />
-					<div className="electrobun-webkit-app-region-no-drag relative z-10 flex items-center gap-2 sm:gap-3 shrink-0">
-						<Button
-							size="sm"
-							variant={showSettings ? "secondary" : "ghost"}
-							onClick={() => setShowSettings((v) => !v)}
-							className="hidden sm:flex shrink-0"
-						>
-							Theme
-						</Button>
-						<IconButton
-							size="sm"
-							variant={showSettings ? "secondary" : "ghost"}
-							onClick={() => setShowSettings((v) => !v)}
-							title="Theme settings"
-							className="flex sm:hidden shrink-0"
-						>
-							<IconPalette size={12} />
-						</IconButton>
-						<div className="flex items-center shrink-0 rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-							<button
-								type="button"
-								onClick={() => setLayoutMode("grid")}
-								className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-surgent-text/10 text-surgent-text" : "text-surgent-text-3 hover:text-surgent-text-2"}`}
-								title="Grid layout"
-							>
-								<IconLayoutGrid size={13} />
-							</button>
-							<button
-								type="button"
-								onClick={() => setLayoutMode("rows")}
-								className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-surgent-text/10 text-surgent-text" : "text-surgent-text-3 hover:text-surgent-text-2"}`}
-								title="Row layout"
-							>
-								<IconLayoutRows size={13} />
-							</button>
-						</div>
-						{layoutMode === "grid" && (
-							<>
-								<div className="flex items-center gap-1.5 shrink-0">
-									<span className="text-[9px] text-surgent-text-3 sm:text-[10px]">
-										Col
-									</span>
-									<DropdownButton
-										key={`cols-${selectedGroupId}`}
-										value={String(currentGroup?.columns ?? DEFAULT_COLUMNS)}
-										options={[1, 2, 3, 4].map((n) => ({
-											id: String(n),
-											label: String(n),
-										}))}
-										onChange={(id) => setGroupColumns(Number(id))}
-										minWidth={60}
-									/>
-								</div>
-								<div className="flex items-center gap-1.5 shrink-0">
-									<span className="text-[9px] text-surgent-text-3 sm:text-[10px]">
-										Row
-									</span>
-									<DropdownButton
-										key={`rows-${selectedGroupId}`}
-										value={String(currentGroup?.rows ?? DEFAULT_ROWS)}
-										options={[1, 2, 3, 4].map((n) => ({
-											id: String(n),
-											label: String(n),
-										}))}
-										onChange={(id) => setGroupRows(Number(id))}
-										minWidth={60}
-									/>
-								</div>
-							</>
-						)}
-						<div className="relative shrink-0" ref={newMenuRef}>
-							<Button
-								size="sm"
-								variant="secondary"
-								onClick={() => setShowNewMenu((v) => !v)}
-								className="shrink-0"
-							>
-								<span>New</span>
-								<IconPlus size={10} />
-								<IconChevronDown
-									size={10}
-									className={`transition-transform ${showNewMenu ? "rotate-180" : ""}`}
-								/>
-							</Button>
-							{showNewMenu && (
-								<div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-surgent-border bg-surgent-surface shadow-lg overflow-hidden">
-									{NEW_PANE_AGENT_KINDS.map((kind) => (
-										<button
-											type="button"
-											key={kind}
-											onClick={() => {
-												handleAddPane(kind);
-												setShowNewMenu(false);
-											}}
-											className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
-										>
-											{getAgentIcon(kind, 12, "text-surgent-text-3")}
-											<span>{getAgentDefinition(kind).label}</span>
-										</button>
-									))}
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
 				<div className="flex flex-1 flex-col overflow-hidden">
-					{!sidebarOpen && currentGroup && currentGroup.panes.length > 0 && (
-						<CollapsedAgentBar
-							panes={currentGroup.panes}
-							selectedPaneId={currentGroup.selectedPaneId}
-							agentStatuses={agentStatuses}
-							onSelectPane={selectPane}
-							onExpand={() => setSidebarOpen((v) => !v)}
-						/>
-					)}
+					{false &&
+						mainView === "editor" &&
+						!sidebarOpen &&
+						currentGroup &&
+						currentGroup.panes.length > 0 && (
+							<CollapsedAgentBar
+								panes={currentGroup.panes}
+								selectedPaneId={currentGroup.selectedPaneId}
+								agentStatuses={agentStatuses}
+								onSelectPane={selectPane}
+								onExpand={() => setSidebarOpen((v) => !v)}
+							/>
+						)}
 					<div className="flex flex-1 overflow-hidden">
 						<div
-							className={`relative flex-1 flex flex-col ${layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
+							className={`relative flex-1 flex flex-col ${mainView === "editor" && layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
 								<EmptyState
 									icon={<TerminalEmptyStateBrand />}
+									title="No Sessions"
 									description="Start a new terminal or agent session"
 									action={
 										<NewSessionButtons
@@ -766,6 +751,57 @@ export function TerminalPage({
 										/>
 									}
 								/>
+							) : mainView === "editor" ? (
+								<ExperimentalPage key={editorViewKey} />
+							) : mainView === "chat" ? (
+								!currentGroup || currentGroup.panes.length === 0 ? (
+									<EmptyState
+										icon={
+											<IconMessageCircle
+												size={18}
+												className="text-inferay-text-3"
+											/>
+										}
+										title="No Panes"
+										description="Add a terminal or agent session to get started"
+										action={
+											<NewSessionButtons
+												labelPrefix="New"
+												layout="row"
+												onAddPane={handleAddPane}
+											/>
+										}
+									/>
+								) : (
+									<TerminalGrid
+										panes={currentGroup.panes}
+										selectedPaneId={currentGroup.selectedPaneId}
+										columns={currentGroup.columns}
+										rows={currentGroup.rows ?? DEFAULT_ROWS}
+										layoutMode={layoutMode}
+										theme={theme}
+										fontSize={fontSize}
+										fontFamily={fontFamily}
+										onSelectPane={selectPane}
+										onClosePane={removePane}
+										onDirectorySelect={handleDirectorySelected}
+										onDirectoryCancel={removePane}
+										onChatRef={handleChatRef}
+										onAgentStatusChange={handleAgentStatusChange}
+										onReorderPanes={reorderPanes}
+									/>
+								)
+							) : mainView === "graph" ? (
+								graphCwds.length === 0 ? (
+									<GraphEmptyState message="Open a project directory in one of this group's panes to populate the file graph." />
+								) : (
+									<ProjectFileGraphView
+										cwds={graphCwds}
+										activeCwd={activeGraphCwd}
+										onSelectCwd={setActiveGraphCwd}
+										project={activeGraphProject}
+									/>
+								)
 							) : (
 								<TerminalGrid
 									panes={currentGroup.panes}
@@ -807,80 +843,84 @@ export function TerminalPage({
 								/>
 							)}
 						</div>
-						{sidebarOpen && currentGroup && currentGroup.panes.length > 0 && (
-							<div className="flex flex-col shrink-0 border-l border-surgent-border bg-surgent-bg order-last">
-								<AgentSidebar
-									panes={currentGroup.panes}
-									selectedPaneId={currentGroup.selectedPaneId}
-									agentStatuses={agentStatuses}
-									onSelectPane={selectPane}
-									onRemovePane={removePane}
-									onCollapse={() => setSidebarOpen((v) => !v)}
-								/>
-								<CollapsibleSidebarSection
-									icon={<IconGlobe size={12} />}
-									label="Ports"
-									count={runningPorts.length}
-									countColor="text-surgent-accent"
-									expanded={sidebarSections.ports}
-									onToggle={() => toggleSection("ports")}
-									emptyMessage="No ports running"
-								>
-									{runningPorts.map((p) => (
-										<div
-											key={`${p.port}-${p.pid}`}
-											className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surgent-surface"
-										>
-											<div className="shrink-0">
-												<IconCircle
-													size={8}
-													className="fill-surgent-accent text-surgent-accent"
-												/>
+						{false &&
+							mainView === "editor" &&
+							sidebarOpen &&
+							currentGroup &&
+							currentGroup.panes.length > 0 && (
+								<div className="flex flex-col shrink-0 border-l border-inferay-border bg-inferay-bg order-last">
+									<AgentSidebar
+										panes={currentGroup.panes}
+										selectedPaneId={currentGroup.selectedPaneId}
+										agentStatuses={agentStatuses}
+										onSelectPane={selectPane}
+										onRemovePane={removePane}
+										onCollapse={() => setSidebarOpen((v) => !v)}
+									/>
+									<CollapsibleSidebarSection
+										icon={<IconGlobe size={12} />}
+										label="Ports"
+										count={runningPorts.length}
+										countColor="text-inferay-accent"
+										expanded={sidebarSections.ports}
+										onToggle={() => toggleSection("ports")}
+										emptyMessage="No ports running"
+									>
+										{runningPorts.map((p) => (
+											<div
+												key={`${p.port}-${p.pid}`}
+												className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-inferay-surface"
+											>
+												<div className="shrink-0">
+													<IconCircle
+														size={8}
+														className="fill-inferay-accent text-inferay-accent"
+													/>
+												</div>
+												<div className="min-w-0 flex-1">
+													<p
+														className="truncate text-[11px] font-medium text-inferay-text"
+														title={p.command}
+													>
+														:{p.port}
+													</p>
+													<p
+														className="truncate text-[9px] text-inferay-text-3"
+														title={p.command}
+													>
+														{p.name}
+													</p>
+												</div>
+												<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+													<IconButton
+														variant="ghost"
+														size="xs"
+														onClick={() => openInBrowser(p.port)}
+														title="Open in browser"
+													>
+														<IconExternalLink size={10} />
+													</IconButton>
+													<IconButton
+														variant="danger"
+														size="xs"
+														onClick={() => killPort(p.pid)}
+														title="Kill process"
+													>
+														<IconX size={10} />
+													</IconButton>
+												</div>
 											</div>
-											<div className="min-w-0 flex-1">
-												<p
-													className="truncate text-[11px] font-medium text-surgent-text"
-													title={p.command}
-												>
-													:{p.port}
-												</p>
-												<p
-													className="truncate text-[9px] text-surgent-text-3"
-													title={p.command}
-												>
-													{p.name}
-												</p>
-											</div>
-											<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-												<IconButton
-													variant="ghost"
-													size="xs"
-													onClick={() => openInBrowser(p.port)}
-													title="Open in browser"
-												>
-													<IconExternalLink size={10} />
-												</IconButton>
-												<IconButton
-													variant="danger"
-													size="xs"
-													onClick={() => killPort(p.port, p.pid)}
-													title="Kill process"
-												>
-													<IconX size={10} />
-												</IconButton>
-											</div>
-										</div>
-									))}
-								</CollapsibleSidebarSection>
-								<ClaudeProcessesSidebar
-									processes={claudeProcesses}
-									onKillProcess={killClaudeProcess}
-									onKillAll={killAllClaudeProcesses}
-									expanded={sidebarSections.claudeProcesses}
-									onToggle={() => toggleSection("claudeProcesses")}
-								/>
-							</div>
-						)}
+										))}
+									</CollapsibleSidebarSection>
+									<ClaudeProcessesSidebar
+										processes={claudeProcesses}
+										onKillProcess={killClaudeProcess}
+										onKillAll={killAllClaudeProcesses}
+										expanded={sidebarSections.claudeProcesses}
+										onToggle={() => toggleSection("claudeProcesses")}
+									/>
+								</div>
+							)}
 					</div>
 				</div>
 			</div>

@@ -175,7 +175,7 @@ function FilterDropdown({
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
-				className="flex items-center gap-1.5 h-6 rounded-md border border-surgent-border bg-surgent-surface px-2 text-[9px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+				className="flex items-center gap-1.5 h-6 rounded-md border border-inferay-border bg-inferay-surface px-2 text-[9px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 			>
 				{activeLabel}
 				<svg
@@ -192,7 +192,7 @@ function FilterDropdown({
 				</svg>
 			</button>
 			{open && (
-				<div className="absolute left-0 top-full mt-1 z-50 min-w-[120px] rounded-md border border-surgent-border bg-surgent-surface p-1 shadow-xl">
+				<div className="absolute left-0 top-full mt-1 z-50 min-w-[120px] rounded-md border border-inferay-border bg-inferay-surface p-1 shadow-xl">
 					{FILTER_OPTIONS.map((opt) => (
 						<button
 							type="button"
@@ -203,8 +203,8 @@ function FilterDropdown({
 							}}
 							className={`w-full text-left rounded px-2 py-1 text-[9px] transition-colors ${
 								filter === opt.value
-									? "bg-surgent-surface-2 text-surgent-text"
-									: "text-surgent-text-3 hover:bg-surgent-surface-2 hover:text-surgent-text-2"
+									? "bg-inferay-surface-2 text-inferay-text"
+									: "text-inferay-text-3 hover:bg-inferay-surface-2 hover:text-inferay-text-2"
 							}`}
 						>
 							{opt.label}
@@ -247,18 +247,18 @@ function PromptDetailPanel({
 	const isEditMode = isEditing || isCreating;
 
 	const labelCls =
-		"text-[8px] font-medium uppercase tracking-wide text-surgent-text-3";
+		"text-[8px] font-medium uppercase tracking-wide text-inferay-text-3";
 	const inputCls =
-		"mt-1 w-full rounded-md bg-transparent border border-surgent-border px-2 py-1.5 text-[10px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-text-3";
+		"mt-1 w-full rounded-md bg-transparent border border-inferay-border px-2 py-1.5 text-[10px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-text-3";
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg overflow-hidden">
+		<div className="flex h-full flex-col bg-inferay-bg overflow-hidden">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
 				<div className="flex items-center gap-2">
 					{isEditMode ? (
 						<div className="flex items-center gap-0.5">
-							<span className="text-surgent-text-3 font-mono text-[10px]">
+							<span className="text-inferay-text-3 font-mono text-[10px]">
 								/
 							</span>
 							<input
@@ -270,21 +270,21 @@ function PromptDetailPanel({
 									)
 								}
 								placeholder="command"
-								className="w-20 rounded bg-surgent-surface py-0.5 px-1 text-[10px] font-mono text-surgent-text outline-none placeholder:text-surgent-text-3"
+								className="w-20 rounded bg-inferay-surface py-0.5 px-1 text-[10px] font-mono text-inferay-text outline-none placeholder:text-inferay-text-3"
 							/>
 						</div>
 					) : prompt ? (
-						<span className="text-[10px] font-mono text-surgent-text">
+						<span className="text-[10px] font-mono text-inferay-text">
 							/{prompt.command}
 						</span>
 					) : null}
 					{prompt?.isBuiltIn && !isCreating && (
-						<span className="text-[7px] text-surgent-text-3/60 bg-surgent-surface px-1 py-0.5 rounded">
+						<span className="text-[7px] text-inferay-text-3/60 bg-inferay-surface px-1 py-0.5 rounded">
 							built-in
 						</span>
 					)}
 					{isCreating && (
-						<span className="text-[7px] text-surgent-accent bg-surgent-accent/10 px-1 py-0.5 rounded">
+						<span className="text-[7px] text-inferay-accent bg-inferay-accent/10 px-1 py-0.5 rounded">
 							new
 						</span>
 					)}
@@ -295,13 +295,13 @@ function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onCancelEdit}
-								className="h-5 px-1.5 rounded text-[9px] text-surgent-text-3 hover:bg-surgent-surface"
+								className="h-5 px-1.5 rounded text-[9px] text-inferay-text-3 hover:bg-inferay-surface"
 							>
 								Cancel
 							</button>
 							<button
 								type="button"
-								className="h-5 px-1.5 rounded text-[9px] text-surgent-text bg-surgent-surface-2"
+								className="h-5 px-1.5 rounded text-[9px] text-inferay-text bg-inferay-surface-2"
 							>
 								Create
 							</button>
@@ -311,13 +311,13 @@ function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onCancelEdit}
-								className="h-5 px-1.5 rounded text-[9px] text-surgent-text-3 hover:bg-surgent-surface"
+								className="h-5 px-1.5 rounded text-[9px] text-inferay-text-3 hover:bg-inferay-surface"
 							>
 								Cancel
 							</button>
 							<button
 								type="button"
-								className="h-5 px-1.5 rounded text-[9px] text-surgent-text bg-surgent-surface-2"
+								className="h-5 px-1.5 rounded text-[9px] text-inferay-text bg-inferay-surface-2"
 							>
 								Save
 							</button>
@@ -327,14 +327,14 @@ function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onStartEdit}
-								className="h-5 w-5 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-surface"
+								className="h-5 w-5 rounded flex items-center justify-center text-inferay-text-3 hover:bg-inferay-surface"
 							>
 								<Icons.Edit />
 							</button>
 							{prompt && !prompt.isBuiltIn && (
 								<button
 									type="button"
-									className="h-5 w-5 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-surface"
+									className="h-5 w-5 rounded flex items-center justify-center text-inferay-text-3 hover:bg-inferay-surface"
 								>
 									<Icons.Close />
 								</button>
@@ -344,7 +344,7 @@ function PromptDetailPanel({
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-5 w-5 rounded flex items-center justify-center text-surgent-text-3 hover:bg-surgent-surface"
+						className="h-5 w-5 rounded flex items-center justify-center text-inferay-text-3 hover:bg-inferay-surface"
 					>
 						<Icons.Close />
 					</button>
@@ -365,7 +365,7 @@ function PromptDetailPanel({
 								className={inputCls}
 							/>
 						) : (
-							<p className="mt-1 text-[10px] text-surgent-text">
+							<p className="mt-1 text-[10px] text-inferay-text">
 								{prompt?.name}
 							</p>
 						)}
@@ -385,7 +385,7 @@ function PromptDetailPanel({
 								))}
 							</select>
 						) : (
-							<p className="mt-1 text-[10px] text-surgent-text-2">
+							<p className="mt-1 text-[10px] text-inferay-text-2">
 								{prompt?.category}
 							</p>
 						)}
@@ -403,7 +403,7 @@ function PromptDetailPanel({
 							className={`${inputCls} resize-none`}
 						/>
 					) : (
-						<p className="mt-1 text-[10px] text-surgent-text-2 leading-relaxed">
+						<p className="mt-1 text-[10px] text-inferay-text-2 leading-relaxed">
 							{prompt?.description}
 						</p>
 					)}
@@ -413,7 +413,7 @@ function PromptDetailPanel({
 					<span className={labelCls}>
 						Template
 						{isEditMode && (
-							<span className="ml-1 normal-case font-normal text-surgent-text-3/50">
+							<span className="ml-1 normal-case font-normal text-inferay-text-3/50">
 								use {"{args}"} for input
 							</span>
 						)}
@@ -424,10 +424,10 @@ function PromptDetailPanel({
 							onChange={(e) => setFormTemplate(e.target.value)}
 							placeholder="Enter prompt template..."
 							rows={4}
-							className="mt-1 w-full rounded-md bg-surgent-surface border border-surgent-border p-2 font-mono text-[9px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-text-3 resize-none leading-relaxed"
+							className="mt-1 w-full rounded-md bg-inferay-surface border border-inferay-border p-2 font-mono text-[9px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-text-3 resize-none leading-relaxed"
 						/>
 					) : (
-						<div className="mt-1 rounded-md bg-surgent-surface border border-surgent-border p-2 font-mono text-[9px] text-surgent-text-2 whitespace-pre-wrap leading-relaxed max-h-[150px] overflow-y-auto">
+						<div className="mt-1 rounded-md bg-inferay-surface border border-inferay-border p-2 font-mono text-[9px] text-inferay-text-2 whitespace-pre-wrap leading-relaxed max-h-[150px] overflow-y-auto">
 							{prompt?.promptTemplate}
 						</div>
 					)}
@@ -448,19 +448,19 @@ function PromptDetailPanel({
 							{prompt.tags.map((tag) => (
 								<span
 									key={tag}
-									className="rounded bg-surgent-surface px-1.5 py-0.5 text-[8px] text-surgent-text-3"
+									className="rounded bg-inferay-surface px-1.5 py-0.5 text-[8px] text-inferay-text-3"
 								>
 									{tag}
 								</span>
 							))}
 						</div>
 					) : (
-						<p className="mt-1 text-[8px] text-surgent-text-3/50">No tags</p>
+						<p className="mt-1 text-[8px] text-inferay-text-3/50">No tags</p>
 					)}
 				</div>
 
 				{!isEditMode && prompt && (
-					<p className="text-[8px] text-surgent-text-3/50 tabular-nums">
+					<p className="text-[8px] text-inferay-text-3/50 tabular-nums">
 						{prompt.executionCount} uses
 					</p>
 				)}
@@ -515,7 +515,7 @@ export function PromptLibrary() {
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col bg-surgent-bg">
+		<div className="flex h-full w-full flex-col bg-inferay-bg">
 			{/* Content */}
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				{/* Prompt grid */}
@@ -523,10 +523,10 @@ export function PromptLibrary() {
 					{filtered.length === 0 ? (
 						<div className="flex items-center justify-center h-full">
 							<div className="text-center">
-								<p className="text-[10px] text-surgent-text-3 mb-1">
+								<p className="text-[10px] text-inferay-text-3 mb-1">
 									{search ? "No prompts found" : "No prompts yet"}
 								</p>
-								<p className="text-[8px] text-surgent-text-3/50">
+								<p className="text-[8px] text-inferay-text-3/50">
 									{search
 										? "Try a different search"
 										: "Create your first prompt"}
@@ -548,33 +548,33 @@ export function PromptLibrary() {
 										onClick={() => handleSelect(prompt)}
 										className={`text-left rounded-lg border p-2.5 transition-colors ${
 											isActive
-												? "border-surgent-border bg-surgent-surface-2"
-												: "border-surgent-border/50 hover:bg-surgent-surface/50 hover:border-surgent-border"
+												? "border-inferay-border bg-inferay-surface-2"
+												: "border-inferay-border/50 hover:bg-inferay-surface/50 hover:border-inferay-border"
 										}`}
 									>
 										<div className="flex items-center gap-1.5 mb-1">
-											<span className="text-[9px] font-mono font-medium text-surgent-text">
+											<span className="text-[9px] font-mono font-medium text-inferay-text">
 												/{prompt.command}
 											</span>
 											{prompt.isBuiltIn && (
-												<span className="text-[6px] text-surgent-text-3/60 bg-surgent-surface px-1 py-0.5 rounded">
+												<span className="text-[6px] text-inferay-text-3/60 bg-inferay-surface px-1 py-0.5 rounded">
 													built-in
 												</span>
 											)}
 											{prompt.isNew && (
-												<span className="text-[6px] text-surgent-accent bg-surgent-accent/10 px-1 py-0.5 rounded">
+												<span className="text-[6px] text-inferay-accent bg-inferay-accent/10 px-1 py-0.5 rounded">
 													new
 												</span>
 											)}
 										</div>
-										<p className="text-[9px] text-surgent-text-2 mb-0.5 truncate">
+										<p className="text-[9px] text-inferay-text-2 mb-0.5 truncate">
 											{prompt.name}
 										</p>
-										<p className="text-[8px] text-surgent-text-3 line-clamp-2 leading-relaxed">
+										<p className="text-[8px] text-inferay-text-3 line-clamp-2 leading-relaxed">
 											{prompt.description}
 										</p>
 										{prompt.executionCount > 0 && (
-											<p className="mt-1.5 text-[7px] tabular-nums text-surgent-text-3/50">
+											<p className="mt-1.5 text-[7px] tabular-nums text-inferay-text-3/50">
 												{prompt.executionCount} uses
 											</p>
 										)}
@@ -587,7 +587,7 @@ export function PromptLibrary() {
 
 				{/* Detail panel */}
 				{(selectedPrompt || isCreating) && (
-					<div className="w-[280px] shrink-0 border-l border-surgent-border overflow-y-auto bg-surgent-bg">
+					<div className="w-[280px] shrink-0 border-l border-inferay-border overflow-y-auto bg-inferay-bg">
 						<PromptDetailPanel
 							prompt={selectedPrompt}
 							isEditing={isEditing}

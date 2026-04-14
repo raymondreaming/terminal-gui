@@ -24,11 +24,8 @@ export interface AgentRunContext {
 }
 
 export interface AgentHandle {
-	/** Run the agent turn to completion, emitting events via ctx. */
 	run(): Promise<void>;
-	/** Gracefully stop the current turn. */
 	stop(): void;
-	/** Forcefully kill the underlying process. */
 	kill(): void;
 }
 

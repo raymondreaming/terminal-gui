@@ -135,11 +135,11 @@ export interface TerminalSavedState {
 	opacity: number;
 }
 
-const TERMINAL_STORAGE_KEY = "surgent-terminal-state" as const;
+const TERMINAL_STORAGE_KEY = "inferay-terminal-state" as const;
 
-const CUSTOM_THEME_KEY = "surgent-custom-theme" as const;
+const CUSTOM_THEME_KEY = "inferay-custom-theme" as const;
 
-export const POPOUT_CHANNEL = "surgent-terminal-popout" as const;
+export const POPOUT_CHANNEL = "inferay-terminal-popout" as const;
 
 export const DEFAULT_THEME_ID: ThemeId = "default";
 
@@ -165,13 +165,21 @@ function isValidTerminalState(value: unknown): value is TerminalSavedState {
 		typeof obj.opacity === "number"
 	);
 }
+let _cachedTerminalState: TerminalSavedState | null = null;
+export function cacheTerminalState(state: TerminalSavedState): void {
+	_cachedTerminalState = state;
+}
 
 export function loadTerminalState(): TerminalSavedState | null {
+	if (_cachedTerminalState) return _cachedTerminalState;
 	const parsed = readStoredJson<unknown>(TERMINAL_STORAGE_KEY, null);
-	return parsed && isValidTerminalState(parsed) ? parsed : null;
+	const state = parsed && isValidTerminalState(parsed) ? parsed : null;
+	_cachedTerminalState = state;
+	return state;
 }
 
 export function saveTerminalState(state: TerminalSavedState): void {
+	_cachedTerminalState = state;
 	writeStoredJson(TERMINAL_STORAGE_KEY, state);
 	sendJson("/api/terminal/state", state).catch(() => {});
 }
@@ -211,12 +219,11 @@ export function createTerminalPane(
 }
 
 export function createDefaultGroup(): TerminalGroupModel {
-	const pane = createTerminalPane("claude");
 	return {
 		id: createGroupId(),
 		name: "Default",
-		panes: [pane],
-		selectedPaneId: pane.id,
+		panes: [],
+		selectedPaneId: null,
 		columns: DEFAULT_COLUMNS,
 		rows: DEFAULT_ROWS,
 	};

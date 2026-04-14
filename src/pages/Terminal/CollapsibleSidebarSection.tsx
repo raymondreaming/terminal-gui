@@ -25,11 +25,11 @@ export const CollapsibleSidebarSection = memo(
 		children: ReactNode;
 	}) {
 		return (
-			<div className="border-t border-surgent-border">
+			<div className="border-t border-inferay-border">
 				<button
 					type="button"
 					onClick={onToggle}
-					className="flex items-center gap-1.5 px-2 py-1.5 w-full text-surgent-text-3 hover:text-surgent-text-2 transition-colors"
+					className="flex items-center gap-1.5 px-2 py-1.5 w-full text-inferay-text-3 hover:text-inferay-text-2 transition-colors"
 				>
 					{expanded ? (
 						<IconChevronDown size={10} />
@@ -51,7 +51,7 @@ export const CollapsibleSidebarSection = memo(
 						{count > 0 ? (
 							children
 						) : (
-							<p className="text-[10px] text-surgent-text-3 px-2 py-2 text-center">
+							<p className="text-[10px] text-inferay-text-3 px-2 py-2 text-center">
 								{emptyMessage}
 							</p>
 						)}

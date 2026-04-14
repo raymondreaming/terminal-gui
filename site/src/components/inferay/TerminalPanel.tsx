@@ -73,7 +73,7 @@ function SingleTerminalPane({
 	const getLineColor = (type: TerminalLine["type"]) => {
 		switch (type) {
 			case "command":
-				return "text-surgent-text";
+				return "text-inferay-text";
 			case "error":
 				return "text-red-400";
 			case "success":
@@ -81,7 +81,7 @@ function SingleTerminalPane({
 			case "info":
 				return "text-blue-400";
 			default:
-				return "text-surgent-text-3";
+				return "text-inferay-text-3";
 		}
 	};
 
@@ -99,12 +99,12 @@ function SingleTerminalPane({
 					>
 						{line.type === "command" ? (
 							<>
-								<span className="text-surgent-accent shrink-0 select-none">
+								<span className="text-inferay-accent shrink-0 select-none">
 									❯
 								</span>
 								<span className="flex-1 font-medium">{line.content}</span>
 								{line.timestamp && (
-									<span className="text-surgent-text-3 text-[8px] tabular-nums shrink-0">
+									<span className="text-inferay-text-3 text-[8px] tabular-nums shrink-0">
 										{line.timestamp}
 									</span>
 								)}
@@ -123,17 +123,17 @@ function SingleTerminalPane({
 
 			{/* Input line - each pane gets its own input */}
 			<div
-				className="shrink-0 flex items-center gap-2 px-2 py-1.5 border-t border-surgent-border bg-surgent-bg/50"
+				className="shrink-0 flex items-center gap-2 px-2 py-1.5 border-t border-inferay-border bg-inferay-bg/50"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<span className="text-surgent-accent text-[10px] select-none">❯</span>
+				<span className="text-inferay-accent text-[10px] select-none">❯</span>
 				<input
 					type="text"
 					value={inputValue}
 					onChange={(e) => setInputValue(e.target.value)}
 					onFocus={onSelect}
 					placeholder="Enter command..."
-					className="flex-1 bg-transparent text-[10px] font-mono text-surgent-text outline-none placeholder:text-surgent-text-3"
+					className="flex-1 bg-transparent text-[10px] font-mono text-inferay-text outline-none placeholder:text-inferay-text-3"
 				/>
 			</div>
 		</div>
@@ -154,22 +154,22 @@ export function TerminalPanel({
 	if (!isExpanded) {
 		// Collapsed state - minimal bar
 		return (
-			<div className="border-t border-surgent-border bg-surgent-bg">
+			<div className="border-t border-inferay-border bg-inferay-bg">
 				<button
 					onClick={onToggle}
-					className="w-full flex items-center gap-2 px-3 py-1 hover:bg-surgent-surface/50 transition-colors"
+					className="w-full flex items-center gap-2 px-3 py-1 hover:bg-inferay-surface/50 transition-colors"
 				>
-					<span className="text-surgent-text-3">
+					<span className="text-inferay-text-3">
 						<Icons.Terminal />
 					</span>
-					<span className="text-[9px] font-medium text-surgent-text-2">
+					<span className="text-[9px] font-medium text-inferay-text-2">
 						Terminal
 					</span>
 					<span className="flex-1" />
-					<span className="text-[8px] text-surgent-text-3 tabular-nums">
+					<span className="text-[8px] text-inferay-text-3 tabular-nums">
 						2 shells
 					</span>
-					<span className="text-surgent-text-3">
+					<span className="text-inferay-text-3">
 						<Icons.Chevron />
 					</span>
 				</button>
@@ -181,33 +181,33 @@ export function TerminalPanel({
 
 	return (
 		<div
-			className={`border-t border-surgent-border bg-black flex flex-col ${panelHeight}`}
+			className={`border-t border-inferay-border bg-black flex flex-col ${panelHeight}`}
 		>
 			{/* Header */}
-			<div className="flex items-center h-7 border-b border-surgent-border bg-surgent-bg shrink-0">
+			<div className="flex items-center h-7 border-b border-inferay-border bg-inferay-bg shrink-0">
 				{/* Tab bar */}
 				<div className="flex items-center flex-1 min-w-0">
 					{terminalPanes.map((pane, i) => (
 						<button
 							key={pane.id}
 							onClick={() => setActivePane(i)}
-							className={`flex items-center gap-1.5 px-2 h-full border-r border-surgent-border transition-colors ${
+							className={`flex items-center gap-1.5 px-2 h-full border-r border-inferay-border transition-colors ${
 								activePane === i || splitView
-									? "bg-black text-surgent-text"
-									: "bg-surgent-bg text-surgent-text-3 hover:text-surgent-text-2"
+									? "bg-black text-inferay-text"
+									: "bg-inferay-bg text-inferay-text-3 hover:text-inferay-text-2"
 							}`}
 						>
-							<span className="text-surgent-text-3">
+							<span className="text-inferay-text-3">
 								<Icons.Terminal />
 							</span>
 							<span className="text-[9px] font-medium">{pane.name}</span>
-							<span className="text-[8px] text-surgent-text-3 font-mono truncate max-w-[70px]">
+							<span className="text-[8px] text-inferay-text-3 font-mono truncate max-w-[70px]">
 								{pane.cwd}
 							</span>
 						</button>
 					))}
 					{/* New terminal button */}
-					<button className="flex items-center justify-center w-6 h-full text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-surface/50 transition-colors">
+					<button className="flex items-center justify-center w-6 h-full text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-surface/50 transition-colors">
 						<Icons.Plus />
 					</button>
 				</div>
@@ -219,8 +219,8 @@ export function TerminalPanel({
 						onClick={() => setSplitView(!splitView)}
 						className={`p-1 rounded-md transition-colors ${
 							splitView
-								? "text-surgent-text bg-surgent-surface border border-surgent-border"
-								: "text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-surface/50 border border-transparent"
+								? "text-inferay-text bg-inferay-surface border border-inferay-border"
+								: "text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-surface/50 border border-transparent"
 						}`}
 						title="Split view"
 					>
@@ -241,14 +241,14 @@ export function TerminalPanel({
 					{/* Maximize/Restore */}
 					<button
 						onClick={() => setIsMaximized(!isMaximized)}
-						className="p-1 rounded-md text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-surface/50 transition-colors border border-transparent"
+						className="p-1 rounded-md text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-surface/50 transition-colors border border-transparent"
 						title={isMaximized ? "Restore" : "Maximize"}
 					>
 						{isMaximized ? <Icons.Collapse /> : <Icons.Expand />}
 					</button>
 					{/* Clear */}
 					<button
-						className="p-1 rounded-md text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-surface/50 transition-colors border border-transparent"
+						className="p-1 rounded-md text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-surface/50 transition-colors border border-transparent"
 						title="Clear"
 					>
 						<Icons.Close />
@@ -256,7 +256,7 @@ export function TerminalPanel({
 					{/* Minimize */}
 					<button
 						onClick={onToggle}
-						className="p-1 rounded-md text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-surface/50 transition-colors border border-transparent"
+						className="p-1 rounded-md text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-surface/50 transition-colors border border-transparent"
 						title="Minimize"
 					>
 						<svg
@@ -281,7 +281,7 @@ export function TerminalPanel({
 					<>
 						{terminalPanes.map((pane, i) => (
 							<React.Fragment key={pane.id}>
-								{i > 0 && <div className="w-px bg-surgent-border shrink-0" />}
+								{i > 0 && <div className="w-px bg-inferay-border shrink-0" />}
 								<SingleTerminalPane
 									pane={pane}
 									isActive={activePane === i}

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MarkdownPreview } from "../../components/MarkdownPreview.tsx";
+import { MarkdownPreview } from "../../components/diff/MarkdownPreview.tsx";
 import type { DiffLine, HunkDiff } from "../../hooks/useGitDiff.ts";
 import { useShikiHighlighter } from "../../hooks/useShikiHighlighter.ts";
 import { type Token, tokenizeLine } from "../../lib/syntax-tokens.ts";
@@ -29,39 +29,24 @@ const TOKEN_CLASSES: Record<string, string> = {
 	attr: "text-syntax-attr",
 	default: "",
 };
-
-// ============================================================
-// DIFF VIEW CONFIG - All measurements in one place
-// ============================================================
 const DIFF_CONFIG = {
-	// Line dimensions
 	lineHeight: 15, // Height of each line in pixels
-
-	// Font sizes
 	lineNumFontSize: 9, // Line number font size
 	signFontSize: 9, // +/- sign font size
 	contentFontSize: 10, // Code content font size
-
-	// Column widths
 	lineNumWidth: 36, // Line number column width
 	signWidth: 12, // +/- sign column width
-
-	// Colors
 	lineNumColor: "#6b7280", // Gray for line numbers
 	addLineNumColor: "rgba(60,180,110,0.7)",
 	removeLineNumColor: "rgba(210,80,80,0.7)",
 	addSignColor: "rgba(46,160,67,0.9)",
 	removeSignColor: "rgba(248,81,73,0.9)",
-
-	// Backgrounds
 	addBg: "rgba(60,180,110,0.13)",
 	addBgHover: "rgba(60,180,110,0.2)",
 	addBgHighlight: "rgba(60,180,110,0.25)",
 	removeBg: "rgba(210,80,80,0.13)",
 	removeBgHover: "rgba(210,80,80,0.2)",
 	removeBgHighlight: "rgba(210,80,80,0.25)",
-
-	// Virtual scroll
 	overscan: 15, // Extra rows to render above/below viewport
 };
 
@@ -91,7 +76,7 @@ const DiffRow = memo(function DiffRow({
 					height: 6,
 					marginTop: 2,
 					marginBottom: 2,
-					backgroundColor: "var(--color-surgent-border)",
+					backgroundColor: "var(--color-inferay-border)",
 					opacity: 0.15,
 					minWidth: minWidth || "100%",
 				}}
@@ -115,8 +100,6 @@ const DiffRow = memo(function DiffRow({
 
 	const isAdd = line.type === "add";
 	const isRemove = line.type === "remove";
-
-	// Calculate base background color (hover handled via CSS)
 	const getBgColor = () => {
 		if (isHighlighted) {
 			return isAdd
@@ -131,8 +114,6 @@ const DiffRow = memo(function DiffRow({
 				? DIFF_CONFIG.removeBg
 				: "transparent";
 	};
-
-	// CSS variable for hover color
 	const hoverBg = isAdd
 		? DIFF_CONFIG.addBgHover
 		: isRemove
@@ -145,8 +126,6 @@ const DiffRow = memo(function DiffRow({
 			onCopy(line.content);
 		}
 	};
-
-	// Render content with Shiki or fallback to basic tokens
 	const renderContent = () => {
 		if (highlightedHtml) {
 			return (
@@ -174,11 +153,9 @@ const DiffRow = memo(function DiffRow({
 				lineHeight: `${LINE_H}px`,
 				backgroundColor: getBgColor(),
 				minWidth: minWidth || "100%",
-				// @ts-expect-error CSS custom property for hover
 				"--hover-bg": hoverBg,
 			}}
 		>
-			{/* Line number */}
 			<span
 				className="shrink-0 text-right font-mono select-none"
 				style={{
@@ -194,7 +171,7 @@ const DiffRow = memo(function DiffRow({
 			>
 				{line.number ?? ""}
 			</span>
-			{/* +/- sign */}
+
 			<span
 				className="shrink-0 text-center font-mono select-none"
 				style={{
@@ -209,24 +186,24 @@ const DiffRow = memo(function DiffRow({
 			>
 				{isAdd ? "+" : isRemove ? "-" : ""}
 			</span>
-			{/* Content */}
+
 			<span
 				className="flex-1 min-w-max font-mono whitespace-pre"
 				style={{
 					fontSize: DIFF_CONFIG.contentFontSize,
 					paddingRight: 12,
 					paddingLeft: 4,
-					color: highlightedHtml ? undefined : "var(--color-surgent-text)",
+					color: highlightedHtml ? undefined : "var(--color-inferay-text)",
 				}}
 			>
 				{renderContent()}
 			</span>
-			{/* Copy button on hover */}
-			{isHovered && line.content && onCopy && (
+
+			{line.content && onCopy && (
 				<button
 					type="button"
 					onClick={handleCopy}
-					className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded opacity-50 hover:opacity-100 transition-opacity bg-surgent-surface-2"
+					className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-inferay-surface-2 p-0.5 opacity-0 transition-opacity group-hover:opacity-50 hover:!opacity-100"
 					title="Copy line"
 				>
 					<svg
@@ -235,7 +212,7 @@ const DiffRow = memo(function DiffRow({
 						fill="none"
 						stroke="currentColor"
 						strokeWidth="2"
-						style={{ color: "var(--color-surgent-text-2)" }}
+						style={{ color: "var(--color-inferay-text-2)" }}
 					>
 						<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
 						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -332,8 +309,6 @@ function VirtualPanel({
 	useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
 	const total = lines.length * LINE_H;
-
-	// Calculate approximate max content width based on longest line
 	const maxLineLength = useMemo(() => {
 		let max = 0;
 		for (const line of lines) {
@@ -343,8 +318,6 @@ function VirtualPanel({
 		}
 		return max;
 	}, [lines]);
-
-	// Approximate width: line num + sign + content (char width ~7px at 10px font)
 	const minContentWidth =
 		DIFF_CONFIG.lineNumWidth + DIFF_CONFIG.signWidth + maxLineLength * 7 + 20;
 
@@ -353,11 +326,7 @@ function VirtualPanel({
 		lines.length,
 		Math.ceil((scrollTop + viewH) / LINE_H) + OVERSCAN
 	);
-
-	// Extract line contents for Shiki
 	const lineContents = useMemo(() => lines.map((l) => l.content), [lines]);
-
-	// Use Shiki highlighter for visible lines
 	const { getHighlightedLine, isReady: shikiReady } = useShikiHighlighter({
 		filePath: filePath ?? `file.${ext}`,
 		lines: lineContents,
@@ -389,8 +358,6 @@ function VirtualPanel({
 			const isHighlighted =
 				highlightedChangeIdx !== undefined &&
 				changeIdx === highlightedChangeIdx;
-
-			// Use Shiki if ready, otherwise fall back to basic tokens
 			const useShiki = shikiReady && !disableTokenize && filePath;
 			const highlightedHtml = useShiki ? getHighlightedLine(i) : undefined;
 
@@ -533,7 +500,7 @@ const DiffMinimap = memo(function DiffMinimap({
 		return (
 			<div
 				ref={containerRef}
-				className="w-[14px] shrink-0 bg-surgent-bg border-l border-surgent-border/30"
+				className="w-[14px] shrink-0 bg-inferay-bg border-l border-inferay-border/30"
 			/>
 		);
 	}
@@ -560,7 +527,7 @@ const DiffMinimap = memo(function DiffMinimap({
 	return (
 		<div
 			ref={containerRef}
-			className="w-[14px] shrink-0 bg-surgent-bg border-l border-surgent-border/30 cursor-pointer relative"
+			className="w-[14px] shrink-0 bg-inferay-bg border-l border-inferay-border/30 cursor-pointer relative"
 			onClick={handleClick}
 		>
 			{segments.map((seg, i) => (
@@ -575,22 +542,20 @@ const DiffMinimap = memo(function DiffMinimap({
 				/>
 			))}
 			<div
-				className="absolute left-0 right-0 bg-surgent-text/10 border-y border-surgent-text/20 pointer-events-none"
+				className="absolute left-0 right-0 bg-inferay-text/10 border-y border-inferay-text/20 pointer-events-none"
 				style={{ top: thumbTop, height: thumbHeight }}
 			/>
 		</div>
 	);
 });
-
-// Copy feedback component
 const CopyFeedback = memo(function CopyFeedback({ show }: { show: boolean }) {
 	if (!show) return null;
 	return (
 		<div
 			className="absolute top-2 right-2 px-2 py-1 rounded text-[10px] font-medium z-10 animate-pulse"
 			style={{
-				backgroundColor: "var(--color-surgent-accent)",
-				color: "var(--color-surgent-surface)",
+				backgroundColor: "var(--color-inferay-accent)",
+				color: "var(--color-inferay-surface)",
 			}}
 		>
 			Copied!
@@ -623,8 +588,6 @@ export const GitDiffView = memo(function GitDiffView({
 	const [highlightedChangeIdx, setHighlightedChangeIdx] = useState<
 		number | undefined
 	>();
-
-	// Calculate diff stats
 	const stats = useMemo(() => {
 		let added = 0;
 		let removed = 0;
@@ -636,8 +599,6 @@ export const GitDiffView = memo(function GitDiffView({
 		}
 		return { added, removed };
 	}, [diff.newLines, diff.oldLines]);
-
-	// Build change position map for navigation
 	const { changePositions, changeLineMap } = useMemo(() => {
 		const positions: number[] = [];
 		const lineMap = new Map<number, number>();
@@ -663,12 +624,11 @@ export const GitDiffView = memo(function GitDiffView({
 	}, [diff.newLines]);
 
 	const totalChanges = changePositions.length;
-
-	// Navigate to a specific change
 	const scrollToChangeIdx = useCallback(
 		(changeIdx: number) => {
 			if (changeIdx < 0 || changeIdx >= changePositions.length) return;
 			const lineIdx = changePositions[changeIdx];
+			if (lineIdx === undefined) return;
 			const scrollPos = Math.max(0, (lineIdx - 5) * LINE_H);
 			setExternalScrollTop(scrollPos);
 			setHighlightedChangeIdx(changeIdx);
@@ -680,8 +640,6 @@ export const GitDiffView = memo(function GitDiffView({
 		},
 		[changePositions]
 	);
-
-	// Navigate to next/previous change
 	const goToNextChange = useCallback(() => {
 		const currentScroll =
 			rightRef.current?.scrollTop ?? leftRef.current?.scrollTop ?? 0;
@@ -700,7 +658,8 @@ export const GitDiffView = memo(function GitDiffView({
 		const currentLine = Math.floor(currentScroll / LINE_H);
 		let prevIdx = -1;
 		for (let i = changePositions.length - 1; i >= 0; i--) {
-			if (changePositions[i] < currentLine - 2) {
+			const changeLine = changePositions[i];
+			if (changeLine !== undefined && changeLine < currentLine - 2) {
 				prevIdx = i;
 				break;
 			}
@@ -711,23 +670,16 @@ export const GitDiffView = memo(function GitDiffView({
 			scrollToChangeIdx(changePositions.length - 1);
 		}
 	}, [changePositions, scrollToChangeIdx]);
-
-	// Copy line handler
 	const handleCopyLine = useCallback((content: string) => {
 		navigator.clipboard.writeText(content).then(() => {
 			setShowCopyFeedback(true);
 			setTimeout(() => setShowCopyFeedback(false), 1000);
 		});
 	}, []);
-
-	// Keyboard navigation
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			// Check if we're in an input
 			const target = e.target as HTMLElement;
 			if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-
-			// Only handle if this viewer is focused/hovered
 			if (!containerRef.current?.matches(":hover")) return;
 
 			if (e.key === "n" && !e.metaKey && !e.ctrlKey) {
@@ -820,10 +772,10 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (loading) {
 		return (
-			<div className="flex h-full items-center justify-center bg-surgent-bg">
+			<div className="flex h-full items-center justify-center bg-inferay-bg">
 				<div className="flex items-center gap-2">
-					<div className="w-3 h-3 border border-surgent-text-3 border-t-transparent rounded-full animate-spin" />
-					<span className="text-[11px] text-surgent-text-3">Loading...</span>
+					<div className="w-3 h-3 border border-inferay-text-3 border-t-transparent rounded-full animate-spin" />
+					<span className="text-[11px] text-inferay-text-3">Loading...</span>
 				</div>
 			</div>
 		);
@@ -831,7 +783,7 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (diff.isBinary) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
+			<div className="flex h-full flex-col bg-inferay-bg">
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
@@ -840,10 +792,10 @@ export const GitDiffView = memo(function GitDiffView({
 						<img
 							src={`/api/file?path=${encodeURIComponent(diff.imagePath)}`}
 							alt={filePath}
-							className="max-w-full max-h-full object-contain rounded border border-surgent-border"
+							className="max-w-full max-h-full object-contain rounded border border-inferay-border"
 						/>
 					) : (
-						<span className="text-[11px] text-surgent-text-3">Binary file</span>
+						<span className="text-[11px] text-inferay-text-3">Binary file</span>
 					)}
 				</div>
 			</div>
@@ -852,12 +804,12 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (statusMessage) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
+			<div className="flex h-full flex-col bg-inferay-bg">
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
 				<div className="flex flex-1 items-center justify-center px-6">
-					<p className="max-w-xs text-center text-[11px] leading-5 text-surgent-text-3">
+					<p className="max-w-xs text-center text-[11px] leading-5 text-inferay-text-3">
 						{statusMessage}
 					</p>
 				</div>
@@ -875,7 +827,7 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (isMarkdown) {
 		return (
-			<div className="flex h-full flex-col bg-surgent-bg">
+			<div className="flex h-full flex-col bg-inferay-bg">
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
@@ -891,7 +843,7 @@ export const GitDiffView = memo(function GitDiffView({
 	return (
 		<div
 			ref={containerRef}
-			className="flex h-full flex-col bg-surgent-bg relative"
+			className="flex h-full flex-col bg-inferay-bg relative"
 		>
 			<CopyFeedback show={showCopyFeedback} />
 			{!hideHeader && (
@@ -911,9 +863,9 @@ export const GitDiffView = memo(function GitDiffView({
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				{viewMode === "split" ? (
 					<>
-						<div className="flex-1 flex flex-col min-w-0 border-r border-surgent-border">
+						<div className="flex-1 flex flex-col min-w-0 border-r border-inferay-border">
 							{diff.isNew ? (
-								<div className="flex-1 flex items-center justify-center text-[11px] text-surgent-text-3/30">
+								<div className="flex-1 flex items-center justify-center text-[11px] text-inferay-text-3/30">
 									New file
 								</div>
 							) : (
@@ -949,9 +901,9 @@ export const GitDiffView = memo(function GitDiffView({
 					</>
 				) : viewMode === "stacked" ? (
 					<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-						<div className="flex-1 flex min-h-0 flex-col border-b border-surgent-border">
+						<div className="flex-1 flex min-h-0 flex-col border-b border-inferay-border">
 							{diff.isNew ? (
-								<div className="flex-1 flex items-center justify-center text-[11px] text-surgent-text-3/30">
+								<div className="flex-1 flex items-center justify-center text-[11px] text-inferay-text-3/30">
 									New file
 								</div>
 							) : (
@@ -1074,7 +1026,7 @@ function DiffViewToolbar({
 	onChange: (viewMode: DiffViewMode) => void;
 }) {
 	return (
-		<div className="flex h-8 shrink-0 items-center gap-1 border-b border-surgent-border bg-surgent-bg px-2">
+		<div className="flex h-8 shrink-0 items-center gap-1 border-b border-inferay-border bg-inferay-bg px-2">
 			<DiffViewButton
 				active={viewMode === "split"}
 				label="Split"
@@ -1109,8 +1061,8 @@ function DiffViewButton({
 			onClick={onClick}
 			className={`rounded-md px-2 py-1 text-[10px] transition-colors ${
 				active
-					? "bg-surgent-surface-2 text-surgent-text"
-					: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
+					? "bg-inferay-surface-2 text-inferay-text"
+					: "text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2"
 			}`}
 		>
 			{label}
@@ -1141,22 +1093,21 @@ function DiffHeader({
 	const name = filePath.split("/").pop() || filePath;
 
 	return (
-		<div className="shrink-0 flex items-center gap-1.5 px-3 h-9 border-b border-surgent-border bg-surgent-bg">
+		<div className="shrink-0 flex items-center gap-1.5 px-3 h-9 border-b border-inferay-border bg-inferay-bg">
 			{dir && (
-				<span className="text-[10px] font-mono text-surgent-text-3/50 truncate">
+				<span className="text-[10px] font-mono text-inferay-text-3/50 truncate">
 					{dir}
 				</span>
 			)}
-			<span className="text-[10px] font-mono font-medium text-surgent-text truncate">
+			<span className="text-[10px] font-mono font-medium text-inferay-text truncate">
 				{name}
 			</span>
 			{staged && (
-				<span className="text-[8px] text-surgent-accent/80 bg-surgent-accent/8 px-1 py-0.5 rounded shrink-0">
+				<span className="text-[8px] text-inferay-accent/80 bg-inferay-accent/8 px-1 py-0.5 rounded shrink-0">
 					staged
 				</span>
 			)}
 
-			{/* Stats */}
 			{stats && (stats.added > 0 || stats.removed > 0) && (
 				<div className="flex items-center gap-1.5 text-[9px] ml-2">
 					{stats.added > 0 && (
@@ -1170,7 +1121,6 @@ function DiffHeader({
 
 			<span className="flex-1" />
 
-			{/* Change navigation */}
 			{totalChanges !== undefined &&
 				totalChanges > 0 &&
 				onPrevChange &&
@@ -1179,7 +1129,7 @@ function DiffHeader({
 						<button
 							type="button"
 							onClick={onPrevChange}
-							className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
+							className="flex items-center justify-center h-5 w-5 rounded text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors"
 							title="Previous change (k/p)"
 						>
 							<svg
@@ -1192,13 +1142,13 @@ function DiffHeader({
 								<polyline points="15 18 9 12 15 6" />
 							</svg>
 						</button>
-						<span className="text-[9px] text-surgent-text-3 tabular-nums px-1">
+						<span className="text-[9px] text-inferay-text-3 tabular-nums px-1">
 							{totalChanges}
 						</span>
 						<button
 							type="button"
 							onClick={onNextChange}
-							className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
+							className="flex items-center justify-center h-5 w-5 rounded text-inferay-text-3 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors"
 							title="Next change (j/n)"
 						>
 							<svg
@@ -1217,7 +1167,7 @@ function DiffHeader({
 			<button
 				type="button"
 				onClick={onClose}
-				className="flex items-center justify-center h-5 w-5 rounded text-surgent-text-3/50 hover:text-surgent-text hover:bg-surgent-surface-2 transition-colors"
+				className="flex items-center justify-center h-5 w-5 rounded text-inferay-text-3/50 hover:text-inferay-text hover:bg-inferay-surface-2 transition-colors"
 			>
 				<svg
 					aria-hidden

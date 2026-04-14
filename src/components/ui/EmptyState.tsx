@@ -19,8 +19,8 @@ export function EmptyState({
 	return (
 		<div className="flex flex-1 flex-col items-center justify-center gap-3 py-16">
 			{visual}
-			<h3 className="text-lg font-medium text-surgent-text">{title}</h3>
-			<p className="max-w-sm text-center text-sm text-surgent-text-2">
+			<h3 className="text-lg font-medium text-inferay-text">{title}</h3>
+			<p className="max-w-sm text-center text-sm text-inferay-text-2">
 				{description}
 			</p>
 			{action && <div className="mt-2">{action}</div>}

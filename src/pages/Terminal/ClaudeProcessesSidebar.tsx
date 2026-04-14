@@ -48,15 +48,15 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 					? "text-red-400"
 					: processes.length > 0
 						? "text-amber-400"
-						: "text-surgent-text-3"
+						: "text-inferay-text-3"
 			}
 			expanded={expanded}
 			onToggle={onToggle}
 			emptyMessage="No Claude processes running"
 		>
 			{processes.length > 0 && (
-				<div className="flex items-center justify-between px-2 py-1 mb-1 rounded-md bg-surgent-surface/50">
-					<span className="text-[9px] text-surgent-text-3">
+				<div className="flex items-center justify-between px-2 py-1 mb-1 rounded-md bg-inferay-surface/50">
+					<span className="text-[9px] text-inferay-text-3">
 						{processes.length} process{processes.length !== 1 ? "es" : ""} ·{" "}
 						{formatRss(totalRss)}
 					</span>
@@ -74,22 +74,22 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 			{processes.map((p) => (
 				<div
 					key={p.pid}
-					className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors mb-0.5 hover:bg-surgent-surface group"
+					className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors mb-0.5 hover:bg-inferay-surface group"
 				>
 					<div className="shrink-0">
 						<IconCircle
 							size={8}
-							className={`fill-current ${p.cpu > 10 ? "text-red-400" : p.cpu > 2 ? "text-amber-400" : "text-surgent-accent"}`}
+							className={`fill-current ${p.cpu > 10 ? "text-red-400" : p.cpu > 2 ? "text-amber-400" : "text-inferay-accent"}`}
 						/>
 					</div>
 					<div className="min-w-0 flex-1">
 						<p
-							className="truncate text-[11px] font-medium text-surgent-text"
+							className="truncate text-[11px] font-medium text-inferay-text"
 							title={p.cwd || `PID ${p.pid}`}
 						>
 							{cwdLabel(p.cwd) || `PID ${p.pid}`}
 						</p>
-						<p className="truncate text-[9px] text-surgent-text-3">
+						<p className="truncate text-[9px] text-inferay-text-3">
 							{p.cpu}% CPU · {formatRss(p.rss)} · {formatElapsed(p.elapsed)}
 						</p>
 					</div>

@@ -1,7 +1,7 @@
 import { mkdir, readdir, unlink } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
-import { readJson } from "../lib/route-helpers.ts";
-import { atomicWriteJson } from "../lib/atomic-write.ts";
+import { readJson } from "../../lib/route-helpers.ts";
+import { atomicWriteJson } from "../../lib/atomic-write.ts";
 
 interface FileSnapshot {
 	relativePath: string;

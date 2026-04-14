@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
-import { PROJECT_ROOT } from "./lib/path-utils.ts";
+import { PROJECT_ROOT } from "../lib/path-utils.ts";
 import { buildApiRoutes } from "./routes/api.ts";
 import { handlePromptRequest } from "./routes/prompts.ts";
 import { TerminalService } from "./routes/terminal.ts";

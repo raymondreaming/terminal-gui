@@ -14,7 +14,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "read":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-accent`}
+					className={`${baseClass} text-inferay-accent`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -27,7 +27,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "edit":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-accent`}
+					className={`${baseClass} text-inferay-accent`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -55,7 +55,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "grep":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-text-2`}
+					className={`${baseClass} text-inferay-text-2`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -68,7 +68,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "glob":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-text-2`}
+					className={`${baseClass} text-inferay-text-2`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -80,7 +80,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "bash":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-text-2`}
+					className={`${baseClass} text-inferay-text-2`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -93,7 +93,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "task":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-accent`}
+					className={`${baseClass} text-inferay-accent`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -108,7 +108,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "todowrite":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-text-3`}
+					className={`${baseClass} text-inferay-text-3`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -126,7 +126,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 		case "websearch":
 			return (
 				<svg
-					className={`${baseClass} text-surgent-accent`}
+					className={`${baseClass} text-inferay-accent`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -141,7 +141,7 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 			// Generic tool icon
 			return (
 				<svg
-					className={`${baseClass} text-surgent-text-3`}
+					className={`${baseClass} text-inferay-text-3`}
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -161,7 +161,7 @@ function getActivityIcon(
 		case "thinking":
 			return (
 				<svg
-					className="w-3 h-3 text-surgent-text-3 animate-pulse"
+					className="w-3 h-3 text-inferay-text-3 animate-pulse"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -174,7 +174,7 @@ function getActivityIcon(
 		case "responding":
 			return (
 				<svg
-					className="w-3 h-3 text-surgent-accent animate-pulse"
+					className="w-3 h-3 text-inferay-accent animate-pulse"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -190,7 +190,7 @@ function getActivityIcon(
 		case "file_changed":
 			return (
 				<svg
-					className="w-3 h-3 text-surgent-accent"
+					className="w-3 h-3 text-inferay-accent"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -204,7 +204,7 @@ function getActivityIcon(
 		case "checkpoint":
 			return (
 				<svg
-					className="w-3 h-3 text-surgent-accent"
+					className="w-3 h-3 text-inferay-accent"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -228,7 +228,7 @@ function getActivityIcon(
 				</svg>
 			);
 		default:
-			return <div className="w-1.5 h-1.5 rounded-full bg-surgent-text-3" />;
+			return <div className="w-1.5 h-1.5 rounded-full bg-inferay-text-3" />;
 	}
 }
 
@@ -291,7 +291,7 @@ export const ActivityFeed = memo(function ActivityFeed({
 	if (events.length === 0) {
 		return (
 			<div
-				className={`flex items-center justify-center text-surgent-text-3 text-[10px] ${className}`}
+				className={`flex items-center justify-center text-inferay-text-3 text-[10px] ${className}`}
 			>
 				No activity yet
 			</div>
@@ -317,7 +317,7 @@ export const ActivityFeed = memo(function ActivityFeed({
 							key={event.id}
 							className={`
 								flex items-center gap-2 px-2.5 py-1 text-[10px]
-								${isLatest && isActive ? "bg-surgent-accent/10" : ""}
+								${isLatest && isActive ? "bg-inferay-accent/10" : ""}
 								${event.type === "error" ? "bg-git-removed/10" : ""}
 							`}
 						>
@@ -327,13 +327,13 @@ export const ActivityFeed = memo(function ActivityFeed({
 							<span
 								className={`
 									flex-1 truncate
-									${event.type === "error" ? "text-git-removed" : "text-surgent-text-2"}
+									${event.type === "error" ? "text-git-removed" : "text-inferay-text-2"}
 								`}
 								title={event.message}
 							>
 								{getEventLabel(event)}
 							</span>
-							<span className="shrink-0 text-surgent-text-3 tabular-nums">
+							<span className="shrink-0 text-inferay-text-3 tabular-nums">
 								{formatRelativeTime(event.timestamp)}
 							</span>
 						</div>
@@ -357,9 +357,9 @@ export const ActivityIndicator = memo(function ActivityIndicator({
 	if (!latestEvent) {
 		return (
 			<div
-				className={`flex items-center gap-1.5 text-surgent-text-3 ${className}`}
+				className={`flex items-center gap-1.5 text-inferay-text-3 ${className}`}
 			>
-				<div className="w-1.5 h-1.5 rounded-full bg-surgent-text-3" />
+				<div className="w-1.5 h-1.5 rounded-full bg-inferay-text-3" />
 				<span className="text-[10px]">Idle</span>
 			</div>
 		);
@@ -372,7 +372,7 @@ export const ActivityIndicator = memo(function ActivityIndicator({
 
 	return (
 		<div
-			className={`flex items-center gap-1.5 ${isActive ? "text-surgent-accent" : "text-surgent-text-2"} ${className}`}
+			className={`flex items-center gap-1.5 ${isActive ? "text-inferay-accent" : "text-inferay-text-2"} ${className}`}
 		>
 			{getActivityIcon(latestEvent.type, latestEvent.toolName)}
 			<span className="text-[10px] truncate max-w-[100px]">

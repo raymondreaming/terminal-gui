@@ -3,7 +3,7 @@ import {
 	BrowserWindow,
 	defineElectrobunRPC,
 } from "electrobun/bun";
-import { shutdownAppServices, startAppServer } from "../server/app-server.ts";
+import { shutdownAppServices, startAppServer } from "./server/app-server.ts";
 
 type WindowControlsRPC = {
 	bun: {

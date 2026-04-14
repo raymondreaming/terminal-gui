@@ -23,8 +23,6 @@ export interface GitProjectStatus {
 }
 
 export function useGitStatus(cwds: string[]) {
-	const _cwdKey = cwds.sort().join(",");
-
 	const fetcher = useCallback(
 		async () => {
 			if (cwds.length === 0) return [];

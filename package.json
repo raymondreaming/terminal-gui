@@ -18,6 +18,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.7",
+		"@tailwindcss/cli": "^4.2.2",
 		"@types/bun": "latest",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
@@ -30,7 +31,7 @@
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"@anthropic-ai/claude-agent-sdk": "^0.2.88",
+		"@anthropic-ai/claude-agent-sdk": "^0.2.89",
 		"@chenglou/pretext": "^0.0.2",
 		"@xterm/addon-fit": "^0.11.0",
 		"@xterm/addon-web-links": "^0.12.0",

@@ -33,11 +33,6 @@ function getPrepared(
 	}
 	return p;
 }
-
-/**
- * Measure the height of a paragraph of text at a given width.
- * Uses canvas measureText internally — no DOM reflow.
- */
 export function measureTextHeight(
 	text: string,
 	maxWidth: number,
@@ -49,21 +44,12 @@ export function measureTextHeight(
 	const result = layout(p, maxWidth, lineHeight);
 	return result.height;
 }
-
-/**
- * Measure a code block's height.
- */
 export function measureCodeHeight(text: string, maxWidth: number): number {
 	if (!text) return MONO_LINE_HEIGHT + 12; // padding
 	const p = getPrepared(text, MONO_FONT);
 	const result = layout(p, maxWidth, MONO_LINE_HEIGHT);
 	return result.height + 12; // py-1.5 padding
 }
-
-/**
- * Estimate the total height of a chat message (markdown content)
- * by parsing blocks and measuring each.
- */
 export function measureMessageHeight(
 	content: string,
 	containerWidth: number
@@ -136,11 +122,6 @@ export function measureMessageHeight(
 
 	return Math.max(height, UI_LINE_HEIGHT);
 }
-
-/**
- * Measure textarea content height (preserves newlines, spaces, tabs).
- * Uses pre-wrap mode like CSS white-space: pre-wrap.
- */
 export function measureTextareaHeight(
 	text: string,
 	maxWidth: number,
@@ -152,10 +133,6 @@ export function measureTextareaHeight(
 	const result = layout(p, maxWidth, lineHeight);
 	return result.height;
 }
-
-/**
- * Get line count for text at a given width.
- */
 export function getLineCount(
 	text: string,
 	maxWidth: number,
@@ -166,10 +143,6 @@ export function getLineCount(
 	const p = getPrepared(text, font);
 	return layout(p, maxWidth, lineHeight).lineCount;
 }
-
-/**
- * Clear the measurement cache. Call when fonts change (theme switch).
- */
 export function clearMeasurementCache(): void {
 	cache.clear();
 }

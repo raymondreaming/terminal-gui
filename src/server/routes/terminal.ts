@@ -3,15 +3,18 @@ import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import type { ServerWebSocket } from "bun";
 import type { AgentKind } from "../../lib/agents.ts";
-import { resolveInteractiveAgentCommand } from "../agents/terminal-command.ts";
-import { PROJECT_ROOT } from "../lib/path-utils.ts";
+import {
+	createClaudeEnv,
+	resolveInteractiveAgentCommand,
+} from "../../lib/terminal-command.ts";
+import { PROJECT_ROOT } from "../../lib/path-utils.ts";
 import { PidTracker } from "../services/pid-tracker.ts";
 import {
 	badRequest,
 	readJson,
 	tryRoute,
 	writeJson,
-} from "../lib/route-helpers.ts";
+} from "../../lib/route-helpers.ts";
 import { ChatService } from "../services/claude-chat.ts";
 
 const isWin = process.platform === "win32";
@@ -50,9 +53,9 @@ interface TerminalSession {
 }
 
 const g = globalThis as any;
-if (!g.__surgent_terminalSessions)
-	g.__surgent_terminalSessions = new Map<string, TerminalSession>();
-const sessions: Map<string, TerminalSession> = g.__surgent_terminalSessions;
+if (!g.__inferay_terminalSessions)
+	g.__inferay_terminalSessions = new Map<string, TerminalSession>();
+const sessions: Map<string, TerminalSession> = g.__inferay_terminalSessions;
 
 function killProcessTree(pid: number): void {
 	if (isWin) {
@@ -127,9 +130,13 @@ export const TerminalService = {
 				},
 			});
 
+			const spawnEnv =
+				agentKind === "claude"
+					? { ...createClaudeEnv(), TERM: "xterm-256color" }
+					: { ...process.env, TERM: "xterm-256color" };
 			const proc = Bun.spawn(resolved.cmd, {
 				terminal,
-				env: { ...process.env, TERM: "xterm-256color" },
+				env: spawnEnv,
 				cwd: cwd || process.cwd(),
 			});
 
@@ -213,7 +220,9 @@ export const TerminalService = {
 		const session = sessions.get(paneId);
 		if (!session) return { ok: false };
 		session.ws = ws;
-		return { ok: true, buffer: session.outputBuffer.drain() || undefined };
+		// Don't send the old buffer - just reconnect
+		session.outputBuffer.drain(); // Clear it but don't send
+		return { ok: true };
 	},
 
 	listSessions() {
@@ -360,30 +369,25 @@ async function findQuickPicks(): Promise<
 		return false;
 	}
 
+	async function scanDir(dirPath: string, depth: number): Promise<void> {
+		if (depth <= 0) return;
+		try {
+			const entries = await readdir(dirPath, { withFileTypes: true });
+			for (const entry of entries) {
+				if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+				const fullPath = resolve(dirPath, entry.name);
+				if (!(await checkGitRepo(fullPath, entry.name))) {
+					await scanDir(fullPath, depth - 1);
+				}
+			}
+		} catch {}
+	}
+
 	for (const basePath of commonPaths) {
 		try {
 			const stats = await stat(basePath);
 			if (!stats.isDirectory()) continue;
-
-			const dirs = await readdir(basePath, { withFileTypes: true });
-			for (const entry of dirs) {
-				if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
-
-				const fullPath = resolve(basePath, entry.name);
-				if (!(await checkGitRepo(fullPath, entry.name))) {
-					try {
-						const subDirs = await readdir(fullPath, { withFileTypes: true });
-						for (const subEntry of subDirs) {
-							if (!subEntry.isDirectory() || subEntry.name.startsWith("."))
-								continue;
-							await checkGitRepo(
-								resolve(fullPath, subEntry.name),
-								subEntry.name
-							);
-						}
-					} catch {}
-				}
-			}
+			await scanDir(basePath, 3);
 		} catch {}
 	}
 

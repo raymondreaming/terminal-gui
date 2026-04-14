@@ -9,7 +9,7 @@ const config: ElectrobunConfig = {
 	},
 	build: {
 		bun: {
-			entrypoint: "src/bun/index.ts",
+			entrypoint: "src/index.ts",
 			format: "esm",
 			sourcemap: "external",
 		},

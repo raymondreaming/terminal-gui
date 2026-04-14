@@ -1,33 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { readStoredBoolean, writeStoredValue } from "../../lib/stored-json.ts";
-
-function IconTerm({
-	size = 15,
-	className = "",
-}: {
-	size?: number;
-	className?: string;
-}) {
-	return (
-		<svg
-			aria-hidden="true"
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className={className}
-		>
-			<polyline points="4 17 10 11 4 5" />
-			<line x1="12" y1="19" x2="20" y2="19" />
-		</svg>
-	);
-}
+import { IconUser } from "../ui/Icons.tsx";
 
 function IconBranch({
 	size = 15,
@@ -84,36 +59,6 @@ function IconSlash({
 	);
 }
 
-function IconFusion({
-	size = 15,
-	className = "",
-}: {
-	size?: number;
-	className?: string;
-}) {
-	return (
-		<svg
-			aria-hidden="true"
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className={className}
-		>
-			<rect x="3.5" y="4.5" width="8" height="15" rx="2" />
-			<path d="M6.5 8.5h2" />
-			<path d="M6.5 12h2.5" />
-			<path d="M14.5 7.5h5" />
-			<path d="M17 7.5v8" />
-			<circle cx="17" cy="17.5" r="2.5" />
-		</svg>
-	);
-}
-
 interface NavItem {
 	label: string;
 	path: string;
@@ -121,8 +66,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-	{ label: "Terminal", path: "/terminal", icon: IconTerm },
-	{ label: "Experimental", path: "/experimental", icon: IconFusion },
 	{ label: "Git", path: "/git", icon: IconBranch },
 	{ label: "Prompts", path: "/prompts", icon: IconSlash },
 ];
@@ -133,8 +76,6 @@ export function Sidebar() {
 	const [collapsed, setCollapsed] = useState(() => {
 		return readStoredBoolean("sidebar-collapsed");
 	});
-	const location = useLocation();
-	const navigate = useNavigate();
 
 	useEffect(() => {
 		writeStoredValue("sidebar-collapsed", String(collapsed));
@@ -142,15 +83,15 @@ export function Sidebar() {
 
 	return (
 		<aside
-			className={`relative flex flex-col border-r border-surgent-border bg-surgent-bg transition-all duration-200 ${
+			className={`relative flex flex-col border-r border-inferay-border bg-inferay-bg transition-all duration-200 ${
 				collapsed ? "w-12" : "w-48"
 			}`}
 		>
-			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-surgent-border">
+			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-inferay-border">
 				<button
 					type="button"
 					onClick={() => setCollapsed(!collapsed)}
-					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-surgent-text/[0.05] transition-colors"
+					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-inferay-text/[0.05] transition-colors"
 				>
 					<img src={logoUrl} alt="" className="h-7 w-7 rounded" />
 				</button>
@@ -165,8 +106,8 @@ export function Sidebar() {
 							className={({ isActive }) =>
 								`mx-1 mb-px flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors ${
 									isActive
-										? "bg-surgent-text/[0.06] text-surgent-text"
-										: "text-surgent-text-3 hover:bg-surgent-text/[0.03] hover:text-surgent-text-2"
+										? "bg-inferay-text/[0.06] text-inferay-text"
+										: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
 								} ${collapsed ? "justify-center !px-0" : ""}`
 							}
 							title={collapsed ? item.label : undefined}
@@ -177,6 +118,22 @@ export function Sidebar() {
 					);
 				})}
 			</nav>
+			<div className="border-t border-inferay-border p-1.5">
+				<NavLink
+					to="/profile"
+					className={({ isActive }) =>
+						`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors ${
+							isActive
+								? "bg-inferay-text/[0.06] text-inferay-text"
+								: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
+						} ${collapsed ? "justify-center !px-0" : ""}`
+					}
+					title={collapsed ? "Profile" : undefined}
+				>
+					<IconUser size={14} className="shrink-0" />
+					{!collapsed ? <span>Profile</span> : null}
+				</NavLink>
+			</div>
 		</aside>
 	);
 }

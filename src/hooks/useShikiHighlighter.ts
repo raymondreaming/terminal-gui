@@ -1,10 +1,3 @@
-/**
- * Shiki Syntax Highlighter Hook
- *
- * Provides lazy syntax highlighting for visible lines only.
- * Caches highlighted lines for instant re-renders during scroll.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	type BundledLanguage,
@@ -86,24 +79,16 @@ export interface HighlightedLine {
 }
 
 export interface UseShikiHighlighterOptions {
-	/** File path for language detection */
 	filePath: string;
-	/** All lines to potentially highlight */
 	lines: string[];
-	/** Currently visible line indices (start, end) */
 	visibleRange: [number, number];
-	/** Theme to use */
 	theme?: BundledTheme;
-	/** Whether highlighting is enabled */
 	enabled?: boolean;
 }
 
 export interface ShikiHighlighterAPI {
-	/** Get highlighted HTML for a specific line (returns plain text if not yet highlighted) */
 	getHighlightedLine: (lineIdx: number) => string;
-	/** Whether the highlighter is ready */
 	isReady: boolean;
-	/** Current language being used */
 	language: string | null;
 }
 
@@ -173,8 +158,7 @@ export function useShikiHighlighter({
 
 				setIsReady(true);
 				setHighlightVersion((v) => v + 1); // Force re-render with highlighted content
-			} catch (err) {
-				console.warn("Failed to initialize Shiki highlighter:", err);
+			} catch {
 				setIsReady(true); // Continue without highlighting
 			}
 		}
@@ -255,8 +239,6 @@ export function useShikiHighlighter({
 
 const LINE_SPAN_PREFIX = '<span class="line">';
 const SPAN_CLOSE = "</span>";
-
-/** Strip the outer `<span class="line">…</span>` wrapper Shiki adds. */
 function unwrapLineSpan(html: string): string {
 	const trimmed = html.trim();
 	if (trimmed.startsWith(LINE_SPAN_PREFIX) && trimmed.endsWith(SPAN_CLOSE)) {
@@ -273,12 +255,6 @@ function escapeHtml(text: string): string {
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#039;");
 }
-
-/**
- * Simple hook for highlighting small code snippets (like chat diffs)
- * Unlike useShikiHighlighter, this highlights all lines at once since
- * chat diffs are typically small.
- */
 export function useShikiSnippet(
 	lines: string[],
 	filePath: string,
@@ -350,8 +326,7 @@ export function useShikiSnippet(
 					setHighlighted(result);
 					setIsReady(true);
 				}
-			} catch (err) {
-				console.warn("Failed to highlight snippet:", err);
+			} catch {
 				if (!cancelled) {
 					setIsReady(true);
 				}

@@ -5,23 +5,23 @@
 	--breakpoint-xs: 480px;
 
 	/* Core theme colors - exact match from main app */
-	--color-surgent-bg: #000000;
-	--color-surgent-surface: #1c1c1e;
-	--color-surgent-surface-2: #2c2c2e;
-	--color-surgent-surface-3: #3a3a3c;
-	--color-surgent-border: rgba(255, 255, 255, 0.08);
-	--color-surgent-border-bold: rgba(255, 255, 255, 0.15);
+	--color-inferay-bg: #000000;
+	--color-inferay-surface: #1c1c1e;
+	--color-inferay-surface-2: #2c2c2e;
+	--color-inferay-surface-3: #3a3a3c;
+	--color-inferay-border: rgba(255, 255, 255, 0.08);
+	--color-inferay-border-bold: rgba(255, 255, 255, 0.15);
 
-	--color-surgent-accent: #e5e5e7;
-	--color-surgent-accent-hover: #ffffff;
-	--color-surgent-success: #30d158;
-	--color-surgent-warning: #ff9f0a;
-	--color-surgent-error: #ff453a;
-	--color-surgent-info: #64d2ff;
+	--color-inferay-accent: #e5e5e7;
+	--color-inferay-accent-hover: #ffffff;
+	--color-inferay-success: #30d158;
+	--color-inferay-warning: #ff9f0a;
+	--color-inferay-error: #ff453a;
+	--color-inferay-info: #64d2ff;
 
-	--color-surgent-text: #f5f5f7;
-	--color-surgent-text-2: rgba(255, 255, 255, 0.72);
-	--color-surgent-text-3: rgba(255, 255, 255, 0.45);
+	--color-inferay-text: #f5f5f7;
+	--color-inferay-text-2: rgba(255, 255, 255, 0.72);
+	--color-inferay-text-3: rgba(255, 255, 255, 0.45);
 
 	/* Git status — muted, desaturated tones */
 	--color-git-added: #5a9e80;
@@ -173,5 +173,5 @@ select,
 	left: 1rem;
 	right: 0;
 	height: 1px;
-	background: var(--color-surgent-border);
+	background: var(--color-inferay-border);
 }

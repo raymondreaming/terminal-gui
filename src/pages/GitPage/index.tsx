@@ -7,40 +7,17 @@ import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
 import { GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { InlineDirectoryPicker } from "../Terminal/InlineDirectoryPicker.tsx";
 
-// ── Helpers ──────────────────────────────────────────────
-
-const DOT_COLORS: Record<string, string> = {
-	M: "bg-git-modified",
-	A: "bg-git-added",
-	D: "bg-git-deleted",
-	"?": "bg-surgent-text-3/40",
-	R: "bg-git-renamed",
-	U: "bg-git-unmerged",
-};
-
-function _StatusDot({ status }: { status: string }) {
-	const c = DOT_COLORS[status] || "bg-surgent-text-3/40";
-	return (
-		<span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${c}`} />
-	);
-}
-
 function persist(dirs: string[]) {
 	writeStoredJson("git-watched-dirs", dirs);
 }
 
-// ── Main component ───────────────────────────────────────
-
 export function GitPage() {
-	// Persisted repo list
 	const [dirs, setDirs] = useState<string[]>(() =>
 		readStoredJson<string[]>("git-watched-dirs", [])
 	);
 	const [activeCwd, setActiveCwd] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [pickerError, setPickerError] = useState<string | null>(null);
-
-	// Git data
 	const { projects } = useGitStatus(dirs);
 	const {
 		diff,
@@ -49,8 +26,6 @@ export function GitPage() {
 		loadDiff,
 		clear: clearDiff,
 	} = useGitDiff();
-
-	// Active project — find by cwd, fallback to first
 	const project = useMemo(() => {
 		if (activeCwd) {
 			const found = projects.find((p) => p.cwd === activeCwd);
@@ -58,14 +33,10 @@ export function GitPage() {
 		}
 		return projects[0] || null;
 	}, [projects, activeCwd]);
-
-	// Selected file in the right panel
 	const [selFile, setSelFile] = useState<{
 		path: string;
 		staged: boolean;
 	} | null>(null);
-
-	// ── Auto-select first file on project switch or initial load ──
 	const prevCwd = useRef<string | null>(null);
 	const hasAutoSelected = useRef(false);
 	useEffect(() => {
@@ -80,19 +51,13 @@ export function GitPage() {
 		const f = project.files[0]!;
 		setSelFile({ path: f.path, staged: f.staged });
 		loadDiff({ cwd: project.cwd, file: f.path, staged: f.staged });
-		// Only depend on cwd and files length — NOT on selFile or loadDiff
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [project?.cwd, project?.files.length, loadDiff, project]);
-
-	// ── All files flat list for keyboard nav ──
 	const allFiles = useMemo(() => {
 		if (!project) return [];
 		const unstaged = project.files.filter((f) => !f.staged);
 		const staged = project.files.filter((f) => f.staged);
 		return [...unstaged, ...staged];
 	}, [project]);
-
-	// ── Actions ──
 
 	const selectFile = useCallback(
 		(path: string, staged: boolean) => {
@@ -102,8 +67,6 @@ export function GitPage() {
 		},
 		[project?.cwd, loadDiff, project]
 	);
-
-	// Arrow up/down to navigate files
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
 			const tag = (e.target as HTMLElement)?.tagName;
@@ -187,8 +150,6 @@ export function GitPage() {
 		setPickerError(null);
 	}, []);
 
-	// ── Derived data ──
-
 	const tabs = useMemo(
 		() =>
 			projects.map((p) => ({
@@ -204,13 +165,11 @@ export function GitPage() {
 		project?.files.filter((f) => !f.staged && f.status !== "?") || [];
 	const untracked = project?.files.filter((f) => f.status === "?") || [];
 
-	// ── Empty: no repos ──
-
 	if (dirs.length === 0 && !pickerOpen) {
 		return (
-			<div className="flex h-full items-center justify-center bg-surgent-bg">
+			<div className="flex h-full items-center justify-center bg-inferay-bg">
 				<div className="text-center">
-					<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-surgent-surface border border-surgent-border">
+					<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-inferay-surface border border-inferay-border">
 						<svg
 							aria-hidden="true"
 							width="24"
@@ -221,7 +180,7 @@ export function GitPage() {
 							strokeWidth="1.5"
 							strokeLinecap="round"
 							strokeLinejoin="round"
-							className="text-surgent-text-3"
+							className="text-inferay-text-3"
 						>
 							<circle cx="18" cy="18" r="3" />
 							<circle cx="6" cy="6" r="3" />
@@ -229,14 +188,14 @@ export function GitPage() {
 							<path d="M6 9v12" />
 						</svg>
 					</div>
-					<p className="text-[12px] text-surgent-text mb-1">No repositories</p>
-					<p className="text-[10px] text-surgent-text-3 mb-4">
+					<p className="text-[12px] text-inferay-text mb-1">No repositories</p>
+					<p className="text-[10px] text-inferay-text-3 mb-4">
 						Add a local git repo to get started
 					</p>
 					<button
 						type="button"
 						onClick={() => setPickerOpen(true)}
-						className="rounded-lg bg-surgent-surface border border-surgent-border px-3 py-1.5 text-[10px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+						className="rounded-lg bg-inferay-surface border border-inferay-border px-3 py-1.5 text-[10px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 					>
 						Add Repository
 					</button>
@@ -247,7 +206,7 @@ export function GitPage() {
 
 	if (dirs.length === 0 && pickerOpen) {
 		return (
-			<div className="flex h-full items-center justify-center bg-surgent-bg">
+			<div className="flex h-full items-center justify-center bg-inferay-bg">
 				<div>
 					{pickerError && (
 						<div className="mb-2 rounded-lg px-3 py-1.5 text-[10px] text-git-deleted bg-git-deleted/5 border border-git-deleted/20">
@@ -263,12 +222,9 @@ export function GitPage() {
 		);
 	}
 
-	// ── Main layout ──
-
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
-			{/* Toolbar */}
-			<div className="shrink-0 flex items-center gap-2 px-2 sm:gap-3 sm:px-3 h-12 border-b border-surgent-border bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
+			<div className="shrink-0 flex items-center gap-2 px-2 sm:gap-3 sm:px-3 h-12 border-b border-inferay-border bg-inferay-bg">
 				<GroupTabs
 					items={tabs}
 					activeId={project?.cwd || null}
@@ -278,7 +234,7 @@ export function GitPage() {
 				<button
 					type="button"
 					onClick={() => setPickerOpen(true)}
-					className="flex items-center justify-center h-7 w-7 rounded-lg border border-surgent-border bg-surgent-surface text-surgent-text-3 hover:bg-surgent-text/[0.06] hover:text-surgent-text-2 transition-colors"
+					className="flex items-center justify-center h-7 w-7 rounded-lg border border-inferay-border bg-inferay-surface text-inferay-text-3 hover:bg-inferay-text/[0.06] hover:text-inferay-text-2 transition-colors"
 					title="Add repository"
 				>
 					<svg
@@ -296,7 +252,7 @@ export function GitPage() {
 				</button>
 				{project && (
 					<>
-						<div className="w-px h-4 bg-surgent-border/40" />
+						<div className="w-px h-4 bg-inferay-border/40" />
 						<svg
 							aria-hidden="true"
 							width="11"
@@ -307,14 +263,14 @@ export function GitPage() {
 							strokeWidth="2"
 							strokeLinecap="round"
 							strokeLinejoin="round"
-							className="text-surgent-text-3 shrink-0"
+							className="text-inferay-text-3 shrink-0"
 						>
 							<circle cx="18" cy="18" r="3" />
 							<circle cx="6" cy="6" r="3" />
 							<path d="M13 6h3a2 2 0 0 1 2 2v7" />
 							<path d="M6 9v12" />
 						</svg>
-						<span className="text-[10px] text-surgent-text-3">
+						<span className="text-[10px] text-inferay-text-3">
 							{project.branch}
 						</span>
 						{project.ahead > 0 && (
@@ -332,7 +288,7 @@ export function GitPage() {
 				<span className="flex-1" />
 				{selFile && (
 					<span
-						className="text-[11px] font-mono text-surgent-text-3 truncate max-w-[400px]"
+						className="text-[11px] font-mono text-inferay-text-3 truncate max-w-[400px]"
 						title={selFile.path}
 					>
 						{selFile.path}
@@ -340,9 +296,7 @@ export function GitPage() {
 				)}
 			</div>
 
-			{/* Content */}
 			<div className="flex flex-1 min-h-0 overflow-hidden">
-				{/* Center */}
 				<div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 					{pickerOpen ? (
 						<div className="flex h-full items-center justify-center">
@@ -361,8 +315,8 @@ export function GitPage() {
 					) : diffLoading ? (
 						<div className="flex h-full items-center justify-center">
 							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 border border-surgent-text-3 border-t-transparent rounded-full animate-spin" />
-								<span className="text-[11px] text-surgent-text-3">
+								<div className="w-3 h-3 border border-inferay-text-3 border-t-transparent rounded-full animate-spin" />
+								<span className="text-[11px] text-inferay-text-3">
 									Loading...
 								</span>
 							</div>
@@ -380,21 +334,20 @@ export function GitPage() {
 						/>
 					) : (
 						<div className="flex h-full items-center justify-center">
-							<p className="text-[11px] text-surgent-text-3/40">
+							<p className="text-[11px] text-inferay-text-3/40">
 								{project ? "Select a file to view changes" : "Add a repository"}
 							</p>
 						</div>
 					)}
 				</div>
 
-				{/* Right: file list */}
 				{project && (
-					<div className="w-52 shrink-0 border-l border-surgent-border flex flex-col bg-surgent-bg">
+					<div className="w-52 shrink-0 border-l border-inferay-border flex flex-col bg-inferay-bg">
 						<div className="flex-1 overflow-y-auto">
 							<FileGroup
 								title="Unstaged"
 								files={[...modified, ...untracked]}
-								color="text-surgent-text-2"
+								color="text-inferay-text-2"
 								selFile={selFile}
 								onSelect={(p) => selectFile(p, false)}
 							/>
@@ -407,12 +360,12 @@ export function GitPage() {
 							/>
 							{project.files.length === 0 && (
 								<div className="flex items-center justify-center h-full">
-									<p className="text-[10px] text-surgent-text-3/40">Clean</p>
+									<p className="text-[10px] text-inferay-text-3/40">Clean</p>
 								</div>
 							)}
 						</div>
 						{project.files.length > 0 && (
-							<div className="flex items-center gap-2.5 px-2.5 py-1.5 border-t border-surgent-border text-[8px] text-surgent-text-3/60 tabular-nums">
+							<div className="flex items-center gap-2.5 px-2.5 py-1.5 border-t border-inferay-border text-[8px] text-inferay-text-3/60 tabular-nums">
 								{staged.length > 0 && (
 									<span className="flex items-center gap-1">
 										<span className="w-1 h-1 rounded-full bg-git-added" />
@@ -427,7 +380,7 @@ export function GitPage() {
 								)}
 								{untracked.length > 0 && (
 									<span className="flex items-center gap-1">
-										<span className="w-1 h-1 rounded-full bg-surgent-text-3/30" />
+										<span className="w-1 h-1 rounded-full bg-inferay-text-3/30" />
 										{untracked.length}
 									</span>
 								)}
@@ -439,8 +392,6 @@ export function GitPage() {
 		</div>
 	);
 }
-
-// ── File group ───────────────────────────────────────────
 
 function FileGroup({
 	title,
@@ -458,13 +409,13 @@ function FileGroup({
 	if (files.length === 0) return null;
 	return (
 		<div>
-			<div className="sticky top-0 z-10 flex items-center justify-between px-2.5 h-6 border-b border-surgent-border/30 bg-surgent-bg">
+			<div className="sticky top-0 z-10 flex items-center justify-between px-2.5 h-6 border-b border-inferay-border/30 bg-inferay-bg">
 				<span
 					className={`text-[8px] font-medium uppercase tracking-[0.1em] ${color}`}
 				>
 					{title}
 				</span>
-				<span className="text-[8px] tabular-nums text-surgent-text-3/50">
+				<span className="text-[8px] tabular-nums text-inferay-text-3/50">
 					{files.length}
 				</span>
 			</div>
@@ -478,13 +429,13 @@ function FileGroup({
 						onClick={() => onSelect(f.path)}
 						className={`w-full flex items-center px-2.5 h-[24px] text-left transition-colors ${
 							active
-								? "bg-surgent-accent/8 border-l-[2px] border-surgent-accent"
-								: "border-l-[2px] border-transparent hover:bg-surgent-text/[0.03]"
+								? "bg-inferay-accent/8 border-l-[2px] border-inferay-accent"
+								: "border-l-[2px] border-transparent hover:bg-inferay-text/[0.03]"
 						}`}
 						title={f.path}
 					>
 						<span
-							className={`truncate text-[10.5px] font-mono ${active ? "text-surgent-text" : "text-surgent-text-2/80"}`}
+							className={`truncate text-[10.5px] font-mono ${active ? "text-inferay-text" : "text-inferay-text-2/80"}`}
 						>
 							{name}
 						</span>

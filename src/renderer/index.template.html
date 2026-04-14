@@ -22,12 +22,12 @@
 		<script>
 			(() => {
 				try {
-					var id = localStorage.getItem("surgent-app-theme-id");
+					var id = localStorage.getItem("inferay-app-theme-id");
 					if (!id || id === "default") return;
 					var colors = null,
 						light = false;
 					if (id === "custom") {
-						var c = localStorage.getItem("surgent-app-custom-theme");
+						var c = localStorage.getItem("inferay-app-custom-theme");
 						if (c) {
 							colors = JSON.parse(c);
 							var bg = colors.bg;
@@ -45,7 +45,7 @@
 					if (colors) {
 						var root = document.documentElement;
 						for (var k in colors)
-							root.style.setProperty(`--surgent-${k}`, colors[k]);
+							root.style.setProperty(`--inferay-${k}`, colors[k]);
 						root.classList.toggle("light", light);
 					}
 				} catch {}

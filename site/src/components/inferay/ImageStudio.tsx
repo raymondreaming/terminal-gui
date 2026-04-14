@@ -73,8 +73,8 @@ function ImageCard({
 			onClick={onSelect}
 			className={`group relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
 				isSelected
-					? "border-surgent-accent ring-2 ring-surgent-accent/20"
-					: "border-transparent hover:border-surgent-border"
+					? "border-inferay-accent ring-2 ring-inferay-accent/20"
+					: "border-transparent hover:border-inferay-border"
 			}`}
 		>
 			<img
@@ -108,16 +108,16 @@ function ImageDetail({
 	onClose: () => void;
 }) {
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
-				<span className="text-[10px] font-medium text-surgent-text">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
+				<span className="text-[10px] font-medium text-inferay-text">
 					Details
 				</span>
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1 rounded text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -125,7 +125,7 @@ function ImageDetail({
 
 			{/* Preview */}
 			<div className="p-3">
-				<div className="rounded-lg overflow-hidden border border-surgent-border">
+				<div className="rounded-lg overflow-hidden border border-inferay-border">
 					<img
 						src={image.url}
 						alt={image.prompt}
@@ -137,37 +137,37 @@ function ImageDetail({
 			{/* Info */}
 			<div className="flex-1 overflow-y-auto px-3 space-y-3">
 				<div>
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Prompt
 					</span>
-					<p className="mt-1 text-[9px] text-surgent-text leading-relaxed">
+					<p className="mt-1 text-[9px] text-inferay-text leading-relaxed">
 						{image.prompt}
 					</p>
 				</div>
 
 				<div className="flex gap-3">
 					<div>
-						<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Model
 						</span>
-						<p className="mt-1 text-[9px] text-surgent-text">
+						<p className="mt-1 text-[9px] text-inferay-text">
 							{image.model.replace("fal-", "").charAt(0).toUpperCase() +
 								image.model.replace("fal-", "").slice(1)}
 						</p>
 					</div>
 					<div>
-						<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Ratio
 						</span>
-						<p className="mt-1 text-[9px] text-surgent-text">
+						<p className="mt-1 text-[9px] text-inferay-text">
 							{image.aspectRatio}
 						</p>
 					</div>
 					<div>
-						<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Created
 						</span>
-						<p className="mt-1 text-[9px] text-surgent-text">
+						<p className="mt-1 text-[9px] text-inferay-text">
 							{image.timestamp}
 						</p>
 					</div>
@@ -175,23 +175,23 @@ function ImageDetail({
 			</div>
 
 			{/* Actions */}
-			<div className="shrink-0 p-3 border-t border-surgent-border space-y-2">
+			<div className="shrink-0 p-3 border-t border-inferay-border space-y-2">
 				<button
 					type="button"
-					className="w-full h-7 rounded-md bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-accent hover:text-black hover:border-surgent-accent transition-colors"
+					className="w-full h-7 rounded-md bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-accent hover:text-black hover:border-inferay-accent transition-colors"
 				>
 					Download
 				</button>
 				<div className="flex gap-2">
 					<button
 						type="button"
-						className="flex-1 h-6 rounded-md border border-surgent-border text-[9px] text-surgent-text-3 hover:bg-surgent-surface transition-colors"
+						className="flex-1 h-6 rounded-md border border-inferay-border text-[9px] text-inferay-text-3 hover:bg-inferay-surface transition-colors"
 					>
 						Remix
 					</button>
 					<button
 						type="button"
-						className="flex-1 h-6 rounded-md border border-surgent-border text-[9px] text-surgent-text-3 hover:bg-surgent-surface transition-colors"
+						className="flex-1 h-6 rounded-md border border-inferay-border text-[9px] text-inferay-text-3 hover:bg-inferay-surface transition-colors"
 					>
 						Upscale
 					</button>
@@ -231,9 +231,9 @@ export function ImageStudio() {
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col bg-surgent-bg">
+		<div className="flex h-full w-full flex-col bg-inferay-bg">
 			{/* Generation Panel */}
-			<div className="shrink-0 border-b border-surgent-border p-3 space-y-3">
+			<div className="shrink-0 border-b border-inferay-border p-3 space-y-3">
 				{/* Prompt input */}
 				<div className="relative">
 					<textarea
@@ -241,19 +241,19 @@ export function ImageStudio() {
 						onChange={(e) => setPrompt(e.target.value)}
 						placeholder="Describe the image you want to create..."
 						rows={2}
-						className="w-full rounded-lg bg-surgent-surface border border-surgent-border px-3 py-2 text-[11px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-accent/50 resize-none"
+						className="w-full rounded-lg bg-inferay-surface border border-inferay-border px-3 py-2 text-[11px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-accent/50 resize-none"
 					/>
 				</div>
 
 				{/* Controls row */}
 				<div className="flex items-center gap-2">
 					{/* Model selector */}
-					<div className="flex items-center gap-1 h-7 px-2 rounded-md bg-surgent-surface border border-surgent-border">
-						<span className="text-[8px] text-surgent-text-3">Model:</span>
+					<div className="flex items-center gap-1 h-7 px-2 rounded-md bg-inferay-surface border border-inferay-border">
+						<span className="text-[8px] text-inferay-text-3">Model:</span>
 						<select
 							value={model}
 							onChange={(e) => setModel(e.target.value)}
-							className="bg-transparent text-[9px] text-surgent-text outline-none cursor-pointer"
+							className="bg-transparent text-[9px] text-inferay-text outline-none cursor-pointer"
 						>
 							{models.map((m) => (
 								<option key={m.id} value={m.id}>
@@ -271,8 +271,8 @@ export function ImageStudio() {
 								onClick={() => setAspectRatio(ar.id)}
 								className={`h-6 px-2 rounded-md text-[8px] font-medium transition-colors ${
 									aspectRatio === ar.id
-										? "bg-surgent-surface-2 border border-surgent-border text-surgent-text"
-										: "text-surgent-text-3 hover:text-surgent-text-2 border border-transparent"
+										? "bg-inferay-surface-2 border border-inferay-border text-inferay-text"
+										: "text-inferay-text-3 hover:text-inferay-text-2 border border-transparent"
 								}`}
 							>
 								{ar.label}
@@ -287,7 +287,7 @@ export function ImageStudio() {
 						type="button"
 						onClick={handleGenerate}
 						disabled={!prompt.trim() || isGenerating}
-						className="flex items-center gap-1.5 h-7 px-3 rounded-md bg-surgent-accent text-black text-[10px] font-medium hover:bg-surgent-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						className="flex items-center gap-1.5 h-7 px-3 rounded-md bg-inferay-accent text-black text-[10px] font-medium hover:bg-inferay-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{isGenerating ? (
 							<>
@@ -310,13 +310,13 @@ export function ImageStudio() {
 				<div className="flex-1 overflow-y-auto p-3">
 					{images.length === 0 ? (
 						<div className="flex flex-col items-center justify-center h-full text-center">
-							<div className="w-12 h-12 rounded-full bg-surgent-surface border border-surgent-border flex items-center justify-center mb-3">
-								<Icons.Sparkle className="w-5 h-5 text-surgent-text-3" />
+							<div className="w-12 h-12 rounded-full bg-inferay-surface border border-inferay-border flex items-center justify-center mb-3">
+								<Icons.Sparkle className="w-5 h-5 text-inferay-text-3" />
 							</div>
-							<p className="text-[11px] text-surgent-text mb-1">
+							<p className="text-[11px] text-inferay-text mb-1">
 								No images yet
 							</p>
-							<p className="text-[9px] text-surgent-text-3">
+							<p className="text-[9px] text-inferay-text-3">
 								Enter a prompt above to generate your first image
 							</p>
 						</div>
@@ -336,7 +336,7 @@ export function ImageStudio() {
 
 				{/* Detail panel */}
 				{selectedImage && (
-					<div className="w-[220px] shrink-0 border-l border-surgent-border">
+					<div className="w-[220px] shrink-0 border-l border-inferay-border">
 						<ImageDetail
 							image={selectedImage}
 							onClose={() => setSelectedImage(null)}

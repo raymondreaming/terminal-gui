@@ -256,18 +256,18 @@ function NodeComponent({
 			<div
 				className={`w-[140px] rounded-lg border ${colorClasses[nodeType.color]} ${
 					isSelected
-						? "ring-2 ring-surgent-accent ring-offset-1 ring-offset-surgent-bg"
+						? "ring-2 ring-inferay-accent ring-offset-1 ring-offset-inferay-bg"
 						: ""
 				} backdrop-blur-sm transition-shadow hover:shadow-lg`}
 			>
 				{/* Header */}
-				<div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-surgent-border/30">
+				<div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-inferay-border/30">
 					<span
 						className={`${dotColors[nodeType.color]} p-0.5 rounded text-white`}
 					>
 						{nodeType.icon}
 					</span>
-					<span className="text-[9px] font-medium text-surgent-text truncate">
+					<span className="text-[9px] font-medium text-inferay-text truncate">
 						{node.title}
 					</span>
 				</div>
@@ -280,11 +280,11 @@ function NodeComponent({
 							<div
 								className={`w-2 h-2 rounded-full border-2 ${
 									hasInputConnection(input)
-										? `${dotColors[nodeType.color]} border-surgent-bg`
-										: "bg-surgent-bg border-surgent-border"
+										? `${dotColors[nodeType.color]} border-inferay-bg`
+										: "bg-inferay-bg border-inferay-border"
 								}`}
 							/>
-							<span className="text-[8px] text-surgent-text-3">{input}</span>
+							<span className="text-[8px] text-inferay-text-3">{input}</span>
 						</div>
 					))}
 
@@ -294,12 +294,12 @@ function NodeComponent({
 							key={output}
 							className="flex items-center justify-end gap-1.5 -mr-4"
 						>
-							<span className="text-[8px] text-surgent-text-3">{output}</span>
+							<span className="text-[8px] text-inferay-text-3">{output}</span>
 							<div
 								className={`w-2 h-2 rounded-full border-2 ${
 									hasOutputConnection(output)
-										? `${dotColors[nodeType.color]} border-surgent-bg`
-										: "bg-surgent-bg border-surgent-border"
+										? `${dotColors[nodeType.color]} border-inferay-bg`
+										: "bg-inferay-bg border-inferay-border"
 								}`}
 							/>
 						</div>
@@ -357,15 +357,15 @@ function WorkflowList({
 	onNew: () => void;
 }) {
 	return (
-		<div className="w-[180px] shrink-0 border-r border-surgent-border flex flex-col bg-surgent-bg">
+		<div className="w-[180px] shrink-0 border-r border-inferay-border flex flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between px-3 h-9 border-b border-surgent-border">
-				<span className="text-[10px] font-medium text-surgent-text">
+			<div className="flex items-center justify-between px-3 h-9 border-b border-inferay-border">
+				<span className="text-[10px] font-medium text-inferay-text">
 					Workflows
 				</span>
 				<button
 					onClick={onNew}
-					className="p-1 rounded-md text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded-md text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Plus />
 				</button>
@@ -379,26 +379,26 @@ function WorkflowList({
 						onClick={() => onSelect(wf.id)}
 						className={`w-full text-left px-2.5 py-2 rounded-lg border transition-colors ${
 							activeId === wf.id
-								? "border-surgent-border bg-surgent-surface-2"
-								: "border-surgent-border/50 hover:bg-surgent-surface/50 hover:border-surgent-border"
+								? "border-inferay-border bg-inferay-surface-2"
+								: "border-inferay-border/50 hover:bg-inferay-surface/50 hover:border-inferay-border"
 						}`}
 					>
 						<div className="flex items-center gap-2">
-							<span className="text-[10px] font-medium text-surgent-text truncate">
+							<span className="text-[10px] font-medium text-inferay-text truncate">
 								{wf.name}
 							</span>
 							{wf.status === "active" && (
-								<div className="w-1.5 h-1.5 rounded-full bg-surgent-accent shrink-0" />
+								<div className="w-1.5 h-1.5 rounded-full bg-inferay-accent shrink-0" />
 							)}
 						</div>
-						<p className="text-[8px] text-surgent-text-3 truncate mt-0.5">
+						<p className="text-[8px] text-inferay-text-3 truncate mt-0.5">
 							{wf.description}
 						</p>
 						<div className="flex items-center gap-2 mt-1">
-							<span className="text-[7px] text-surgent-text-3">
+							<span className="text-[7px] text-inferay-text-3">
 								{wf.nodeCount} nodes
 							</span>
-							<span className="text-[7px] text-surgent-text-3">
+							<span className="text-[7px] text-inferay-text-3">
 								{wf.lastEdited}
 							</span>
 						</div>
@@ -411,9 +411,9 @@ function WorkflowList({
 
 function NodePalette({ onAddNode }: { onAddNode: (type: NodeType) => void }) {
 	return (
-		<div className="absolute bottom-0 left-0 right-0 z-10 border-t border-surgent-border bg-surgent-bg/95 backdrop-blur-sm">
+		<div className="absolute bottom-0 left-0 right-0 z-10 border-t border-inferay-border bg-inferay-bg/95 backdrop-blur-sm">
 			<div className="flex items-center gap-1 px-3 py-2">
-				<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3 mr-2">
+				<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3 mr-2">
 					Add
 				</span>
 				{(
@@ -425,9 +425,9 @@ function NodePalette({ onAddNode }: { onAddNode: (type: NodeType) => void }) {
 					<button
 						key={type}
 						onClick={() => onAddNode(type)}
-						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-surgent-border text-[9px] text-surgent-text-2 hover:bg-surgent-surface hover:text-surgent-text transition-colors"
+						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-inferay-border text-[9px] text-inferay-text-2 hover:bg-inferay-surface hover:text-inferay-text transition-colors"
 					>
-						<span className="text-surgent-text-3">{config.icon}</span>
+						<span className="text-inferay-text-3">{config.icon}</span>
 						{config.label}
 					</button>
 				))}
@@ -448,19 +448,19 @@ function NodeDetail({
 	const nodeType = nodeTypes[node.type];
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
 				<div className="flex items-center gap-2">
-					<span className="text-surgent-text-3">{nodeType.icon}</span>
-					<span className="text-[10px] font-medium text-surgent-text">
+					<span className="text-inferay-text-3">{nodeType.icon}</span>
+					<span className="text-[10px] font-medium text-inferay-text">
 						{node.title}
 					</span>
 				</div>
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1 rounded text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -469,34 +469,34 @@ function NodeDetail({
 			{/* Config */}
 			<div className="flex-1 overflow-y-auto p-3 space-y-3">
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Node Type
 					</label>
-					<p className="mt-1 text-[10px] text-surgent-text">{nodeType.label}</p>
+					<p className="mt-1 text-[10px] text-inferay-text">{nodeType.label}</p>
 				</div>
 
 				{node.type === "prompt" && (
 					<>
 						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 								Model
 							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none">
+							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
 								<option>Claude Opus</option>
 								<option>Claude Sonnet</option>
 								<option>GPT-4</option>
 							</select>
 						</div>
 						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 								Prompt Template
 							</label>
 							<textarea
 								defaultValue={node.config.template as string}
 								rows={4}
-								className="mt-1 w-full rounded-md bg-surgent-surface border border-surgent-border px-2 py-1.5 text-[9px] text-surgent-text outline-none resize-none font-mono"
+								className="mt-1 w-full rounded-md bg-inferay-surface border border-inferay-border px-2 py-1.5 text-[9px] text-inferay-text outline-none resize-none font-mono"
 							/>
-							<p className="mt-1 text-[7px] text-surgent-text-3">
+							<p className="mt-1 text-[7px] text-inferay-text-3">
 								Use {"{{variable}}"} to reference inputs
 							</p>
 						</div>
@@ -506,20 +506,20 @@ function NodeDetail({
 				{node.type === "image" && (
 					<>
 						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 								Model
 							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none">
+							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
 								<option>Flux</option>
 								<option>Flux Pro</option>
 								<option>Flux Dev</option>
 							</select>
 						</div>
 						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 								Style
 							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none">
+							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
 								<option>Professional</option>
 								<option>Artistic</option>
 								<option>Photorealistic</option>
@@ -532,23 +532,23 @@ function NodeDetail({
 				{node.type === "research" && (
 					<>
 						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 								Depth
 							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none">
+							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
 								<option>Quick</option>
 								<option>Thorough</option>
 								<option>Deep</option>
 							</select>
 						</div>
 						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 								Max Sources
 							</label>
 							<input
 								type="number"
 								defaultValue={5}
-								className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none"
+								className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none"
 							/>
 						</div>
 					</>
@@ -556,23 +556,23 @@ function NodeDetail({
 
 				{node.type === "input" && (
 					<div>
-						<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Default Value
 						</label>
 						<input
 							type="text"
 							defaultValue={node.config.value as string}
-							className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none"
+							className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none"
 						/>
 					</div>
 				)}
 
 				{node.type === "output" && (
 					<div>
-						<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+						<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 							Output Format
 						</label>
-						<select className="mt-1 w-full h-7 rounded-md bg-surgent-surface border border-surgent-border px-2 text-[9px] text-surgent-text outline-none">
+						<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
 							<option>Markdown</option>
 							<option>HTML</option>
 							<option>Plain Text</option>
@@ -582,19 +582,19 @@ function NodeDetail({
 				)}
 
 				{/* Inputs/Outputs info */}
-				<div className="pt-2 border-t border-surgent-border">
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+				<div className="pt-2 border-t border-inferay-border">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Connections
 					</span>
 					<div className="mt-1.5 space-y-1">
 						{node.inputs.length > 0 && (
 							<div className="flex items-center gap-2">
-								<span className="text-[8px] text-surgent-text-3">Inputs:</span>
+								<span className="text-[8px] text-inferay-text-3">Inputs:</span>
 								<div className="flex gap-1">
 									{node.inputs.map((i) => (
 										<span
 											key={i}
-											className="px-1.5 py-0.5 rounded bg-surgent-surface border border-surgent-border text-[7px] font-mono text-surgent-text-2"
+											className="px-1.5 py-0.5 rounded bg-inferay-surface border border-inferay-border text-[7px] font-mono text-inferay-text-2"
 										>
 											{i}
 										</span>
@@ -604,12 +604,12 @@ function NodeDetail({
 						)}
 						{node.outputs.length > 0 && (
 							<div className="flex items-center gap-2">
-								<span className="text-[8px] text-surgent-text-3">Outputs:</span>
+								<span className="text-[8px] text-inferay-text-3">Outputs:</span>
 								<div className="flex gap-1">
 									{node.outputs.map((o) => (
 										<span
 											key={o}
-											className="px-1.5 py-0.5 rounded bg-surgent-surface border border-surgent-border text-[7px] font-mono text-surgent-text-2"
+											className="px-1.5 py-0.5 rounded bg-inferay-surface border border-inferay-border text-[7px] font-mono text-inferay-text-2"
 										>
 											{o}
 										</span>
@@ -622,7 +622,7 @@ function NodeDetail({
 			</div>
 
 			{/* Actions */}
-			<div className="shrink-0 p-3 border-t border-surgent-border">
+			<div className="shrink-0 p-3 border-t border-inferay-border">
 				<button
 					type="button"
 					className="w-full h-7 rounded-md border border-red-500/30 text-[9px] text-red-400 hover:bg-red-500/10 transition-colors"
@@ -682,7 +682,7 @@ export function WorkflowBuilder() {
 	};
 
 	return (
-		<div className="flex h-full w-full bg-surgent-bg">
+		<div className="flex h-full w-full bg-inferay-bg">
 			{/* Workflow List */}
 			<WorkflowList
 				workflows={workflows}
@@ -694,11 +694,11 @@ export function WorkflowBuilder() {
 			{/* Main content */}
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Toolbar */}
-				<div className="shrink-0 flex items-center gap-2 px-3 h-9 border-b border-surgent-border">
-					<span className="text-[10px] font-medium text-surgent-text">
+				<div className="shrink-0 flex items-center gap-2 px-3 h-9 border-b border-inferay-border">
+					<span className="text-[10px] font-medium text-inferay-text">
 						{activeWorkflow?.name || "Untitled"}
 					</span>
-					<span className="text-[8px] text-surgent-text-3">
+					<span className="text-[8px] text-inferay-text-3">
 						{nodes.length} nodes
 					</span>
 
@@ -706,7 +706,7 @@ export function WorkflowBuilder() {
 
 					<button
 						type="button"
-						className="flex items-center gap-1 h-6 px-2 rounded-md border border-surgent-border text-[9px] text-surgent-text-3 hover:bg-surgent-surface transition-colors"
+						className="flex items-center gap-1 h-6 px-2 rounded-md border border-inferay-border text-[9px] text-inferay-text-3 hover:bg-inferay-surface transition-colors"
 					>
 						<Icons.Folder />
 						Save
@@ -715,7 +715,7 @@ export function WorkflowBuilder() {
 						type="button"
 						onClick={handleRun}
 						disabled={isRunning}
-						className="flex items-center gap-1.5 h-6 px-3 rounded-md bg-surgent-accent text-black text-[9px] font-medium hover:bg-surgent-accent/90 transition-colors disabled:opacity-50"
+						className="flex items-center gap-1.5 h-6 px-3 rounded-md bg-inferay-accent text-black text-[9px] font-medium hover:bg-inferay-accent/90 transition-colors disabled:opacity-50"
 					>
 						{isRunning ? (
 							<>
@@ -785,12 +785,12 @@ export function WorkflowBuilder() {
 
 						{/* Running indicator */}
 						{isRunning && (
-							<div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-surgent-surface border border-surgent-border">
-								<div className="w-2 h-2 rounded-full bg-surgent-accent animate-pulse" />
-								<span className="text-[10px] text-surgent-text">
+							<div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-lg bg-inferay-surface border border-inferay-border">
+								<div className="w-2 h-2 rounded-full bg-inferay-accent animate-pulse" />
+								<span className="text-[10px] text-inferay-text">
 									Executing workflow...
 								</span>
-								<span className="text-[9px] text-surgent-text-3">
+								<span className="text-[9px] text-inferay-text-3">
 									Step 2 of 5
 								</span>
 							</div>
@@ -799,7 +799,7 @@ export function WorkflowBuilder() {
 
 					{/* Detail panel */}
 					{selectedNode && (
-						<div className="w-[220px] shrink-0 border-l border-surgent-border">
+						<div className="w-[220px] shrink-0 border-l border-inferay-border">
 							<NodeDetail
 								node={selectedNode}
 								onClose={() => setSelectedNode(null)}

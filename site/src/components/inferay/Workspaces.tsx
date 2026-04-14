@@ -119,41 +119,41 @@ function WorkspaceRow({
 		<button
 			type="button"
 			onClick={onSelect}
-			className={`w-full flex items-center gap-3 px-3 py-2 border-b border-surgent-border transition-colors ${
-				isActive ? "bg-surgent-surface-2" : "hover:bg-surgent-surface/50"
+			className={`w-full flex items-center gap-3 px-3 py-2 border-b border-inferay-border transition-colors ${
+				isActive ? "bg-inferay-surface-2" : "hover:bg-inferay-surface/50"
 			}`}
 		>
 			{/* Icon */}
-			<div className="w-6 h-6 rounded-md border border-surgent-border bg-surgent-surface flex items-center justify-center text-surgent-text-3">
+			<div className="w-6 h-6 rounded-md border border-inferay-border bg-inferay-surface flex items-center justify-center text-inferay-text-3">
 				<Icons.Layers />
 			</div>
 
 			{/* Name & Description */}
 			<div className="flex-1 min-w-0 text-left">
 				<div className="flex items-center gap-1.5">
-					<span className="text-[10px] font-medium text-surgent-text truncate">
+					<span className="text-[10px] font-medium text-inferay-text truncate">
 						{workspace.name}
 					</span>
 					{workspace.isBuiltIn && (
-						<span className="text-[7px] text-surgent-text-3 bg-surgent-surface px-1 py-0.5 rounded shrink-0">
+						<span className="text-[7px] text-inferay-text-3 bg-inferay-surface px-1 py-0.5 rounded shrink-0">
 							preset
 						</span>
 					)}
 				</div>
-				<p className="text-[8px] text-surgent-text-3 truncate">
+				<p className="text-[8px] text-inferay-text-3 truncate">
 					{workspace.description}
 				</p>
 			</div>
 
 			{/* Model */}
 			<div className="shrink-0 text-right">
-				<span className="text-[9px] text-surgent-text-2">{model?.name}</span>
-				<p className="text-[7px] text-surgent-text-3">{model?.speed}</p>
+				<span className="text-[9px] text-inferay-text-2">{model?.name}</span>
+				<p className="text-[7px] text-inferay-text-3">{model?.speed}</p>
 			</div>
 
 			{/* Last used */}
 			{workspace.lastUsed && (
-				<span className="shrink-0 text-[7px] text-surgent-text-3 tabular-nums w-10 text-right">
+				<span className="shrink-0 text-[7px] text-inferay-text-3 tabular-nums w-10 text-right">
 					{workspace.lastUsed}
 				</span>
 			)}
@@ -173,16 +173,16 @@ function WorkspaceDetail({
 	const model = models[workspace.model];
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
-				<span className="text-[10px] font-medium text-surgent-text">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
+				<span className="text-[10px] font-medium text-inferay-text">
 					{workspace.name}
 				</span>
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1 rounded text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -191,18 +191,18 @@ function WorkspaceDetail({
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto p-3 space-y-4">
 				{/* Description */}
-				<p className="text-[9px] text-surgent-text-2 leading-relaxed">
+				<p className="text-[9px] text-inferay-text-2 leading-relaxed">
 					{workspace.description}
 				</p>
 
 				{/* Model */}
 				<div>
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Model
 					</span>
-					<div className="mt-1.5 flex items-center gap-2 px-2 py-1.5 rounded-md bg-surgent-surface border border-surgent-border">
-						<span className="text-[9px] text-surgent-text">{model?.name}</span>
-						<span className="text-[8px] text-surgent-text-3">
+					<div className="mt-1.5 flex items-center gap-2 px-2 py-1.5 rounded-md bg-inferay-surface border border-inferay-border">
+						<span className="text-[9px] text-inferay-text">{model?.name}</span>
+						<span className="text-[8px] text-inferay-text-3">
 							{model?.speed}
 						</span>
 					</div>
@@ -210,15 +210,15 @@ function WorkspaceDetail({
 
 				{/* Layout */}
 				<div>
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Layout
 					</span>
 					<div className="mt-1.5 flex items-center gap-1.5">
 						<div
 							className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[8px] ${
 								workspace.layout.sidebar
-									? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-									: "border-surgent-border/50 text-surgent-text-3"
+									? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+									: "border-inferay-border/50 text-inferay-text-3"
 							}`}
 						>
 							<Icons.Layers />
@@ -227,8 +227,8 @@ function WorkspaceDetail({
 						<div
 							className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[8px] ${
 								workspace.layout.terminal
-									? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-									: "border-surgent-border/50 text-surgent-text-3"
+									? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+									: "border-inferay-border/50 text-inferay-text-3"
 							}`}
 						>
 							<Icons.Terminal />
@@ -238,8 +238,8 @@ function WorkspaceDetail({
 							<div
 								className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[8px] ${
 									workspace.layout.splitTerminal
-										? "border-surgent-border bg-surgent-surface-2 text-surgent-text"
-										: "border-surgent-border/50 text-surgent-text-3"
+										? "border-inferay-border bg-inferay-surface-2 text-inferay-text"
+										: "border-inferay-border/50 text-inferay-text-3"
 								}`}
 							>
 								Split
@@ -250,14 +250,14 @@ function WorkspaceDetail({
 
 				{/* Prompts */}
 				<div>
-					<span className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<span className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Loaded Prompts
 					</span>
 					<div className="mt-1.5 flex flex-wrap gap-1">
 						{workspace.prompts.map((prompt) => (
 							<span
 								key={prompt}
-								className="px-1.5 py-0.5 rounded-md bg-surgent-surface border border-surgent-border text-[8px] font-mono text-surgent-text-2"
+								className="px-1.5 py-0.5 rounded-md bg-inferay-surface border border-inferay-border text-[8px] font-mono text-inferay-text-2"
 							>
 								/{prompt}
 							</span>
@@ -267,11 +267,11 @@ function WorkspaceDetail({
 			</div>
 
 			{/* Footer */}
-			<div className="shrink-0 p-3 border-t border-surgent-border space-y-2">
+			<div className="shrink-0 p-3 border-t border-inferay-border space-y-2">
 				<button
 					type="button"
 					onClick={onActivate}
-					className="w-full h-7 rounded-md bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-accent hover:text-black hover:border-surgent-accent transition-colors"
+					className="w-full h-7 rounded-md bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-accent hover:text-black hover:border-inferay-accent transition-colors"
 				>
 					Activate Workspace
 				</button>
@@ -279,13 +279,13 @@ function WorkspaceDetail({
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							className="flex-1 h-6 rounded-md border border-surgent-border text-[9px] text-surgent-text-3 hover:bg-surgent-surface transition-colors"
+							className="flex-1 h-6 rounded-md border border-inferay-border text-[9px] text-inferay-text-3 hover:bg-inferay-surface transition-colors"
 						>
 							Edit
 						</button>
 						<button
 							type="button"
-							className="flex-1 h-6 rounded-md border border-surgent-border text-[9px] text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
+							className="flex-1 h-6 rounded-md border border-inferay-border text-[9px] text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
 						>
 							Delete
 						</button>
@@ -305,19 +305,19 @@ function CreateWorkspacePanel({ onClose }: { onClose: () => void }) {
 	const [split, setSplit] = useState(false);
 
 	const inputCls =
-		"w-full rounded-md bg-surgent-surface border border-surgent-border px-2 py-1.5 text-[10px] text-surgent-text placeholder:text-surgent-text-3 outline-none focus:border-surgent-accent/50";
+		"w-full rounded-md bg-inferay-surface border border-inferay-border px-2 py-1.5 text-[10px] text-inferay-text placeholder:text-inferay-text-3 outline-none focus:border-inferay-accent/50";
 
 	return (
-		<div className="flex h-full flex-col bg-surgent-bg">
+		<div className="flex h-full flex-col bg-inferay-bg">
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-surgent-border px-3 h-8">
-				<span className="text-[10px] font-medium text-surgent-text">
+			<div className="flex items-center justify-between border-b border-inferay-border px-3 h-8">
+				<span className="text-[10px] font-medium text-inferay-text">
 					New Workspace
 				</span>
 				<button
 					type="button"
 					onClick={onClose}
-					className="p-1 rounded text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2 transition-colors"
+					className="p-1 rounded text-inferay-text-3 hover:bg-inferay-surface hover:text-inferay-text-2 transition-colors"
 				>
 					<Icons.Close />
 				</button>
@@ -326,7 +326,7 @@ function CreateWorkspacePanel({ onClose }: { onClose: () => void }) {
 			{/* Form */}
 			<div className="flex-1 overflow-y-auto p-3 space-y-3">
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Name
 					</label>
 					<input
@@ -339,7 +339,7 @@ function CreateWorkspacePanel({ onClose }: { onClose: () => void }) {
 				</div>
 
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Description
 					</label>
 					<input
@@ -352,7 +352,7 @@ function CreateWorkspacePanel({ onClose }: { onClose: () => void }) {
 				</div>
 
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Model
 					</label>
 					<select
@@ -369,35 +369,35 @@ function CreateWorkspacePanel({ onClose }: { onClose: () => void }) {
 				</div>
 
 				<div>
-					<label className="text-[8px] font-medium uppercase tracking-wide text-surgent-text-3">
+					<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
 						Layout
 					</label>
 					<div className="mt-1.5 space-y-1.5">
-						<label className="flex items-center gap-2 text-[9px] text-surgent-text-2 cursor-pointer">
+						<label className="flex items-center gap-2 text-[9px] text-inferay-text-2 cursor-pointer">
 							<input
 								type="checkbox"
 								checked={sidebar}
 								onChange={(e) => setSidebar(e.target.checked)}
-								className="rounded border-surgent-border"
+								className="rounded border-inferay-border"
 							/>
 							Show sidebar
 						</label>
-						<label className="flex items-center gap-2 text-[9px] text-surgent-text-2 cursor-pointer">
+						<label className="flex items-center gap-2 text-[9px] text-inferay-text-2 cursor-pointer">
 							<input
 								type="checkbox"
 								checked={terminal}
 								onChange={(e) => setTerminal(e.target.checked)}
-								className="rounded border-surgent-border"
+								className="rounded border-inferay-border"
 							/>
 							Show terminal
 						</label>
 						{terminal && (
-							<label className="flex items-center gap-2 text-[9px] text-surgent-text-2 cursor-pointer pl-4">
+							<label className="flex items-center gap-2 text-[9px] text-inferay-text-2 cursor-pointer pl-4">
 								<input
 									type="checkbox"
 									checked={split}
 									onChange={(e) => setSplit(e.target.checked)}
-									className="rounded border-surgent-border"
+									className="rounded border-inferay-border"
 								/>
 								Split terminal
 							</label>
@@ -407,10 +407,10 @@ function CreateWorkspacePanel({ onClose }: { onClose: () => void }) {
 			</div>
 
 			{/* Footer */}
-			<div className="shrink-0 p-3 border-t border-surgent-border">
+			<div className="shrink-0 p-3 border-t border-inferay-border">
 				<button
 					type="button"
-					className="w-full h-7 rounded-md bg-surgent-surface-2 border border-surgent-border text-[10px] font-medium text-surgent-text hover:bg-surgent-accent hover:text-black hover:border-surgent-accent transition-colors"
+					className="w-full h-7 rounded-md bg-inferay-surface-2 border border-inferay-border text-[10px] font-medium text-inferay-text hover:bg-inferay-accent hover:text-black hover:border-inferay-accent transition-colors"
 				>
 					Create Workspace
 				</button>
@@ -448,9 +448,9 @@ export function Workspaces() {
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col bg-surgent-bg">
+		<div className="flex h-full w-full flex-col bg-inferay-bg">
 			{/* Toolbar */}
-			<div className="shrink-0 flex items-center gap-2 px-3 h-8 border-b border-surgent-border">
+			<div className="shrink-0 flex items-center gap-2 px-3 h-8 border-b border-inferay-border">
 				<div className="flex items-center gap-0.5">
 					{(["all", "preset", "custom"] as const).map((f) => (
 						<button
@@ -458,8 +458,8 @@ export function Workspaces() {
 							onClick={() => setFilter(f)}
 							className={`h-5 px-1.5 rounded-md text-[8px] font-medium transition-colors ${
 								filter === f
-									? "bg-surgent-surface-2 text-surgent-text border border-surgent-border"
-									: "text-surgent-text-3 hover:text-surgent-text-2 border border-transparent"
+									? "bg-inferay-surface-2 text-inferay-text border border-inferay-border"
+									: "text-inferay-text-3 hover:text-inferay-text-2 border border-transparent"
 							}`}
 						>
 							{f.charAt(0).toUpperCase() + f.slice(1)}
@@ -467,7 +467,7 @@ export function Workspaces() {
 					))}
 				</div>
 
-				<span className="text-[8px] tabular-nums text-surgent-text-3">
+				<span className="text-[8px] tabular-nums text-inferay-text-3">
 					{filtered.length}
 				</span>
 
@@ -476,7 +476,7 @@ export function Workspaces() {
 				<button
 					type="button"
 					onClick={handleCreate}
-					className="flex items-center gap-1 h-6 rounded-md border border-surgent-border bg-surgent-surface px-2 text-[9px] text-surgent-text-2 hover:bg-surgent-surface-2 transition-colors"
+					className="flex items-center gap-1 h-6 rounded-md border border-inferay-border bg-inferay-surface px-2 text-[9px] text-inferay-text-2 hover:bg-inferay-surface-2 transition-colors"
 				>
 					<Icons.Plus />
 					New
@@ -499,7 +499,7 @@ export function Workspaces() {
 
 				{/* Detail panel */}
 				{selectedWorkspace && !isCreating && (
-					<div className="w-[240px] shrink-0 border-l border-surgent-border">
+					<div className="w-[240px] shrink-0 border-l border-inferay-border">
 						<WorkspaceDetail
 							workspace={selectedWorkspace}
 							onClose={handleClose}
@@ -512,7 +512,7 @@ export function Workspaces() {
 
 				{/* Create panel */}
 				{isCreating && (
-					<div className="w-[240px] shrink-0 border-l border-surgent-border">
+					<div className="w-[240px] shrink-0 border-l border-inferay-border">
 						<CreateWorkspacePanel onClose={handleClose} />
 					</div>
 				)}

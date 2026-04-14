@@ -1,5 +1,5 @@
 import { watch, type FSWatcher } from "fs";
-import { broadcastAll } from "../../server/ws.ts";
+import { broadcastAll } from "../ws.ts";
 
 interface WatchedDir {
 	watcher: FSWatcher;

@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { mkdir, readdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
-import { PROJECT_ROOT } from "../lib/path-utils.ts";
-import { tryRoute } from "../lib/route-helpers.ts";
+import { PROJECT_ROOT } from "../../lib/path-utils.ts";
+import { tryRoute } from "../../lib/route-helpers.ts";
 
 const TMP_DIR = resolve(PROJECT_ROOT, "data/.tmp");
 

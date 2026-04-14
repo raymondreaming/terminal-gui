@@ -1,4 +1,4 @@
-import { notFound } from "../lib/route-helpers.ts";
+import { notFound } from "../../lib/route-helpers.ts";
 import { CheckpointService } from "../services/checkpoint.ts";
 
 export function checkpointRoutes() {

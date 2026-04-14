@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { badRequest, tryRoute } from "../lib/route-helpers.ts";
+import { badRequest, tryRoute } from "../../lib/route-helpers.ts";
 import {
 	type GitStatusResult,
 	commit,
@@ -16,10 +16,7 @@ import {
 	unstageAll,
 	unstageFile,
 } from "../services/git.ts";
-import {
-	watchDirectory,
-	unwatchDirectory,
-} from "../../features/file-watcher/server.ts";
+import { watchDirectory, unwatchDirectory } from "../services/file-watcher.ts";
 
 interface DiffLine {
 	number: number | null;

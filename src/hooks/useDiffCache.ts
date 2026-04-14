@@ -1,30 +1,21 @@
-/**
- * Diff Cache Hook
- *
- * Provides access to precomputed diffs from the background worker.
- * Falls back to synchronous computation if worker not available.
- */
-
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import {
 	computeLineDiff,
 	type DiffCacheEntry,
 	type DiffWorkerMessage,
 	type DiffWorkerResponse,
 	type ParsedDiff,
-} from "../workers/diff-worker";
+} from "../services/diff-worker";
 
 // Global cache for when worker isn't available
 const fallbackCache = new Map<string, Map<string, DiffCacheEntry>>();
 
 // Singleton worker instance
 let workerInstance: Worker | null = null;
-let workerReady = false;
 const pendingCallbacks = new Map<
 	string,
 	(response: DiffWorkerResponse) => void
 >();
-let messageId = 0;
 
 function getWorker(): Worker | null {
 	if (workerInstance) return workerInstance;
@@ -32,7 +23,7 @@ function getWorker(): Worker | null {
 	try {
 		// Try to create worker
 		workerInstance = new Worker(
-			new URL("../workers/diff-worker.ts", import.meta.url),
+			new URL("../services/diff-worker.ts", import.meta.url),
 			{ type: "module" }
 		);
 
@@ -46,15 +37,10 @@ function getWorker(): Worker | null {
 		};
 
 		workerInstance.onerror = (e) => {
-			console.warn("Diff worker error, falling back to sync:", e);
 			workerInstance = null;
-			workerReady = false;
 		};
-
-		workerReady = true;
 		return workerInstance;
-	} catch (e) {
-		console.warn("Failed to create diff worker, using sync fallback");
+	} catch {
 		return null;
 	}
 }
@@ -128,23 +114,14 @@ export interface UseDiffCacheOptions {
 }
 
 export interface DiffCacheAPI {
-	/** Precompute and cache a diff (call this when AI edits a file) */
 	computeDiff: (
 		filePath: string,
 		before: string,
 		after: string
 	) => Promise<ParsedDiff>;
-
-	/** Get a cached diff (instant, no computation) */
 	getCachedDiff: (filePath: string) => Promise<DiffCacheEntry | null>;
-
-	/** Get cached diff synchronously if available */
 	getCachedDiffSync: (filePath: string) => DiffCacheEntry | null;
-
-	/** Clear cache for this chat */
 	clearCache: () => void;
-
-	/** Check if a diff is cached */
 	hasCachedDiff: (filePath: string) => boolean;
 }
 

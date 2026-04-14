@@ -7,24 +7,27 @@ import {
 	useState,
 } from "react";
 import {
-	type ClaudeChatHandle,
-	type ToolActivity,
-	type QueuedMessageInfo,
 	type AttachedImageInfo,
-	ClaudeChatView,
-	clearChatMessages,
-} from "../../components/chat/ClaudeChatView.tsx";
+	type AgentChatHandle,
+	AgentChatView,
+	type QueuedMessageInfo,
+	type ToolActivity,
+} from "../../components/chat/AgentChatView.tsx";
+import { clearAgentChatMessages } from "../../components/chat/chat-session-store.ts";
 import { CommitGraph } from "../../components/git/CommitGraph.tsx";
+import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
 import {
 	IconGitBranch,
 	IconLayoutGrid,
 	IconLayoutRows,
 	IconPanelRight,
-	IconZen,
 } from "../../components/ui/Icons.tsx";
-import { useCommitDetails, useGitGraph } from "../../hooks/useGitGraph.ts";
+import { ActivityIndicator } from "../../features/activity-feed/ActivityFeed.tsx";
+import { useActivityFeed } from "../../features/activity-feed/useActivityFeed.ts";
+import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
 import { type DiffRequest, useGitDiff } from "../../hooks/useGitDiff.ts";
+import { useCommitDetails, useGitGraph } from "../../hooks/useGitGraph.ts";
 import {
 	type GitFileEntry,
 	type GitProjectStatus,
@@ -32,20 +35,14 @@ import {
 } from "../../hooks/useGitStatus.ts";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
+import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
-	getStatusInfo,
 	getThemeById,
 	loadTerminalState,
 	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
-import {
-	ActivityIndicator,
-	useActivityFeed,
-} from "../../features/activity-feed/index.ts";
-import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
-import { StatusIcon } from "../Terminal/StatusIcon.tsx";
 
 interface Session {
 	groupId: string;
@@ -106,6 +103,10 @@ function basename(p?: string): string {
 	return p.split("/").pop() || p;
 }
 
+function loadZenMode() {
+	return readStoredValue("terminal-editor-zen") === "true";
+}
+
 export function ExperimentalPage() {
 	const [, setTick] = useState(0);
 	const [selectedPaneId, setSelectedPaneId] = useState<string | null>(null);
@@ -120,7 +121,7 @@ export function ExperimentalPage() {
 	const [commitMessage, setCommitMessage] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
 	const [scrollToChange, setScrollToChange] = useState(0);
-	const [zenMode, setZenMode] = useState(false);
+	const [zenMode, setZenMode] = useState(loadZenMode);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [sidebarWidth, setSidebarWidth] = useState(224); // Default w-56 = 224px
 	const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
@@ -128,7 +129,7 @@ export function ExperimentalPage() {
 	);
 	const [fileViewMode, setFileViewMode] = useState<"path" | "tree">("path");
 	const [mainViewMode, setMainViewMode] = useState<"diff" | "graph">("diff");
-	const chatRef = useRef<ClaudeChatHandle>(null);
+	const chatRef = useRef<AgentChatHandle>(null);
 	const sidebarDragRef = useRef<{
 		startX: number;
 		startWidth: number;
@@ -145,7 +146,11 @@ export function ExperimentalPage() {
 	);
 	const { sessions: liveAgentSessions } = useAgentSessions();
 	const trackedDirs = useMemo(
-		() => [...new Set(sessions.map((s) => s.cwd).filter(Boolean))],
+		() => [
+			...new Set(
+				sessions.map((s) => s.cwd).filter((cwd): cwd is string => Boolean(cwd))
+			),
+		],
 		[sessions]
 	);
 	const { projectMap } = useGitStatus(trackedDirs);
@@ -162,8 +167,6 @@ export function ExperimentalPage() {
 	} = useGitDiff();
 
 	const refresh = useCallback(() => setTick((v) => v + 1), []);
-
-	// Ensure WebSocket is connected
 	useEffect(() => {
 		wsClient.connect();
 	}, []);
@@ -192,7 +195,9 @@ export function ExperimentalPage() {
 			return;
 		}
 		setSelectedPaneId((cur) =>
-			cur && sessions.some((s) => s.paneId === cur) ? cur : sessions[0]?.paneId
+			cur && sessions.some((s) => s.paneId === cur)
+				? cur
+				: (sessions[0]?.paneId ?? null)
 		);
 	}, [sessions]);
 
@@ -209,14 +214,10 @@ export function ExperimentalPage() {
 		project?.files.filter((f) => !f.staged && f.status !== "?") ?? [];
 	const untracked = project?.files.filter((f) => f.status === "?") ?? [];
 	const selectedFile = session ? (selectedFiles[session.paneId] ?? null) : null;
-
-	// Fetch commit graph when in graph view
 	const { commits: graphCommits, loading: graphLoading } = useGitGraph(
 		mainViewMode === "graph" ? session?.cwd : undefined,
 		100
 	);
-
-	// Fetch commit details when a commit is selected
 	const { details: commitDetails, loading: commitDetailsLoading } =
 		useCommitDetails(
 			mainViewMode === "graph" ? session?.cwd : undefined,
@@ -260,6 +261,21 @@ export function ExperimentalPage() {
 			setTimeout(() => setScrollToChange((v) => v + 1), 50);
 		}, [refresh]),
 	});
+
+	const updateZenMode = useCallback((next: boolean) => {
+		setZenMode(next);
+		writeStoredValue("terminal-editor-zen", next ? "true" : "false");
+		window.dispatchEvent(new Event("terminal-shell-change"));
+	}, []);
+
+	useEffect(() => {
+		const syncEditorShellState = () => {
+			setZenMode(loadZenMode());
+		};
+		window.addEventListener("terminal-shell-change", syncEditorShellState);
+		return () =>
+			window.removeEventListener("terminal-shell-change", syncEditorShellState);
+	}, []);
 
 	useEffect(() => {
 		if (diff && !diffLoading) checkPendingScroll();
@@ -316,7 +332,7 @@ export function ExperimentalPage() {
 					: idx <= 0
 						? sessions.length - 1
 						: idx - 1;
-			setSelectedPaneId(sessions[next]?.paneId);
+			setSelectedPaneId(sessions[next]?.paneId ?? null);
 		},
 		[sessionIdx, sessions]
 	);
@@ -350,7 +366,6 @@ export function ExperimentalPage() {
 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
-			// Skip if user is in an input field or textarea
 			const target = e.target as HTMLElement;
 			const isEditable =
 				target.tagName === "INPUT" ||
@@ -376,7 +391,7 @@ export function ExperimentalPage() {
 
 	const closePane = useCallback(
 		(paneId: string) => {
-			clearChatMessages(paneId);
+			clearAgentChatMessages(paneId);
 			setClosedPaneIds((prev) => new Set(prev).add(paneId));
 			if (selectedPaneId === paneId) {
 				const rest = sessions.filter((s) => s.paneId !== paneId);
@@ -467,86 +482,14 @@ export function ExperimentalPage() {
 	);
 
 	return (
-		<div className="flex h-full min-h-0 flex-col bg-surgent-bg">
-			<div className="electrobun-webkit-app-region-drag relative flex h-12 shrink-0 items-center gap-2 border-b border-surgent-border bg-surgent-bg px-2">
-				<div className="electrobun-webkit-app-region-no-drag relative z-10 min-w-0 shrink-0 overflow-x-auto">
-					<AgentStrip
-						sessions={sessions}
-						statuses={agentStatuses}
-						selectedId={session?.paneId ?? null}
-						onSelect={setSelectedPaneId}
-						onClose={closePane}
-					/>
-				</div>
-				<div className="flex-1 min-w-0" />
-				{/* Main view mode toggle: Diff / Graph */}
-				<div className="electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-					<button
-						type="button"
-						onClick={() => setMainViewMode("diff")}
-						className={`px-2.5 h-full text-[10px] font-medium transition-all ${
-							mainViewMode === "diff"
-								? "bg-surgent-text/10 text-surgent-text"
-								: "text-surgent-text-3 hover:text-surgent-text-2"
-						}`}
-					>
-						Diff
-					</button>
-					<button
-						type="button"
-						onClick={() => setMainViewMode("graph")}
-						className={`px-2.5 h-full text-[10px] font-medium transition-all ${
-							mainViewMode === "graph"
-								? "bg-surgent-text/10 text-surgent-text"
-								: "text-surgent-text-3 hover:text-surgent-text-2"
-						}`}
-					>
-						Graph
-					</button>
-				</div>
-				{/* Diff view mode buttons */}
-				<div className="electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center rounded-lg border border-surgent-border bg-surgent-surface overflow-hidden h-7">
-					<ToolbarButton
-						active={diffViewMode === "split"}
-						title="Split diff"
-						onClick={() => setDiffViewMode("split")}
-						icon={<IconLayoutGrid size={13} />}
-					/>
-					<ToolbarButton
-						active={diffViewMode === "stacked"}
-						title="Vertical diff"
-						onClick={() => setDiffViewMode("stacked")}
-						icon={<IconLayoutRows size={13} />}
-					/>
-					<ToolbarButton
-						active={diffViewMode === "hunks"}
-						title="Hunk view"
-						onClick={() => setDiffViewMode("hunks")}
-						icon={<IconGitBranch size={13} />}
-					/>
-				</div>
-				<button
-					type="button"
-					onClick={() => setZenMode((v) => !v)}
-					title={zenMode ? "Zen mode: ON" : "Zen mode: OFF"}
-					className={`electrobun-webkit-app-region-no-drag relative z-10 flex shrink-0 items-center justify-center rounded-lg border border-surgent-border bg-surgent-surface h-7 w-7 transition-all ${
-						zenMode
-							? "bg-surgent-text/10 text-surgent-text"
-							: "text-surgent-text-3 hover:text-surgent-text-2"
-					}`}
-				>
-					<IconZen size={13} />
-				</button>
-			</div>
-
+		<div className="flex h-full min-h-0 flex-col bg-inferay-bg">
 			{!session ? (
 				<EmptyState />
 			) : zenMode ? (
 				/* ===== ZEN MODE LAYOUT ===== */
 				<div className="relative flex min-h-0 flex-1">
-					{/* Hidden ClaudeChatView - keeps state alive but not visible */}
 					<div className="hidden">
-						<ClaudeChatView
+						<AgentChatView
 							key={session.paneId}
 							ref={chatRef}
 							paneId={session.paneId}
@@ -562,7 +505,6 @@ export function ExperimentalPage() {
 						/>
 					</div>
 
-					{/* Main content - Diff/Graph takes most space */}
 					<div className="flex-1 min-h-0 min-w-0 overflow-hidden">
 						{mainViewMode === "diff" ? (
 							diffLoading ? (
@@ -589,7 +531,7 @@ export function ExperimentalPage() {
 							)
 						) : graphLoading ? (
 							<div className="flex items-center justify-center h-full">
-								<p className="text-[11px] text-surgent-text-3">
+								<p className="text-[11px] text-inferay-text-3">
 									Loading graph...
 								</p>
 							</div>
@@ -605,70 +547,32 @@ export function ExperimentalPage() {
 						)}
 					</div>
 
-					{/* Right sidebar - file tree */}
 					{!sidebarCollapsed && (
 						<div
-							className="flex shrink-0 flex-row border-l border-surgent-border bg-surgent-bg"
+							className="flex shrink-0 flex-row border-l border-inferay-border bg-inferay-bg"
 							style={{ width: sidebarWidth }}
 						>
 							<div
-								className="w-1 cursor-ew-resize bg-transparent hover:bg-surgent-accent/30 transition-colors shrink-0"
+								className="w-1 cursor-ew-resize bg-transparent hover:bg-inferay-accent/30 transition-colors shrink-0"
 								onMouseDown={handleSidebarDragStart}
 							/>
 							<div className="flex flex-1 flex-col min-w-0">
-								{/* Sidebar Header */}
-								<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
-									<IconGitBranch
-										size={12}
-										className="shrink-0 text-surgent-text-3"
-									/>
-									<span className="flex-1 truncate text-[11px] font-medium text-surgent-text">
-										{project?.branch ?? "No repo"}
-									</span>
-									<button
-										type="button"
-										onClick={() => setSidebarCollapsed(true)}
-										title="Hide sidebar"
-										className="shrink-0 flex items-center justify-center rounded w-5 h-5 text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-all"
-									>
-										<IconPanelRight size={12} />
-									</button>
-								</div>
+								<EditorSidebarHeader
+									branch={project?.branch}
+									mainViewMode={mainViewMode}
+									diffViewMode={diffViewMode}
+									fileViewMode={fileViewMode}
+									onMainViewModeChange={setMainViewMode}
+									onDiffViewModeChange={setDiffViewMode}
+									onFileViewModeChange={setFileViewMode}
+									onCollapse={() => setSidebarCollapsed(true)}
+								/>
 
-								{/* Files View */}
 								<div className="flex-1 min-h-0 overflow-y-auto">
-									<div className="sticky top-0 z-20 flex items-center justify-end gap-1 px-2 py-1 border-b border-surgent-border/30 bg-surgent-bg">
-										<div className="flex items-center rounded border border-surgent-border bg-surgent-surface overflow-hidden">
-											<button
-												type="button"
-												onClick={() => setFileViewMode("path")}
-												title="Path view"
-												className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-													fileViewMode === "path"
-														? "bg-surgent-text/10 text-surgent-text"
-														: "text-surgent-text-3 hover:text-surgent-text-2"
-												}`}
-											>
-												Path
-											</button>
-											<button
-												type="button"
-												onClick={() => setFileViewMode("tree")}
-												title="Tree view"
-												className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-													fileViewMode === "tree"
-														? "bg-surgent-text/10 text-surgent-text"
-														: "text-surgent-text-3 hover:text-surgent-text-2"
-												}`}
-											>
-												Tree
-											</button>
-										</div>
-									</div>
 									<FileGroup
 										title="Unstaged"
 										files={[...modified, ...untracked]}
-										color="text-surgent-text-2"
+										color="text-inferay-text-2"
 										selected={selectedFile}
 										onSelect={(f) =>
 											session.cwd &&
@@ -703,7 +607,7 @@ export function ExperimentalPage() {
 									/>
 									{project && !project.files.length && (
 										<div className="flex items-center justify-center py-6">
-											<p className="text-[10px] text-surgent-text-3/50">
+											<p className="text-[10px] text-inferay-text-3/50">
 												Clean
 											</p>
 										</div>
@@ -718,39 +622,54 @@ export function ExperimentalPage() {
 							type="button"
 							onClick={() => setSidebarCollapsed(false)}
 							title="Show file sidebar"
-							className="shrink-0 flex items-center justify-center w-6 border-l border-surgent-border bg-surgent-bg text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/5 transition-all"
+							className="shrink-0 flex items-center justify-center w-6 border-l border-inferay-border bg-inferay-bg text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-text/5 transition-all"
 						>
 							<IconPanelRight size={12} />
 						</button>
 					)}
 
-					{/* Floating input at bottom center */}
 					<ZenModeInput
 						chatRef={chatRef}
 						agentKind={session.agentKind}
-						onExitZen={() => setZenMode(false)}
+						onExitZen={() => updateZenMode(false)}
 					/>
 				</div>
 			) : (
 				/* ===== NORMAL MODE LAYOUT ===== */
 				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
-					<section className="flex min-h-0 min-w-0 flex-col border-r border-surgent-border">
-						<div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-surgent-border bg-surgent-text/[0.02]">
-							<span className="text-surgent-accent">
+					<section className="flex min-h-0 min-w-0 flex-col border-r border-inferay-border">
+						<div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-inferay-border bg-inferay-text/[0.02]">
+							<span className="text-inferay-accent">
 								{getAgentIcon(session.agentKind, 10)}
 							</span>
-							<span className="text-[10px] font-medium text-surgent-text-2">
+							<span className="text-[10px] font-medium text-inferay-text-2">
 								{getAgentDefinition(session.agentKind).label}
 							</span>
 							{session.cwd && (
 								<>
-									<span className="text-[10px] text-surgent-text-3">›</span>
-									<span
-										className="text-[10px] font-medium text-surgent-text truncate"
-										title={session.cwd}
-									>
-										{session.cwd.split("/").pop() || session.cwd}
-									</span>
+									<span className="text-[10px] text-inferay-text-3">›</span>
+									{sessions.length > 1 ? (
+										<DropdownButton
+											value={session.paneId}
+											options={sessions.map((item) => ({
+												id: item.paneId,
+												label: basename(item.cwd),
+												detail: getAgentDefinition(item.agentKind).label,
+												icon: getAgentIcon(item.agentKind, 12),
+											}))}
+											onChange={setSelectedPaneId}
+											minWidth={220}
+											buttonClassName="h-6 rounded-md border-transparent bg-inferay-surface-2 px-2 text-[10px] font-medium hover:bg-inferay-surface"
+											labelClassName="max-w-[120px] truncate text-[10px]"
+										/>
+									) : (
+										<span
+											className="text-[10px] font-medium text-inferay-text truncate"
+											title={session.cwd}
+										>
+											{session.cwd.split("/").pop() || session.cwd}
+										</span>
+									)}
 								</>
 							)}
 							<span className="flex-1" />
@@ -758,7 +677,7 @@ export function ExperimentalPage() {
 							<button
 								type="button"
 								onClick={() => closePane(session.paneId)}
-								className="flex items-center justify-center h-4 w-4 rounded transition-colors text-surgent-text-3 hover:text-red-400 hover:bg-red-500/15"
+								className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-red-400 hover:bg-red-500/15"
 								title="Close session"
 							>
 								<svg
@@ -776,7 +695,7 @@ export function ExperimentalPage() {
 							</button>
 						</div>
 						<div className="flex-1 min-h-0">
-							<ClaudeChatView
+							<AgentChatView
 								key={session.paneId}
 								ref={chatRef}
 								paneId={session.paneId}
@@ -793,12 +712,11 @@ export function ExperimentalPage() {
 						</div>
 					</section>
 
-					<aside className="min-h-0 min-w-0 bg-surgent-bg">
+					<aside className="min-h-0 min-w-0 bg-inferay-bg">
 						<div className="flex h-full min-h-0 flex-col">
 							<div className="flex min-h-0 flex-1 overflow-hidden">
 								<div className="min-h-0 min-w-0 flex-1 overflow-hidden">
 									{mainViewMode === "diff" ? (
-										// Diff View
 										diffLoading ? (
 											<Placeholder label="Loading diff..." />
 										) : diff && request ? (
@@ -826,7 +744,7 @@ export function ExperimentalPage() {
 									) : // Graph View - full width, details show in sidebar
 									graphLoading ? (
 										<div className="flex items-center justify-center h-full">
-											<p className="text-[11px] text-surgent-text-3">
+											<p className="text-[11px] text-inferay-text-3">
 												Loading graph...
 											</p>
 										</div>
@@ -847,76 +765,37 @@ export function ExperimentalPage() {
 										type="button"
 										onClick={() => setSidebarCollapsed(false)}
 										title="Show file sidebar"
-										className="shrink-0 flex items-center justify-center w-6 border-l border-surgent-border bg-surgent-bg text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/5 transition-all"
+										className="shrink-0 flex items-center justify-center w-6 border-l border-inferay-border bg-inferay-bg text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-text/5 transition-all"
 									>
 										<IconPanelRight size={12} />
 									</button>
 								) : (
 									<div
-										className="flex shrink-0 flex-row border-l border-surgent-border bg-surgent-bg"
+										className="flex shrink-0 flex-row border-l border-inferay-border bg-inferay-bg"
 										style={{ width: sidebarWidth }}
 									>
-										{/* Drag handle for resizing sidebar */}
 										<div
-											className="w-1 cursor-ew-resize bg-transparent hover:bg-surgent-accent/30 transition-colors shrink-0"
+											className="w-1 cursor-ew-resize bg-transparent hover:bg-inferay-accent/30 transition-colors shrink-0"
 											onMouseDown={handleSidebarDragStart}
 										/>
 										<div className="flex flex-1 flex-col min-w-0">
-											{/* Sidebar Header */}
-											<div className="sticky top-0 z-10 flex items-center gap-1.5 border-b border-surgent-border bg-surgent-bg px-2.5 py-2">
-												<IconGitBranch
-													size={12}
-													className="shrink-0 text-surgent-text-3"
-												/>
-												<span className="flex-1 truncate text-[11px] font-medium text-surgent-text">
-													{project?.branch ?? "No repo"}
-												</span>
-												<button
-													type="button"
-													onClick={() => setSidebarCollapsed(true)}
-													title="Hide sidebar"
-													className="shrink-0 flex items-center justify-center rounded w-5 h-5 text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-all"
-												>
-													<IconPanelRight size={12} />
-												</button>
-											</div>
+											<EditorSidebarHeader
+												branch={project?.branch}
+												mainViewMode={mainViewMode}
+												diffViewMode={diffViewMode}
+												fileViewMode={fileViewMode}
+												onMainViewModeChange={setMainViewMode}
+												onDiffViewModeChange={setDiffViewMode}
+												onFileViewModeChange={setFileViewMode}
+												onCollapse={() => setSidebarCollapsed(true)}
+											/>
 
-											{/* Files View */}
 											{mainViewMode !== "graph" && (
 												<div className="flex-1 min-h-0 overflow-y-auto">
-													{/* Path/Tree toggle */}
-													<div className="sticky top-0 z-20 flex items-center justify-end gap-1 px-2 py-1 border-b border-surgent-border/30 bg-surgent-bg">
-														<div className="flex items-center rounded border border-surgent-border bg-surgent-surface overflow-hidden">
-															<button
-																type="button"
-																onClick={() => setFileViewMode("path")}
-																title="Path view"
-																className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-																	fileViewMode === "path"
-																		? "bg-surgent-text/10 text-surgent-text"
-																		: "text-surgent-text-3 hover:text-surgent-text-2"
-																}`}
-															>
-																Path
-															</button>
-															<button
-																type="button"
-																onClick={() => setFileViewMode("tree")}
-																title="Tree view"
-																className={`px-1.5 py-0.5 text-[8px] font-medium transition-all ${
-																	fileViewMode === "tree"
-																		? "bg-surgent-text/10 text-surgent-text"
-																		: "text-surgent-text-3 hover:text-surgent-text-2"
-																}`}
-															>
-																Tree
-															</button>
-														</div>
-													</div>
 													<FileGroup
 														title="Unstaged"
 														files={[...modified, ...untracked]}
-														color="text-surgent-text-2"
+														color="text-inferay-text-2"
 														selected={selectedFile}
 														onSelect={(f) =>
 															session.cwd &&
@@ -952,14 +831,14 @@ export function ExperimentalPage() {
 
 													{project && !project.files.length && (
 														<div className="flex items-center justify-center py-6">
-															<p className="text-[10px] text-surgent-text-3/50">
+															<p className="text-[10px] text-inferay-text-3/50">
 																Clean
 															</p>
 														</div>
 													)}
 													{!project && (
 														<div className="flex items-center justify-center py-6">
-															<p className="px-3 text-center text-[10px] text-surgent-text-3/50">
+															<p className="px-3 text-center text-[10px] text-inferay-text-3/50">
 																No repository
 															</p>
 														</div>
@@ -967,18 +846,16 @@ export function ExperimentalPage() {
 												</div>
 											)}
 
-											{/* Graph View - show commit details or WIP files in sidebar */}
 											{mainViewMode === "graph" && (
 												<div className="flex-1 min-h-0 overflow-y-auto">
 													{selectedCommitHash === "wip" ? (
-														// WIP selected - show current changes
 														<>
-															<div className="sticky top-0 z-10 flex items-center gap-2 px-3 py-2 border-b border-surgent-border bg-surgent-bg">
-																<div className="w-3 h-3 rounded-full border-2 border-dashed border-surgent-accent" />
-																<span className="text-[11px] font-medium text-surgent-text">
+															<div className="sticky top-0 z-10 flex items-center gap-2 px-3 py-2 border-b border-inferay-border bg-inferay-bg">
+																<div className="w-3 h-3 rounded-full border-2 border-dashed border-inferay-accent" />
+																<span className="text-[11px] font-medium text-inferay-text">
 																	WIP on {project?.branch ?? "branch"}
 																</span>
-																<span className="ml-auto text-[9px] text-surgent-text-3">
+																<span className="ml-auto text-[9px] text-inferay-text-3">
 																	{files.length} files
 																</span>
 															</div>
@@ -986,17 +863,17 @@ export function ExperimentalPage() {
 																{files.map((f, i) => (
 																	<div
 																		key={i}
-																		className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-surgent-text/5"
+																		className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-inferay-text/5"
 																	>
 																		<FileStatusIcon status={f.status} />
-																		<span className="flex-1 truncate text-[10px] font-mono text-surgent-text-2">
+																		<span className="flex-1 truncate text-[10px] font-mono text-inferay-text-2">
 																			{f.path}
 																		</span>
 																	</div>
 																))}
 																{files.length === 0 && (
 																	<div className="flex items-center justify-center py-6">
-																		<p className="text-[10px] text-surgent-text-3/50">
+																		<p className="text-[10px] text-inferay-text-3/50">
 																			No changes
 																		</p>
 																	</div>
@@ -1004,10 +881,9 @@ export function ExperimentalPage() {
 															</div>
 														</>
 													) : selectedCommitHash ? (
-														// Commit selected - show commit details
 														commitDetailsLoading ? (
 															<div className="flex items-center justify-center py-8">
-																<p className="text-[10px] text-surgent-text-3">
+																<p className="text-[10px] text-inferay-text-3">
 																	Loading...
 																</p>
 															</div>
@@ -1015,15 +891,14 @@ export function ExperimentalPage() {
 															<CommitDetailsPanel details={commitDetails} />
 														) : (
 															<div className="flex items-center justify-center py-8">
-																<p className="text-[10px] text-surgent-text-3">
+																<p className="text-[10px] text-inferay-text-3">
 																	No details
 																</p>
 															</div>
 														)
 													) : (
-														// Nothing selected
 														<div className="flex items-center justify-center py-8">
-															<p className="text-[10px] text-surgent-text-3 px-4 text-center">
+															<p className="text-[10px] text-inferay-text-3 px-4 text-center">
 																Select a commit to view details
 															</p>
 														</div>
@@ -1031,14 +906,12 @@ export function ExperimentalPage() {
 												</div>
 											)}
 
-											{/* Commit Section - only show when not in graph view */}
 											{project && mainViewMode !== "graph" && (
-												<div className="shrink-0 border-t border-surgent-border">
-													{/* Commit header */}
-													<div className="flex items-center justify-between px-2.5 py-1.5 border-b border-surgent-border/50">
+												<div className="shrink-0 border-t border-inferay-border">
+													<div className="flex items-center justify-between px-2.5 py-1.5 border-b border-inferay-border/50">
 														<div className="flex items-center gap-1.5">
 															<svg
-																className="w-3 h-3 text-surgent-text-3"
+																className="w-3 h-3 text-inferay-text-3"
 																viewBox="0 0 24 24"
 																fill="none"
 																stroke="currentColor"
@@ -1048,20 +921,19 @@ export function ExperimentalPage() {
 																<line x1="1.05" y1="12" x2="7" y2="12" />
 																<line x1="17.01" y1="12" x2="22.96" y2="12" />
 															</svg>
-															<span className="text-[9px] font-medium text-surgent-text-2">
+															<span className="text-[9px] font-medium text-inferay-text-2">
 																Commit
 															</span>
 														</div>
 														{commitMessage.length > 0 && (
 															<span
-																className={`text-[9px] tabular-nums ${commitMessage.length > 72 ? "text-amber-400" : "text-surgent-text-3"}`}
+																className={`text-[9px] tabular-nums ${commitMessage.length > 72 ? "text-amber-400" : "text-inferay-text-3"}`}
 															>
 																{commitMessage.length}
 															</span>
 														)}
 													</div>
 													<div className="p-2 space-y-2">
-														{/* Summary line */}
 														<input
 															type="text"
 															value={commitMessage.split("\n")[0] || ""}
@@ -1071,7 +943,7 @@ export function ExperimentalPage() {
 																setCommitMessage(lines.join("\n"));
 															}}
 															placeholder="Summary (required)"
-															className="w-full rounded border border-surgent-border bg-surgent-surface px-2 py-1.5 text-[11px] text-surgent-text placeholder:text-surgent-text-3/50 focus:border-surgent-accent focus:outline-none"
+															className="w-full rounded border border-inferay-border bg-inferay-surface px-2 py-1.5 text-[11px] text-inferay-text placeholder:text-inferay-text-3/50 focus:border-inferay-accent focus:outline-none"
 															onKeyDown={(e) => {
 																if (
 																	e.key === "Enter" &&
@@ -1082,7 +954,7 @@ export function ExperimentalPage() {
 																}
 															}}
 														/>
-														{/* Description */}
+
 														<textarea
 															value={commitMessage
 																.split("\n")
@@ -1099,10 +971,10 @@ export function ExperimentalPage() {
 																);
 															}}
 															placeholder="Description (optional)"
-															className="w-full resize-none rounded border border-surgent-border bg-surgent-surface px-2 py-1.5 text-[10px] text-surgent-text placeholder:text-surgent-text-3/50 focus:border-surgent-accent focus:outline-none"
+															className="w-full resize-none rounded border border-inferay-border bg-inferay-surface px-2 py-1.5 text-[10px] text-inferay-text placeholder:text-inferay-text-3/50 focus:border-inferay-accent focus:outline-none"
 															rows={2}
 														/>
-														{/* Commit button */}
+
 														<button
 															type="button"
 															onClick={handleCommit}
@@ -1111,7 +983,7 @@ export function ExperimentalPage() {
 																!staged.length ||
 																isCommitting
 															}
-															className="w-full flex items-center justify-center gap-1.5 rounded bg-surgent-accent hover:bg-surgent-accent/90 px-3 py-1.5 text-[10px] font-medium text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+															className="w-full flex items-center justify-center gap-1.5 rounded bg-inferay-accent hover:bg-inferay-accent/90 px-3 py-1.5 text-[10px] font-medium text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
 														>
 															<svg
 																className="w-3 h-3"
@@ -1143,87 +1015,14 @@ export function ExperimentalPage() {
 	);
 }
 
-function AgentStrip({
-	sessions,
-	statuses,
-	selectedId,
-	onSelect,
-	onClose,
-}: {
-	sessions: Session[];
-	statuses: Map<string, string>;
-	selectedId: string | null;
-	onSelect: (id: string) => void;
-	onClose: (id: string) => void;
-}) {
-	return (
-		<div className="flex items-center gap-1 overflow-x-auto py-1">
-			{sessions.map((s) => {
-				const selected = s.paneId === selectedId;
-				const info = getStatusInfo(statuses.get(s.paneId) ?? "idle");
-				return (
-					<div
-						key={s.paneId}
-						className={`group flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 cursor-pointer transition-colors ${
-							selected
-								? "bg-surgent-surface-2 text-surgent-text"
-								: "text-surgent-text-3 hover:bg-surgent-surface hover:text-surgent-text-2"
-						}`}
-						title={`${basename(s.cwd)} - ${getAgentDefinition(s.agentKind).label}`}
-						onClick={() => onSelect(s.paneId)}
-					>
-						<StatusIcon
-							iconType={info.iconType}
-							size={12}
-							className={info.iconColor}
-						/>
-						<span className="max-w-[110px] truncate text-[10px] font-medium">
-							{basename(s.cwd)}
-						</span>
-						{s.messageCount > 0 && (
-							<span
-								className={`rounded-md px-1.5 py-0.5 text-[9px] tabular-nums ${selected ? "bg-surgent-text/10 text-surgent-text" : "bg-surgent-text/5 text-surgent-text-3"}`}
-							>
-								{s.messageCount}
-							</span>
-						)}
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								onClose(s.paneId);
-							}}
-							className="ml-0.5 w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-surgent-text/10 transition-opacity"
-							title="Close"
-						>
-							<svg
-								aria-hidden
-								width="8"
-								height="8"
-								viewBox="0 0 8 8"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-							>
-								<path d="M1 1l6 6M7 1L1 7" />
-							</svg>
-						</button>
-					</div>
-				);
-			})}
-		</div>
-	);
-}
-
 function EmptyState() {
 	return (
 		<div className="flex flex-1 items-center justify-center px-6">
-			<div className="max-w-md border border-surgent-border bg-surgent-surface p-6 text-center">
-				<h2 className="text-[15px] font-semibold text-surgent-text">
+			<div className="max-w-md border border-inferay-border bg-inferay-surface p-6 text-center">
+				<h2 className="text-[15px] font-semibold text-inferay-text">
 					No saved agent sessions
 				</h2>
-				<p className="mt-2 text-[12px] leading-5 text-surgent-text-3">
+				<p className="mt-2 text-[12px] leading-5 text-inferay-text-3">
 					Open Claude or Codex in the terminal page, pick a project directory,
 					and it will appear here.
 				</p>
@@ -1235,14 +1034,128 @@ function EmptyState() {
 function Placeholder({ label }: { label: string }) {
 	return (
 		<div className="flex h-full items-center justify-center px-6">
-			<p className="max-w-xs text-center text-[12px] leading-5 text-surgent-text-3">
+			<p className="max-w-xs text-center text-[12px] leading-5 text-inferay-text-3">
 				{label}
 			</p>
 		</div>
 	);
 }
 
-// Commit details panel for graph view
+function EditorSidebarHeader({
+	branch,
+	mainViewMode,
+	diffViewMode,
+	fileViewMode,
+	onMainViewModeChange,
+	onDiffViewModeChange,
+	onFileViewModeChange,
+	onCollapse,
+}: {
+	branch?: string;
+	mainViewMode: "diff" | "graph";
+	diffViewMode: DiffViewMode;
+	fileViewMode: "path" | "tree";
+	onMainViewModeChange: (mode: "diff" | "graph") => void;
+	onDiffViewModeChange: (mode: DiffViewMode) => void;
+	onFileViewModeChange: (mode: "path" | "tree") => void;
+	onCollapse: () => void;
+}) {
+	return (
+		<>
+			<div className="sticky top-0 z-20 flex items-center gap-2 border-b border-inferay-border bg-inferay-bg px-2.5 py-2">
+				<div className="flex items-center gap-1 rounded-md border border-inferay-border bg-inferay-surface px-1.5 py-1 text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
+					<IconGitBranch size={10} className="text-inferay-text-3" />
+					<span>Git</span>
+				</div>
+				<span className="flex-1 truncate text-[11px] font-medium text-inferay-text">
+					{branch ?? "No repo"}
+				</span>
+				<button
+					type="button"
+					onClick={onCollapse}
+					title="Hide sidebar"
+					className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-inferay-text-3 transition-all hover:bg-inferay-text/10 hover:text-inferay-text-2"
+				>
+					<IconPanelRight size={12} />
+				</button>
+			</div>
+			<div className="sticky top-[38px] z-20 flex flex-wrap items-center gap-2 border-b border-inferay-border/50 bg-inferay-bg px-2.5 py-1.5">
+				<div className="flex h-7 items-center overflow-hidden rounded-lg border border-inferay-border bg-inferay-surface">
+					<button
+						type="button"
+						onClick={() => onMainViewModeChange("diff")}
+						className={`px-2.5 text-[10px] font-medium transition-colors ${
+							mainViewMode === "diff"
+								? "bg-inferay-text/10 text-inferay-text"
+								: "text-inferay-text-3 hover:text-inferay-text-2"
+						}`}
+					>
+						Diff
+					</button>
+					<button
+						type="button"
+						onClick={() => onMainViewModeChange("graph")}
+						className={`px-2.5 text-[10px] font-medium transition-colors ${
+							mainViewMode === "graph"
+								? "bg-inferay-text/10 text-inferay-text"
+								: "text-inferay-text-3 hover:text-inferay-text-2"
+						}`}
+					>
+						Graph
+					</button>
+				</div>
+				<div className="flex h-7 items-center overflow-hidden rounded-lg border border-inferay-border bg-inferay-surface">
+					<ToolbarButton
+						active={diffViewMode === "split"}
+						title="Split diff"
+						onClick={() => onDiffViewModeChange("split")}
+						icon={<IconLayoutGrid size={13} />}
+					/>
+					<ToolbarButton
+						active={diffViewMode === "stacked"}
+						title="Vertical diff"
+						onClick={() => onDiffViewModeChange("stacked")}
+						icon={<IconLayoutRows size={13} />}
+					/>
+					<ToolbarButton
+						active={diffViewMode === "hunks"}
+						title="Hunk view"
+						onClick={() => onDiffViewModeChange("hunks")}
+						icon={<IconGitBranch size={13} />}
+					/>
+				</div>
+				{mainViewMode === "diff" ? (
+					<div className="ml-auto flex h-7 items-center overflow-hidden rounded-lg border border-inferay-border bg-inferay-surface">
+						<button
+							type="button"
+							onClick={() => onFileViewModeChange("path")}
+							title="Path view"
+							className={`px-2 text-[9px] font-medium transition-colors ${
+								fileViewMode === "path"
+									? "bg-inferay-text/10 text-inferay-text"
+									: "text-inferay-text-3 hover:text-inferay-text-2"
+							}`}
+						>
+							Path
+						</button>
+						<button
+							type="button"
+							onClick={() => onFileViewModeChange("tree")}
+							title="Tree view"
+							className={`px-2 text-[9px] font-medium transition-colors ${
+								fileViewMode === "tree"
+									? "bg-inferay-text/10 text-inferay-text"
+									: "text-inferay-text-3 hover:text-inferay-text-2"
+							}`}
+						>
+							Tree
+						</button>
+					</div>
+				) : null}
+			</div>
+		</>
+	);
+}
 function CommitDetailsPanel({
 	details,
 }: {
@@ -1261,41 +1174,38 @@ function CommitDetailsPanel({
 }) {
 	return (
 		<div className="flex flex-col h-full">
-			{/* Commit info header */}
-			<div className="shrink-0 border-b border-surgent-border p-3 space-y-2">
+			<div className="shrink-0 border-b border-inferay-border p-3 space-y-2">
 				<div className="flex items-center gap-2">
-					<span className="font-mono text-[11px] text-surgent-accent font-medium">
+					<span className="font-mono text-[11px] text-inferay-accent font-medium">
 						{details.hash.slice(0, 7)}
 					</span>
-					<span className="text-[10px] text-surgent-text-3">
+					<span className="text-[10px] text-inferay-text-3">
 						{details.date}
 					</span>
 				</div>
-				<p className="text-[11px] text-surgent-text leading-relaxed">
+				<p className="text-[11px] text-inferay-text leading-relaxed">
 					{details.message}
 				</p>
-				<p className="text-[10px] text-surgent-text-2">{details.author}</p>
+				<p className="text-[10px] text-inferay-text-2">{details.author}</p>
 			</div>
 
-			{/* Files changed */}
-			<div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-surgent-border/50 bg-surgent-text/[0.02]">
-				<span className="text-[9px] font-medium text-surgent-text-2">
+			<div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-inferay-border/50 bg-inferay-text/[0.02]">
+				<span className="text-[9px] font-medium text-inferay-text-2">
 					Files Changed
 				</span>
-				<span className="text-[9px] text-surgent-text-3">
+				<span className="text-[9px] text-inferay-text-3">
 					{details.files.length}
 				</span>
 			</div>
 
-			{/* File list */}
 			<div className="flex-1 min-h-0 overflow-y-auto">
 				{details.files.map((file, i) => (
 					<div
 						key={i}
-						className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-surgent-text/5 cursor-pointer"
+						className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-inferay-text/5 cursor-pointer"
 					>
 						<FileStatusIcon status={file.status} />
-						<span className="flex-1 truncate text-[10px] font-mono text-surgent-text-2">
+						<span className="flex-1 truncate text-[10px] font-mono text-inferay-text-2">
 							{file.path.split("/").pop()}
 						</span>
 						<div className="shrink-0 flex items-center gap-1 text-[9px] tabular-nums">
@@ -1310,8 +1220,7 @@ function CommitDetailsPanel({
 				))}
 			</div>
 
-			{/* Stats summary */}
-			<div className="shrink-0 flex items-center justify-center gap-3 px-3 py-2 border-t border-surgent-border text-[10px]">
+			<div className="shrink-0 flex items-center justify-center gap-3 px-3 py-2 border-t border-inferay-border text-[10px]">
 				<span className="text-git-added">
 					+{details.files.reduce((sum, f) => sum + f.additions, 0)}
 				</span>
@@ -1322,8 +1231,6 @@ function CommitDetailsPanel({
 		</div>
 	);
 }
-
-// Get tool icon for zen mode display
 function getZenToolIcon(toolName: string, isAnimated = false): React.ReactNode {
 	const baseClass = "w-3 h-3 shrink-0";
 	const animateClass = isAnimated ? "animate-pulse" : "";
@@ -1417,7 +1324,6 @@ function getZenToolIcon(toolName: string, isAnimated = false): React.ReactNode {
 			</svg>
 		);
 	}
-	// Default tool icon
 	return (
 		<svg
 			className={`${baseClass} ${animateClass}`}
@@ -1430,14 +1336,12 @@ function getZenToolIcon(toolName: string, isAnimated = false): React.ReactNode {
 		</svg>
 	);
 }
-
-// Floating input for Zen mode
 function ZenModeInput({
 	chatRef,
 	agentKind,
 	onExitZen,
 }: {
-	chatRef: React.RefObject<ClaudeChatHandle | null>;
+	chatRef: React.RefObject<AgentChatHandle | null>;
 	agentKind: "claude" | "codex";
 	onExitZen: () => void;
 }) {
@@ -1451,8 +1355,6 @@ function ZenModeInput({
 	const [editingQueueText, setEditingQueueText] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-
-	// Poll all shared state from chatRef (activities, queue, loading, images)
 	useEffect(() => {
 		const interval = setInterval(() => {
 			if (chatRef.current) {
@@ -1491,30 +1393,24 @@ function ZenModeInput({
 		},
 		[handleSubmit, onExitZen]
 	);
-
-	// Focus input on mount
 	useEffect(() => {
 		inputRef.current?.focus();
 	}, []);
-
-	// Get latest tool activity for display
 	const latestActivity = toolActivities[toolActivities.length - 1];
 	const activityCount = toolActivities.length;
 
 	return (
 		<div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4">
-			<div className="relative flex flex-col rounded-xl border border-surgent-border bg-surgent-surface/95 backdrop-blur-sm shadow-2xl overflow-visible">
-				{/* Main status bar - shows when loading */}
+			<div className="relative flex flex-col rounded-xl border border-inferay-border bg-inferay-surface/95 backdrop-blur-sm shadow-2xl overflow-visible">
 				{isLoading && (
 					<div
-						className="relative flex items-center justify-between gap-3 px-3 py-2 border-b border-surgent-border/50 rounded-t-xl"
+						className="relative flex items-center justify-between gap-3 px-3 py-2 border-b border-inferay-border/50 rounded-t-xl"
 						onMouseEnter={() => setIsActivityHovered(true)}
 						onMouseLeave={() => setIsActivityHovered(false)}
 					>
-						{/* Activity dropdown - appears on hover above status bar */}
 						{isActivityHovered && activityCount > 0 && (
-							<div className="absolute bottom-full left-0 right-0 mb-1 rounded-lg overflow-hidden bg-surgent-surface shadow-lg border border-surgent-border z-50">
-								<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-surgent-border text-surgent-text-3">
+							<div className="absolute bottom-full left-0 right-0 mb-1 rounded-lg overflow-hidden bg-inferay-surface shadow-lg border border-inferay-border z-50">
+								<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-inferay-border text-inferay-text-3">
 									<span>Activity</span>
 									<span className="tabular-nums">{activityCount}</span>
 								</div>
@@ -1524,18 +1420,18 @@ function ZenModeInput({
 											key={activity.id}
 											className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] ${
 												idx < toolActivities.length - 1
-													? "border-b border-surgent-border/50"
+													? "border-b border-inferay-border/50"
 													: ""
 											}`}
 										>
-											<span className="shrink-0 text-surgent-text-3">
+											<span className="shrink-0 text-inferay-text-3">
 												{getZenToolIcon(activity.toolName, false)}
 											</span>
-											<span className="flex-1 truncate text-surgent-text-2">
+											<span className="flex-1 truncate text-inferay-text-2">
 												{activity.summary}
 											</span>
 											{activity.isStreaming && (
-												<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-surgent-accent animate-pulse" />
+												<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-inferay-accent animate-pulse" />
 											)}
 										</div>
 									))}
@@ -1543,38 +1439,36 @@ function ZenModeInput({
 							</div>
 						)}
 
-						{/* Left side: Activity indicator */}
 						{latestActivity ? (
 							<div className="flex items-center gap-2 min-w-0 flex-1">
-								<span className="shrink-0 text-surgent-accent">
+								<span className="shrink-0 text-inferay-accent">
 									{getZenToolIcon(
 										latestActivity.toolName,
 										latestActivity.isStreaming
 									)}
 								</span>
-								<span className="text-[11px] text-surgent-text truncate">
+								<span className="text-[11px] text-inferay-text truncate">
 									{latestActivity.summary}
 								</span>
 								{activityCount > 1 && (
-									<span className="shrink-0 text-[9px] text-surgent-accent bg-surgent-accent/10 px-1.5 py-0.5 rounded-full tabular-nums">
+									<span className="shrink-0 text-[9px] text-inferay-accent bg-inferay-accent/10 px-1.5 py-0.5 rounded-full tabular-nums">
 										+{activityCount - 1}
 									</span>
 								)}
 							</div>
 						) : (
 							<div className="flex items-center gap-2">
-								<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-surgent-accent" />
-								<span className="text-[11px] text-surgent-text-2">
+								<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-inferay-accent" />
+								<span className="text-[11px] text-inferay-text-2">
 									Working...
 								</span>
 							</div>
 						)}
 
-						{/* Right side: Stop button */}
 						<button
 							type="button"
 							onClick={handleStop}
-							className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-surgent-surface-2 text-surgent-text-2 hover:bg-surgent-surface-3 border border-surgent-border"
+							className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3 border border-inferay-border"
 						>
 							<svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
 								<rect x="6" y="6" width="12" height="12" rx="1" />
@@ -1584,19 +1478,18 @@ function ZenModeInput({
 					</div>
 				)}
 
-				{/* Queued messages panel */}
 				{queuedMessages.length > 0 && (
 					<div
-						className="border-b border-surgent-border/50 overflow-y-auto"
+						className="border-b border-inferay-border/50 overflow-y-auto"
 						style={{ maxHeight: "120px" }}
 					>
-						<div className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase text-surgent-text-3 border-b border-surgent-border/30">
+						<div className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase text-inferay-text-3 border-b border-inferay-border/30">
 							Queued messages
 						</div>
 						{queuedMessages.map((qm, idx) => (
 							<div
 								key={qm.id}
-								className="group flex items-start gap-2 px-3 py-1.5 hover:bg-surgent-text/5 transition-colors"
+								className="group flex items-start gap-2 px-3 py-1.5 hover:bg-inferay-text/5 transition-colors"
 								style={{
 									borderBottom:
 										idx < queuedMessages.length - 1
@@ -1604,7 +1497,7 @@ function ZenModeInput({
 											: undefined,
 								}}
 							>
-								<span className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums text-surgent-text-3">
+								<span className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums text-inferay-text-3">
 									{idx + 1}
 								</span>
 								{editingQueueId === qm.id ? (
@@ -1625,7 +1518,7 @@ function ZenModeInput({
 													setEditingQueueId(null);
 												}
 											}}
-											className="flex-1 bg-surgent-surface-2 text-[11px] outline-none border-none px-1 py-0.5 rounded text-surgent-text"
+											className="flex-1 bg-inferay-surface-2 text-[11px] outline-none border-none px-1 py-0.5 rounded text-inferay-text"
 										/>
 										<button
 											type="button"
@@ -1636,7 +1529,7 @@ function ZenModeInput({
 												}
 												setEditingQueueId(null);
 											}}
-											className="shrink-0 p-0.5 rounded text-surgent-accent"
+											className="shrink-0 p-0.5 rounded text-inferay-accent"
 											title="Save"
 										>
 											<svg
@@ -1652,7 +1545,7 @@ function ZenModeInput({
 										<button
 											type="button"
 											onClick={() => setEditingQueueId(null)}
-											className="shrink-0 p-0.5 rounded text-surgent-text-3"
+											className="shrink-0 p-0.5 rounded text-inferay-text-3"
 											title="Cancel"
 										>
 											<svg
@@ -1669,7 +1562,7 @@ function ZenModeInput({
 									</div>
 								) : (
 									<>
-										<span className="flex-1 text-[11px] truncate text-surgent-text">
+										<span className="flex-1 text-[11px] truncate text-inferay-text">
 											{qm.displayText}
 										</span>
 										<div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1679,7 +1572,7 @@ function ZenModeInput({
 													setEditingQueueId(qm.id);
 													setEditingQueueText(qm.text);
 												}}
-												className="p-0.5 rounded transition-colors hover:bg-white/10 text-surgent-text-3"
+												className="p-0.5 rounded transition-colors hover:bg-white/10 text-inferay-text-3"
 												title="Edit"
 											>
 												<svg
@@ -1720,15 +1613,14 @@ function ZenModeInput({
 					</div>
 				)}
 
-				{/* Attached images preview - shared with ClaudeChatView */}
 				{attachedImages.length > 0 && (
-					<div className="flex items-center gap-2 px-3 py-2 border-b border-surgent-border/50">
+					<div className="flex items-center gap-2 px-3 py-2 border-b border-inferay-border/50">
 						{attachedImages.map((img) => (
 							<div key={img.path} className="relative group">
 								<img
 									src={img.previewUrl}
 									alt={img.name}
-									className="h-10 w-10 rounded-md object-cover border border-surgent-border"
+									className="h-10 w-10 rounded-md object-cover border border-inferay-border"
 								/>
 								<button
 									type="button"
@@ -1742,7 +1634,6 @@ function ZenModeInput({
 					</div>
 				)}
 
-				{/* Hidden file input - uploads through ClaudeChatView */}
 				<input
 					type="file"
 					ref={fileInputRef}
@@ -1759,13 +1650,11 @@ function ZenModeInput({
 					}}
 				/>
 
-				{/* Input row */}
 				<div className="flex items-center gap-2 px-3 py-2">
-					{/* Add image button */}
 					<button
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
-						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-surgent-text-3 hover:text-surgent-text-2 hover:bg-surgent-text/10 transition-colors"
+						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-text/10 transition-colors"
 						title="Attach image"
 					>
 						<svg
@@ -1782,12 +1671,10 @@ function ZenModeInput({
 						</svg>
 					</button>
 
-					{/* Agent icon */}
-					<span className="shrink-0 text-surgent-accent">
+					<span className="shrink-0 text-inferay-accent">
 						{getAgentIcon(agentKind, 14)}
 					</span>
 
-					{/* Input */}
 					<input
 						ref={inputRef}
 						type="text"
@@ -1799,22 +1686,20 @@ function ZenModeInput({
 								? "Type to queue next message..."
 								: "Message... (Esc to exit)"
 						}
-						className="flex-1 bg-transparent text-[13px] text-surgent-text outline-none placeholder:text-surgent-text-3"
+						className="flex-1 bg-transparent text-[13px] text-inferay-text outline-none placeholder:text-inferay-text-3"
 					/>
 
-					{/* Queued count badge */}
 					{queuedMessages.length > 0 && (
-						<span className="shrink-0 text-[10px] text-surgent-accent bg-surgent-accent/10 px-1.5 py-0.5 rounded tabular-nums">
+						<span className="shrink-0 text-[10px] text-inferay-accent bg-inferay-accent/10 px-1.5 py-0.5 rounded tabular-nums">
 							+{queuedMessages.length}
 						</span>
 					)}
 
-					{/* Send button */}
 					<button
 						type="button"
 						onClick={handleSubmit}
 						disabled={!input.trim()}
-						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-surgent-accent/20 text-surgent-accent hover:bg-surgent-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-inferay-accent/20 text-inferay-accent hover:bg-inferay-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
 					>
 						<svg
 							className="w-4 h-4"
@@ -1834,10 +1719,7 @@ function ZenModeInput({
 		</div>
 	);
 }
-
-// File status icon component
 function FileStatusIcon({ status }: { status: string }) {
-	// M = modified, A = added, D = deleted, R = renamed, ? = untracked
 	switch (status) {
 		case "M":
 			return (
@@ -1889,7 +1771,7 @@ function FileStatusIcon({ status }: { status: string }) {
 		case "?":
 			return (
 				<span
-					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-surgent-text-3 bg-surgent-text/10 text-[8px] font-bold"
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-inferay-text-3 bg-inferay-text/10 text-[8px] font-bold"
 					title="Untracked"
 				>
 					?
@@ -1898,7 +1780,7 @@ function FileStatusIcon({ status }: { status: string }) {
 		default:
 			return (
 				<span
-					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-surgent-text-3 bg-surgent-text/10 text-[8px] font-bold"
+					className="shrink-0 flex items-center justify-center w-4 h-4 rounded text-inferay-text-3 bg-inferay-text/10 text-[8px] font-bold"
 					title={status}
 				>
 					•
@@ -1906,8 +1788,6 @@ function FileStatusIcon({ status }: { status: string }) {
 			);
 	}
 }
-
-// Build tree structure from flat file list
 interface TreeNode {
 	name: string;
 	path: string;
@@ -1935,8 +1815,6 @@ function buildFileTree(files: GitFileEntry[]): TreeNode {
 				});
 			}
 			current = current.children.get(part)!;
-
-			// If this is the last part, attach the file
 			if (i === parts.length - 1) {
 				current.file = file;
 			}
@@ -1972,7 +1850,6 @@ function TreeNodeRow({
 		file && selected?.path === file.path && selected?.staged === file.staged;
 
 	const sortedChildren = [...node.children.values()].sort((a, b) => {
-		// Directories first
 		const aIsDir = a.children.size > 0 && !a.file;
 		const bIsDir = b.children.size > 0 && !b.file;
 		if (aIsDir && !bIsDir) return -1;
@@ -1984,7 +1861,7 @@ function TreeNodeRow({
 		<>
 			<div
 				className={`group flex h-[26px] items-center gap-1 cursor-pointer transition-colors ${
-					active ? "bg-surgent-accent/10" : "hover:bg-surgent-text/5"
+					active ? "bg-inferay-accent/10" : "hover:bg-inferay-text/5"
 				}`}
 				style={{ paddingLeft: `${8 + depth * 12}px` }}
 				onClick={() => {
@@ -1998,7 +1875,7 @@ function TreeNodeRow({
 				{isDir ? (
 					<>
 						<svg
-							className={`w-2.5 h-2.5 text-surgent-text-3 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}
+							className={`w-2.5 h-2.5 text-inferay-text-3 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -2007,13 +1884,13 @@ function TreeNodeRow({
 							<polyline points="9 18 15 12 9 6" />
 						</svg>
 						<svg
-							className="w-3 h-3 text-surgent-text-3 shrink-0"
+							className="w-3 h-3 text-inferay-text-3 shrink-0"
 							viewBox="0 0 24 24"
 							fill="currentColor"
 						>
 							<path d="M2 6a2 2 0 012-2h5l2 2h9a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
 						</svg>
-						<span className="truncate text-[10px] text-surgent-text-2">
+						<span className="truncate text-[10px] text-inferay-text-2">
 							{node.name}
 						</span>
 					</>
@@ -2023,8 +1900,8 @@ function TreeNodeRow({
 						<span
 							className={`truncate text-[10px] font-mono transition-colors ${
 								active
-									? "text-surgent-text"
-									: "text-surgent-text-2 group-hover:text-surgent-text"
+									? "text-inferay-text"
+									: "text-inferay-text-2 group-hover:text-inferay-text"
 							}`}
 						>
 							{node.name}
@@ -2036,7 +1913,7 @@ function TreeNodeRow({
 									e.stopPropagation();
 									onAction(file.path);
 								}}
-								className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 rounded px-1 py-0.5 text-[8px] text-surgent-text-3 hover:bg-surgent-text/10 hover:text-surgent-text transition-all"
+								className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 rounded px-1 py-0.5 text-[8px] text-inferay-text-3 hover:bg-inferay-text/10 hover:text-inferay-text transition-all"
 							>
 								{actionLabel}
 							</button>
@@ -2088,7 +1965,6 @@ function FileGroup({
 }) {
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [expandedDirs, setExpandedDirs] = useState<Set<string>>(() => {
-		// Start with all directories expanded
 		const dirs = new Set<string>();
 		for (const f of files) {
 			const parts = f.path.split("/");
@@ -2118,7 +1994,7 @@ function FileGroup({
 	if (!files.length) return null;
 	return (
 		<div>
-			<div className="sticky top-0 z-10 flex h-7 items-center justify-between border-b border-surgent-border/30 bg-surgent-bg px-2">
+			<div className="sticky top-0 z-10 flex h-7 items-center justify-between border-b border-inferay-border/30 bg-inferay-bg px-2">
 				<button
 					type="button"
 					onClick={() => isCollapsible && setIsCollapsed(!isCollapsed)}
@@ -2126,7 +2002,7 @@ function FileGroup({
 				>
 					{isCollapsible && (
 						<svg
-							className={`w-2.5 h-2.5 text-surgent-text-3 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+							className={`w-2.5 h-2.5 text-inferay-text-3 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -2140,7 +2016,7 @@ function FileGroup({
 					>
 						{title}
 					</span>
-					<span className="text-[9px] text-surgent-text-3">
+					<span className="text-[9px] text-inferay-text-3">
 						({files.length})
 					</span>
 				</button>
@@ -2148,7 +2024,7 @@ function FileGroup({
 					<button
 						type="button"
 						onClick={onActionAll}
-						className="rounded px-1.5 py-0.5 text-[8px] text-surgent-accent hover:bg-surgent-accent/10 transition-colors"
+						className="rounded px-1.5 py-0.5 text-[8px] text-inferay-accent hover:bg-inferay-accent/10 transition-colors"
 					>
 						{actionLabel} All
 					</button>
@@ -2167,7 +2043,7 @@ function FileGroup({
 						<div
 							key={`${f.staged ? "s" : "u"}-${f.path}`}
 							className={`group flex h-[28px] items-center gap-1.5 px-2 ${
-								active ? "bg-surgent-accent/10" : "hover:bg-surgent-text/5"
+								active ? "bg-inferay-accent/10" : "hover:bg-inferay-text/5"
 							}`}
 						>
 							<FileStatusIcon status={f.status} />
@@ -2178,12 +2054,12 @@ function FileGroup({
 								title={f.path}
 							>
 								<span
-									className={`truncate text-[10px] font-mono transition-colors ${active ? "text-surgent-text" : "text-surgent-text-2 group-hover:text-surgent-text"}`}
+									className={`truncate text-[10px] font-mono transition-colors ${active ? "text-inferay-text" : "text-inferay-text-2 group-hover:text-inferay-text"}`}
 								>
 									{name}
 								</span>
 								{dir && (
-									<span className="truncate text-[9px] text-surgent-text-3/60">
+									<span className="truncate text-[9px] text-inferay-text-3/60">
 										{dir}
 									</span>
 								)}
@@ -2195,7 +2071,7 @@ function FileGroup({
 										e.stopPropagation();
 										onAction(f.path);
 									}}
-									className="shrink-0 opacity-0 group-hover:opacity-100 rounded px-1.5 py-0.5 text-[8px] text-surgent-text-3 hover:bg-surgent-text/10 hover:text-surgent-text transition-all"
+									className="shrink-0 opacity-0 group-hover:opacity-100 rounded px-1.5 py-0.5 text-[8px] text-inferay-text-3 hover:bg-inferay-text/10 hover:text-inferay-text transition-all"
 									title={`${actionLabel} ${f.path}`}
 								>
 									{actionLabel}
@@ -2251,8 +2127,8 @@ function ToolbarButton({
 			title={title}
 			className={`flex h-full w-7 items-center justify-center transition-all ${
 				active
-					? "bg-surgent-text/10 text-surgent-text"
-					: "text-surgent-text-3 hover:text-surgent-text-2"
+					? "bg-inferay-text/10 text-inferay-text"
+					: "text-inferay-text-3 hover:text-inferay-text-2"
 			}`}
 		>
 			{icon}

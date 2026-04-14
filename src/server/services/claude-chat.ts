@@ -1,12 +1,11 @@
 import type { ServerWebSocket } from "bun";
-import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { ChatAgentKind } from "../../lib/agents.ts";
 import { getAgentAdapter } from "../agents/registry.ts";
-import type {
-	AgentHandle,
-	AgentRunContext,
-	SessionUsage,
-} from "../agents/types.ts";
+import {
+	createClaudeEnv,
+	resolveClaudeBinary,
+} from "../../lib/terminal-command.ts";
+import type { AgentHandle, AgentRunContext } from "../agents/types.ts";
 import { CheckpointService } from "./checkpoint.ts";
 
 interface ServerChatMessage {
@@ -19,6 +18,7 @@ interface ServerChatMessage {
 
 const MAX_BUFFER_MESSAGES = 100;
 const MAX_BUFFER_CHARS = 200_000;
+const MAX_STDERR_CHARS = 64_000;
 const DISCONNECTED_SESSION_TTL_MS = 5 * 60 * 1000;
 
 let serverMsgId = 0;
@@ -185,20 +185,7 @@ interface ChatSession {
 	cwd: string;
 	messageBuffer: ChatMessageBuffer;
 	cleanupTimer: ReturnType<typeof setTimeout> | null;
-	systemPrompt: string | null;
-	referencePaths: string[];
-	usage: SessionUsage;
 }
-
-const ZERO_USAGE: SessionUsage = {
-	contextTokens: 0,
-	contextLimit: 200_000,
-	totalInputTokens: 0,
-	totalOutputTokens: 0,
-	totalCostUsd: 0,
-	numTurns: 0,
-	durationMs: 0,
-};
 
 interface AgentSessionInfo {
 	paneId: string;
@@ -211,9 +198,9 @@ interface AgentSessionInfo {
 }
 
 const _g = globalThis as any;
-if (!_g.__surgent_chatSessions)
-	_g.__surgent_chatSessions = new Map<string, ChatSession>();
-const sessions: Map<string, ChatSession> = _g.__surgent_chatSessions;
+if (!_g.__inferay_chatSessions)
+	_g.__inferay_chatSessions = new Map<string, ChatSession>();
+const sessions: Map<string, ChatSession> = _g.__inferay_chatSessions;
 
 function sendTo(ws: ServerWebSocket<any>, msg: object) {
 	if (ws.readyState === 1) ws.send(JSON.stringify(msg));
@@ -265,6 +252,44 @@ function updateSessionId(
 	});
 }
 
+async function drainStreamToString(
+	stream: ReadableStream<Uint8Array>,
+	maxChars = MAX_STDERR_CHARS
+) {
+	const reader = stream.getReader();
+	const decoder = new TextDecoder();
+	let text = "";
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		text += decoder.decode(value, { stream: true });
+		if (text.length > maxChars) text = text.slice(-maxChars);
+	}
+	return text + decoder.decode();
+}
+
+function parseNdjsonLines(
+	leftover: string,
+	handler: (event: any) => void
+): string {
+	const lines = leftover.split("\n");
+	const remainder = lines.pop()!;
+	for (const line of lines) {
+		if (!line.trim()) continue;
+		try {
+			handler(JSON.parse(line));
+		} catch {}
+	}
+	return remainder;
+}
+
+function flushNdjsonLeftover(leftover: string, handler: (event: any) => void) {
+	if (!leftover.trim()) return;
+	try {
+		handler(JSON.parse(leftover));
+	} catch {}
+}
+
 async function finalizeCheckpoint(
 	session: ChatSession,
 	paneId: string,
@@ -292,8 +317,6 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 	const ctx: AgentRunContext = {
 		paneId,
 		cwd: session.cwd,
-		systemPrompt: session.systemPrompt,
-		referencePaths: session.referencePaths,
 		getSessionId: () => session.sessionId,
 		updateSessionId: (nextSessionId) =>
 			updateSessionId(session, paneId, nextSessionId),
@@ -306,27 +329,6 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 		emitSystemMessage: (message) => {
 			session.messageBuffer.pushSystem(message);
 			broadcast(session, { type: "chat:system", paneId, message });
-		},
-		emitUsage: (incoming) => {
-			const u = session.usage;
-			// Result events provide authoritative totals — overwrite
-			if (incoming.totalCostUsd) u.totalCostUsd = incoming.totalCostUsd;
-			if (incoming.numTurns) u.numTurns = incoming.numTurns;
-			if (incoming.durationMs) u.durationMs = incoming.durationMs;
-			// Token counts from result are also authoritative totals
-			if (incoming.totalCostUsd) {
-				// This is a result event — use absolute values
-				u.totalInputTokens = incoming.totalInputTokens;
-				u.totalOutputTokens = incoming.totalOutputTokens;
-				u.contextTokens = incoming.contextTokens;
-			} else {
-				// Incremental from assistant messages — accumulate
-				u.totalInputTokens += incoming.totalInputTokens;
-				u.totalOutputTokens += incoming.totalOutputTokens;
-				u.contextTokens = incoming.contextTokens;
-			}
-			if (incoming.contextLimit > 0) u.contextLimit = incoming.contextLimit;
-			broadcast(session, { type: "chat:usage", paneId, ...u });
 		},
 	};
 	const state = adapter.createState(ctx);
@@ -349,29 +351,15 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 	}
 }
 
-export interface SendMessageOpts {
-	cwd?: string;
-	sessionId?: string | null;
-	agentKind?: ChatAgentKind;
-	systemPrompt?: string | null;
-	referencePaths?: string[];
-}
-
 export const ChatService = {
 	async sendMessage(
 		paneId: string,
 		text: string,
 		ws: ServerWebSocket<any>,
-		opts: SendMessageOpts = {}
+		cwd?: string,
+		clientSessionId?: string | null,
+		agentKind: ChatAgentKind = "claude"
 	) {
-		const {
-			cwd,
-			sessionId: clientSessionId,
-			agentKind = "claude",
-			systemPrompt = null,
-			referencePaths = [],
-		} = opts;
-
 		let session = sessions.get(paneId);
 		if (!session) {
 			session = {
@@ -383,9 +371,6 @@ export const ChatService = {
 				cwd: cwd || process.cwd(),
 				messageBuffer: new ChatMessageBuffer(),
 				cleanupTimer: null,
-				systemPrompt,
-				referencePaths,
-				usage: { ...ZERO_USAGE },
 			};
 			sessions.set(paneId, session);
 		}
@@ -393,8 +378,6 @@ export const ChatService = {
 		session.agentKind = agentKind;
 		session.clients.add(ws);
 		if (cwd) session.cwd = cwd;
-		if (systemPrompt !== null) session.systemPrompt = systemPrompt;
-		if (referencePaths.length > 0) session.referencePaths = referencePaths;
 		if (!session.sessionId && clientSessionId)
 			updateSessionId(session, paneId, clientSessionId);
 
@@ -444,59 +427,75 @@ export const ChatService = {
 		cwd?: string
 	) {
 		const effectiveCwd = cwd || process.cwd();
-		const env = { ...process.env };
-		delete env.CLAUDECODE;
+		const claudeCmd = resolveClaudeBinary();
 
 		sendTo(ws, { type: "chat:btw:start", paneId, question: text });
 
 		let fullText = "";
 
 		try {
-			const q = query({
-				prompt: text,
-				options: {
+			const proc = Bun.spawn(
+				[
+					claudeCmd,
+					"-p",
+					text,
+					"--output-format",
+					"stream-json",
+					"--verbose",
+					"--dangerously-skip-permissions",
+				],
+				{
+					stdout: "pipe",
+					stderr: "pipe",
 					cwd: effectiveCwd,
-					permissionMode: "bypassPermissions",
-					allowDangerouslySkipPermissions: true,
-					includePartialMessages: true,
-					env,
-				},
-			});
-
-			for await (const event of q) {
-				const e = event as any;
-				if (e.type === "stream_event" && e.event) {
-					const inner = e.event;
-					if (
-						inner.type === "content_block_delta" &&
-						inner.delta?.type === "text_delta"
-					) {
-						fullText += inner.delta.text;
-						sendTo(ws, {
-							type: "chat:btw:delta",
-							paneId,
-							text: inner.delta.text,
-						});
-					} else if (
-						inner.type === "content_block_start" &&
-						inner.content_block?.type === "text" &&
-						inner.content_block.text
-					) {
-						fullText += inner.content_block.text;
-						sendTo(ws, {
-							type: "chat:btw:delta",
-							paneId,
-							text: inner.content_block.text,
-						});
-					}
-				} else if (
-					e.type === "result" &&
-					e.subtype === "success" &&
-					e.result &&
-					!fullText
-				) {
-					fullText = e.result;
+					env: createClaudeEnv(),
 				}
+			);
+			const stderrPromise = drainStreamToString(
+				proc.stderr as ReadableStream<Uint8Array>
+			);
+			const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
+			const decoder = new TextDecoder();
+			let leftover = "";
+
+			const handleBtwEvent = (event: any) => {
+				if (
+					event.type === "content_block_delta" &&
+					event.delta?.type === "text_delta"
+				) {
+					fullText += event.delta.text;
+					sendTo(ws, {
+						type: "chat:btw:delta",
+						paneId,
+						text: event.delta.text,
+					});
+				} else if (
+					event.type === "content_block_start" &&
+					event.content_block?.type === "text" &&
+					event.content_block.text
+				) {
+					fullText += event.content_block.text;
+					sendTo(ws, {
+						type: "chat:btw:delta",
+						paneId,
+						text: event.content_block.text,
+					});
+				} else if (event.type === "result" && event.result && !fullText) {
+					fullText = event.result;
+				}
+			};
+
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				leftover += decoder.decode(value, { stream: true });
+				leftover = parseNdjsonLines(leftover, handleBtwEvent);
+			}
+			flushNdjsonLeftover(leftover, handleBtwEvent);
+			await proc.exited;
+			const stderrText = (await stderrPromise).trim();
+			if (!fullText && stderrText) {
+				fullText = stderrText;
 			}
 		} catch (err: any) {
 			if (!fullText) {

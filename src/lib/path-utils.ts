@@ -10,8 +10,8 @@ function resolveProjectRoot(): string {
 	if (existsSync(resolve(bundleRoot, "views"))) {
 		return bundleRoot;
 	}
-	// Dev: import.meta.dir = src/server/lib/, go up 3 levels
-	return resolve(import.meta.dir, "../../..");
+	// Dev: import.meta.dir = src/lib/, go up 2 levels
+	return resolve(import.meta.dir, "../..");
 }
 
 export const PROJECT_ROOT = resolveProjectRoot();

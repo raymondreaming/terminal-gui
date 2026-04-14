@@ -1,4 +1,3 @@
-// ── Markdown parser utilities ──
 // Zero-dependency markdown-to-block parser with full inline formatting.
 
 export interface MdBlock {
@@ -27,8 +26,6 @@ export interface MdListItem {
 	children: MdListItem[];
 }
 
-// ── Inline token types ──
-
 export interface MdInlineToken {
 	type:
 		| "text"
@@ -45,8 +42,6 @@ export interface MdInlineToken {
 	alt?: string;
 	children?: MdInlineToken[];
 }
-
-// ── Inline parser ──
 
 export function parseInline(src: string): MdInlineToken[] {
 	const tokens: MdInlineToken[] = [];
@@ -160,8 +155,6 @@ export function parseInline(src: string): MdInlineToken[] {
 
 	return tokens;
 }
-
-// ── Block parser ──
 
 function _parseListItems(
 	lines: string[],

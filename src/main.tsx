@@ -1,24 +1,23 @@
-import { Suspense, lazy } from "react";
+import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
-import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
+import { TerminalShellHeader } from "./components/layout/TerminalShellHeader.tsx";
 import { applyAppTheme, loadAppThemeId } from "./lib/app-theme.ts";
 import { getServerOrigin, resolveServerUrl } from "./lib/server-origin.ts";
 
 const TerminalPage = lazy(() =>
 	import("./pages/Terminal").then((m) => ({ default: m.TerminalPage }))
 );
-const ExperimentalPage = lazy(() =>
-	import("./pages/ExperimentalPage").then((m) => ({
-		default: m.ExperimentalPage,
-	}))
-);
 const GitPage = lazy(() =>
 	import("./pages/GitPage").then((m) => ({ default: m.GitPage }))
 );
 const PromptsPage = lazy(() =>
 	import("./pages/PromptsPage").then((m) => ({ default: m.PromptsPage }))
+);
+const ProfilePage = lazy(() =>
+	import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage }))
 );
 
 if (window.location.origin !== getServerOrigin()) {
@@ -58,21 +57,27 @@ const root = createRoot(rootElement);
 root.render(
 	<ErrorBoundary>
 		<HashRouter>
-			<div className="flex h-screen flex-col bg-surgent-bg">
-				<div className="electrobun-webkit-app-region-drag h-6 shrink-0 bg-surgent-bg" />
+			<div className="flex h-screen flex-col bg-inferay-bg">
+				<div className="electrobun-webkit-app-region-drag h-6 shrink-0 bg-inferay-bg" />
 				<div className="flex min-h-0 flex-1">
 					<Sidebar />
-					<main className="min-w-0 flex-1 overflow-hidden">
-						<Suspense fallback={null}>
-							<Routes>
-								<Route path="/" element={<Navigate to="/terminal" replace />} />
-								<Route path="/terminal" element={<TerminalPage />} />
-								<Route path="/experimental" element={<ExperimentalPage />} />
-								<Route path="/git" element={<GitPage />} />
-								<Route path="/prompts" element={<PromptsPage />} />
-							</Routes>
-						</Suspense>
-					</main>
+					<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+						<TerminalShellHeader />
+						<main className="min-w-0 flex-1 overflow-hidden">
+							<Suspense fallback={null}>
+								<Routes>
+									<Route
+										path="/"
+										element={<Navigate to="/terminal" replace />}
+									/>
+									<Route path="/terminal" element={<TerminalPage />} />
+									<Route path="/git" element={<GitPage />} />
+									<Route path="/prompts" element={<PromptsPage />} />
+									<Route path="/profile" element={<ProfilePage />} />
+								</Routes>
+							</Suspense>
+						</main>
+					</div>
 				</div>
 			</div>
 		</HashRouter>

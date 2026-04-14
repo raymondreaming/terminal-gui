@@ -8,12 +8,12 @@ interface WSData {
 }
 
 const g = globalThis as unknown as {
-	__surgent_wsClients?: Set<ServerWebSocket<WSData>>;
+	__inferay_wsClients?: Set<ServerWebSocket<WSData>>;
 };
-if (!g.__surgent_wsClients)
-	g.__surgent_wsClients = new Set<ServerWebSocket<WSData>>();
+if (!g.__inferay_wsClients)
+	g.__inferay_wsClients = new Set<ServerWebSocket<WSData>>();
 
-const clients: Set<ServerWebSocket<WSData>> = g.__surgent_wsClients;
+const clients: Set<ServerWebSocket<WSData>> = g.__inferay_wsClients;
 
 export function broadcastAll(message: string) {
 	for (const ws of clients) {

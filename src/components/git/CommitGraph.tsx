@@ -27,8 +27,8 @@ function RefBadge({ ref: refName }: { ref: string }) {
 		refName.startsWith("origin/") || (!refName.includes("tag:") && !isHead);
 	const isTag = refName.startsWith("tag:");
 
-	let bg = "bg-surgent-text/10";
-	let text = "text-surgent-text-2";
+	let bg = "bg-inferay-text/10";
+	let text = "text-inferay-text-2";
 	let displayName = refName;
 
 	if (isHead) {
@@ -56,8 +56,6 @@ function RefBadge({ ref: refName }: { ref: string }) {
 		</span>
 	);
 }
-
-// WIP (Work in Progress) row at the top
 const WipRow = memo(function WipRow({
 	maxColumn,
 	selected,
@@ -78,18 +76,16 @@ const WipRow = memo(function WipRow({
 	return (
 		<div
 			className={`group flex items-center h-8 px-2 cursor-pointer transition-colors ${
-				selected ? "bg-surgent-accent/15" : "hover:bg-surgent-text/5"
+				selected ? "bg-inferay-accent/15" : "hover:bg-inferay-text/5"
 			}`}
 			onClick={onClick}
 		>
-			{/* Graph column */}
 			<div className="shrink-0 flex items-center" style={{ width: graphWidth }}>
 				<svg
 					width={graphWidth}
 					height={ROW_HEIGHT}
 					className="overflow-visible"
 				>
-					{/* Dashed circle for WIP */}
 					<circle
 						cx={cx}
 						cy={cy}
@@ -102,24 +98,20 @@ const WipRow = memo(function WipRow({
 				</svg>
 			</div>
 
-			{/* WIP info */}
 			<div className="flex-1 min-w-0 flex items-center gap-2">
-				{/* WIP badge */}
 				<span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-medium bg-orange-500/20 text-orange-400">
 					WIP on {branch ?? "branch"}
 				</span>
 
-				{/* File count */}
 				{fileCount > 0 && (
-					<span className="text-[10px] text-surgent-text-3">
+					<span className="text-[10px] text-inferay-text-3">
 						{fileCount} file{fileCount !== 1 ? "s" : ""} changed
 					</span>
 				)}
 			</div>
 
-			{/* Stats placeholder */}
 			<div className="shrink-0 flex items-center gap-1 ml-2 text-[9px] tabular-nums">
-				<span className="text-surgent-text-3/60">uncommitted</span>
+				<span className="text-inferay-text-3/60">uncommitted</span>
 			</div>
 		</div>
 	);
@@ -145,18 +137,16 @@ const CommitRow = memo(function CommitRow({
 	return (
 		<div
 			className={`group flex items-center h-8 px-2 cursor-pointer transition-colors ${
-				selected ? "bg-surgent-accent/15" : "hover:bg-surgent-text/5"
+				selected ? "bg-inferay-accent/15" : "hover:bg-inferay-text/5"
 			}`}
 			onClick={onClick}
 		>
-			{/* Graph column */}
 			<div className="shrink-0 flex items-center" style={{ width: graphWidth }}>
 				<svg
 					width={graphWidth}
 					height={ROW_HEIGHT}
 					className="overflow-visible"
 				>
-					{/* Commit node */}
 					<circle
 						cx={cx}
 						cy={cy}
@@ -168,39 +158,34 @@ const CommitRow = memo(function CommitRow({
 				</svg>
 			</div>
 
-			{/* Commit info */}
 			<div className="flex-1 min-w-0 flex items-center gap-2">
-				{/* Hash */}
-				<span className="shrink-0 font-mono text-[10px] text-surgent-accent">
+				<span className="shrink-0 font-mono text-[10px] text-inferay-accent">
 					{commit.hash}
 				</span>
 
-				{/* Refs/badges */}
 				{commit.refs.length > 0 && (
 					<div className="shrink-0 flex items-center gap-1">
 						{commit.refs.slice(0, 3).map((ref, i) => (
 							<RefBadge key={i} ref={ref} />
 						))}
 						{commit.refs.length > 3 && (
-							<span className="text-[9px] text-surgent-text-3">
+							<span className="text-[9px] text-inferay-text-3">
 								+{commit.refs.length - 3}
 							</span>
 						)}
 					</div>
 				)}
 
-				{/* Message */}
-				<span className="truncate text-[11px] text-surgent-text-2 group-hover:text-surgent-text">
+				<span className="truncate text-[11px] text-inferay-text-2 group-hover:text-inferay-text">
 					{commit.message}
 				</span>
 			</div>
 
-			{/* Author & date */}
 			<div className="shrink-0 flex items-center gap-3 ml-2">
-				<span className="text-[10px] text-surgent-text-3 truncate max-w-[80px]">
+				<span className="text-[10px] text-inferay-text-3 truncate max-w-[80px]">
 					{commit.author}
 				</span>
-				<span className="text-[10px] text-surgent-text-3/60 tabular-nums">
+				<span className="text-[10px] text-inferay-text-3/60 tabular-nums">
 					{commit.date}
 				</span>
 			</div>
@@ -226,8 +211,6 @@ export const CommitGraph = memo(function CommitGraph({
 		}
 		return max;
 	}, [commits]);
-
-	// Build connection lines between commits
 	const connections = useMemo(() => {
 		const lines: Array<{
 			fromRow: number;
@@ -239,8 +222,6 @@ export const CommitGraph = memo(function CommitGraph({
 
 		const hashToRow = new Map<string, number>();
 		commits.forEach((c, i) => hashToRow.set(c.hash, i + wipOffset));
-
-		// Connect WIP to first commit
 		if (hasWip && commits.length > 0) {
 			lines.push({
 				fromRow: 0,
@@ -275,7 +256,7 @@ export const CommitGraph = memo(function CommitGraph({
 	if (!commits.length && !hasWip) {
 		return (
 			<div className={`flex items-center justify-center py-8 ${className}`}>
-				<p className="text-[11px] text-surgent-text-3">No commits</p>
+				<p className="text-[11px] text-inferay-text-3">No commits</p>
 			</div>
 		);
 	}
@@ -285,7 +266,6 @@ export const CommitGraph = memo(function CommitGraph({
 
 	return (
 		<div className={`relative overflow-auto ${className}`}>
-			{/* SVG layer for connection lines */}
 			<svg
 				className="absolute top-0 left-2 pointer-events-none"
 				width={graphWidth}
@@ -299,8 +279,6 @@ export const CommitGraph = memo(function CommitGraph({
 					const x2 =
 						GRAPH_PADDING + conn.toCol * COLUMN_WIDTH + COLUMN_WIDTH / 2;
 					const y2 = conn.toRow * ROW_HEIGHT + ROW_HEIGHT / 2;
-
-					// If same column, draw straight line
 					if (conn.fromCol === conn.toCol) {
 						return (
 							<line
@@ -315,8 +293,6 @@ export const CommitGraph = memo(function CommitGraph({
 							/>
 						);
 					}
-
-					// Otherwise, draw a curved path (merge/branch)
 					const midY = (y1 + y2) / 2;
 					const path = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
 					return (
@@ -332,9 +308,7 @@ export const CommitGraph = memo(function CommitGraph({
 				})}
 			</svg>
 
-			{/* Rows */}
 			<div className="relative" style={{ zIndex: 1 }}>
-				{/* WIP row at top */}
 				{hasWip && (
 					<WipRow
 						maxColumn={maxColumn}
@@ -345,7 +319,6 @@ export const CommitGraph = memo(function CommitGraph({
 					/>
 				)}
 
-				{/* Commit rows */}
 				{commits.map((commit, i) => (
 					<CommitRow
 						key={commit.hash}
