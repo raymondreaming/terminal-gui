@@ -28,7 +28,7 @@ import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { isChatAgentKind } from "../../lib/agents.ts";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { wsClient } from "../../lib/websocket.ts";
-import { ExperimentalPage } from "../ExperimentalPage/index.tsx";
+import { EditorPage } from "../EditorPage/index.tsx";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
@@ -756,7 +756,7 @@ export function TerminalPage({
 									}
 								/>
 							) : mainView === "editor" ? (
-								<ExperimentalPage key={editorViewKey} />
+								<EditorPage key={editorViewKey} />
 							) : mainView === "chat" ? (
 								!currentGroup || currentGroup.panes.length === 0 ? (
 									<EmptyState

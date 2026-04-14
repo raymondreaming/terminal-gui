@@ -115,7 +115,7 @@ function loadZenMode() {
 	return readStoredValue("terminal-editor-zen") === "true";
 }
 
-export function ExperimentalPage() {
+export function EditorPage() {
 	const [, setTick] = useState(0);
 	const [selectedPaneId, setSelectedPaneId] = useState<string | null>(
 		() => readStoredValue("editor-selected-pane") ?? null
