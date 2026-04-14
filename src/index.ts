@@ -4,6 +4,7 @@ import {
 	defineElectrobunRPC,
 } from "electrobun/bun";
 import { shutdownAppServices, startAppServer } from "./server/app-server.ts";
+import { PidTracker } from "./server/services/pid-tracker.ts";
 
 type WindowControlsRPC = {
 	bun: {
@@ -70,6 +71,8 @@ for (let attempt = 0; attempt < 10; attempt++) {
 if (!server) {
 	throw new Error("Failed to start desktop server on ports 4001-4010.");
 }
+
+await PidTracker.cleanupOrphans();
 
 const rendererUrl =
 	process.env.TERMINAL_GUI_RENDERER_URL || `http://127.0.0.1:${serverPort}`;

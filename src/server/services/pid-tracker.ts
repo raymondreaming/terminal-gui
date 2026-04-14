@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { atomicWriteJson } from "../lib/atomic-write.ts";
+import { atomicWriteJson } from "../../lib/atomic-write.ts";
 
 const PID_FILE = resolve(import.meta.dir, "../../data/pids.json");
 const isWin = process.platform === "win32";
