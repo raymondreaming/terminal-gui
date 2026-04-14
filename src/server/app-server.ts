@@ -7,6 +7,7 @@ import { handlePromptRequest } from "./routes/prompts.ts";
 import { TerminalService } from "./routes/terminal.ts";
 import { CheckpointService } from "./services/checkpoint.ts";
 import { ChatService } from "./services/claude-chat.ts";
+import { PidTracker } from "./services/pid-tracker.ts";
 import { websocketHandler } from "./ws.ts";
 
 const apiRoutes = buildApiRoutes();
@@ -121,6 +122,7 @@ async function serveDistFile(pathname: string): Promise<Response | null> {
 export function shutdownAppServices() {
 	TerminalService.destroyAll();
 	ChatService.destroyAll();
+	PidTracker.flush().catch(() => {});
 }
 
 export function installShutdownHandlers() {

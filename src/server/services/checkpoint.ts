@@ -1,6 +1,7 @@
 import { mkdir, readdir, unlink } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import { readJson } from "../../lib/route-helpers.ts";
+import { atomicWriteJson } from "../../lib/atomic-write.ts";
 
 interface FileSnapshot {
 	relativePath: string;
@@ -415,9 +416,8 @@ export const CheckpointService = {
 				return rest;
 			});
 		}
-		await mkdir(dirname(CHECKPOINTS_PATH), { recursive: true });
 		try {
-			await Bun.write(CHECKPOINTS_PATH, JSON.stringify(data));
+			await atomicWriteJson(CHECKPOINTS_PATH, data);
 		} catch (e) {
 			console.error(
 				"[Checkpoint] JSON.stringify failed, saving metadata only:",
@@ -425,7 +425,7 @@ export const CheckpointService = {
 			);
 			const slim: Record<string, any[]> = {};
 			for (const [paneId, list] of checkpoints) slim[paneId] = list.map(toMeta);
-			await Bun.write(CHECKPOINTS_PATH, JSON.stringify(slim));
+			await atomicWriteJson(CHECKPOINTS_PATH, slim);
 		}
 	},
 

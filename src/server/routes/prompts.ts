@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { PROJECT_ROOT } from "../../lib/path-utils.ts";
 import { tryRoute } from "../../lib/route-helpers.ts";
+import { atomicWriteJson } from "../../lib/atomic-write.ts";
 
 const PROMPTS_FILE = resolve(PROJECT_ROOT, "data/prompts.json");
 const LEGACY_PROMPTS_FILE = resolve(PROJECT_ROOT, "src/data/prompts.json");
@@ -36,8 +37,7 @@ async function loadPrompts(): Promise<Prompt[]> {
 }
 
 async function savePrompts(prompts: Prompt[]): Promise<void> {
-	await mkdir(dirname(PROMPTS_FILE), { recursive: true });
-	await Bun.write(PROMPTS_FILE, JSON.stringify(prompts, null, 2));
+	await atomicWriteJson(PROMPTS_FILE, prompts, 2);
 }
 
 export function promptRoutes() {

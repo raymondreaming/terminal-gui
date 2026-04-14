@@ -1,5 +1,4 @@
-import { mkdir } from "node:fs/promises";
-import { dirname } from "node:path";
+import { atomicWriteJson } from "./atomic-write.ts";
 
 export function errorResponse(e: unknown, status = 500): Response {
 	const message = e instanceof Error ? e.message : "Unknown error";
@@ -41,6 +40,5 @@ export async function readJson<T>(path: string, fallback: T): Promise<T> {
 }
 
 export async function writeJson(path: string, data: unknown): Promise<void> {
-	await mkdir(dirname(path), { recursive: true });
-	await Bun.write(path, JSON.stringify(data, null, 2));
+	await atomicWriteJson(path, data, 2);
 }
