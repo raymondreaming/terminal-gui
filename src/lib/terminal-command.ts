@@ -3,6 +3,8 @@ import { delimiter, dirname, join, resolve } from "node:path";
 import type { AgentKind, ChatAgentKind } from "./agents.ts";
 
 const isWin = process.platform === "win32";
+const homeDir =
+	process.env.HOME || process.env.USERPROFILE || process.env.HOMEPATH || null;
 
 function withExecutableExtension(pathname: string): string {
 	if (!isWin || pathname.endsWith(".cmd") || pathname.endsWith(".exe")) {
@@ -12,7 +14,7 @@ function withExecutableExtension(pathname: string): string {
 }
 
 function findInNvmVersions(binaryName: string): string | null {
-	const home = process.env.HOME;
+	const home = homeDir;
 	if (!home) return null;
 	const versionsDir = join(home, ".nvm", "versions", "node");
 	try {
@@ -26,14 +28,14 @@ function findInNvmVersions(binaryName: string): string | null {
 }
 
 function getClaudePathCandidates(): string[] {
-	const home = process.env.HOME;
 	const nvmBin = process.env.NVM_BIN;
 	const candidates = [
 		process.env.CLAUDE_PATH,
-		home ? join(home, ".bun", "bin", "claude") : null,
+		homeDir ? join(homeDir, ".local", "bin", "claude") : null,
+		homeDir ? join(homeDir, ".bun", "bin", "claude") : null,
 		nvmBin ? join(nvmBin, "claude") : null,
 		findInNvmVersions("claude"),
-		home ? join(home, ".npm-global", "bin", "claude") : null,
+		homeDir ? join(homeDir, ".npm-global", "bin", "claude") : null,
 		"/usr/local/bin/claude",
 		"/opt/homebrew/bin/claude",
 	];
@@ -47,6 +49,11 @@ export function resolveClaudeBinary(): string {
 	for (const candidate of getClaudePathCandidates()) {
 		if (existsSync(candidate)) {
 			return candidate;
+		}
+		// On Windows, also try .exe if the candidate was .cmd
+		if (isWin && candidate.endsWith(".cmd")) {
+			const exeCandidate = candidate.replace(/\.cmd$/, ".exe");
+			if (existsSync(exeCandidate)) return exeCandidate;
 		}
 	}
 	return isWin ? "claude.cmd" : "claude";
@@ -71,11 +78,10 @@ export function createClaudeEnv(): Record<string, string> {
 }
 
 function getCodexPathCandidates(): string[] {
-	const home = process.env.HOME;
 	const candidates = [
 		process.env.CODEX_PATH,
-		home ? join(home, ".npm-global", "bin", "codex") : null,
-		home ? join(home, ".local", "bin", "codex") : null,
+		homeDir ? join(homeDir, ".npm-global", "bin", "codex") : null,
+		homeDir ? join(homeDir, ".local", "bin", "codex") : null,
 		"/usr/local/bin/codex",
 		"/opt/homebrew/bin/codex",
 	];
