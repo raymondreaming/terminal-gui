@@ -157,7 +157,7 @@ const DiffRow = memo(function DiffRow({
 			}}
 		>
 			<span
-				className="shrink-0 text-right font-mono select-none"
+				className="shrink-0 text-right font-diff select-none"
 				style={{
 					width: DIFF_CONFIG.lineNumWidth,
 					paddingRight: 4,
@@ -173,7 +173,7 @@ const DiffRow = memo(function DiffRow({
 			</span>
 
 			<span
-				className="shrink-0 text-center font-mono select-none"
+				className="shrink-0 text-center font-diff select-none"
 				style={{
 					width: DIFF_CONFIG.signWidth,
 					fontSize: DIFF_CONFIG.signFontSize,
@@ -188,7 +188,7 @@ const DiffRow = memo(function DiffRow({
 			</span>
 
 			<span
-				className="flex-1 min-w-max font-mono whitespace-pre"
+				className="flex-1 min-w-max font-diff whitespace-pre"
 				style={{
 					fontSize: DIFF_CONFIG.contentFontSize,
 					paddingRight: 12,

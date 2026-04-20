@@ -65,6 +65,8 @@ const CSS_VAR_MAP: Record<keyof AppThemeColors, string> = {
 	text3: "--color-inferay-text-3",
 };
 
+const ACCENT_FOREGROUND_CSS_VAR = "--color-inferay-accent-foreground" as const;
+
 // Compact theme data: [id, name, bg, surface, surface2, surface3, border, borderBold, accent, accentHover, success, warning, error, info, text, text2, text3, light?]
 type ThemeTuple = [AppThemeId, string, ...string[]] & { length: 17 | 18 };
 
@@ -377,6 +379,7 @@ export function applyAppTheme(id: AppThemeId): void {
 		for (const cssVar of Object.values(CSS_VAR_MAP)) {
 			root.style.removeProperty(cssVar);
 		}
+		root.style.removeProperty(ACCENT_FOREGROUND_CSS_VAR);
 		root.style.colorScheme = "dark";
 		meta?.setAttribute("content", "#09090b");
 		return;
@@ -386,6 +389,10 @@ export function applyAppTheme(id: AppThemeId): void {
 		const value = theme.colors[key as keyof AppThemeColors];
 		root.style.setProperty(cssVar, value);
 	}
+	root.style.setProperty(
+		ACCENT_FOREGROUND_CSS_VAR,
+		getReadableForeground(theme.colors.accent)
+	);
 	const light =
 		id === "custom"
 			? isLightColor(theme.colors.bg)
@@ -400,4 +407,8 @@ function isLightColor(hex: string): boolean {
 	const g = parseInt(clean.substring(2, 4), 16);
 	const b = parseInt(clean.substring(4, 6), 16);
 	return (r * 299 + g * 587 + b * 114) / 1000 > 128;
+}
+
+function getReadableForeground(hex: string): string {
+	return isLightColor(hex) ? "#111111" : "#f8f8f8";
 }

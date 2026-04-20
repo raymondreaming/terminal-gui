@@ -147,7 +147,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 			)}
 
 			<div
-				className="shrink-0 w-3 text-center text-[9px] font-mono select-none"
+				className="shrink-0 w-3 text-center text-[9px] font-diff select-none"
 				style={{
 					lineHeight: `${LINE_HEIGHT}px`,
 					color: isRemoved
@@ -161,7 +161,7 @@ const VirtualizedLine = memo(function VirtualizedLine({
 			</div>
 
 			<div
-				className={`flex-1 pr-1 text-[10px] font-mono overflow-hidden whitespace-pre ${
+				className={`flex-1 pr-1 text-[10px] font-diff overflow-hidden whitespace-pre ${
 					onLineClick ? "cursor-pointer" : ""
 				}`}
 				style={{

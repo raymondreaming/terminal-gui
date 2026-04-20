@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GitFileEntry } from "../../hooks/useGitStatus.ts";
 
 export interface SelectedFile {
@@ -142,7 +142,7 @@ export function EditorSidebar({
 										className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-inferay-text/5"
 									>
 										<FileStatusIcon status={f.status} />
-										<span className="flex-1 truncate text-[10px] font-mono text-inferay-text-2">
+										<span className="flex-1 truncate text-[10px] font-medium text-inferay-text-2">
 											{f.path}
 										</span>
 									</div>
@@ -342,7 +342,7 @@ function CommitSection({
 					type="button"
 					onClick={onCommit}
 					disabled={!commitMessage.trim() || !stagedCount || isCommitting}
-					className="w-full flex items-center justify-center gap-1.5 rounded-md bg-inferay-accent hover:bg-inferay-accent/90 px-3 py-2 text-[10px] font-medium text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+					className="w-full flex items-center justify-center gap-1.5 rounded-md bg-inferay-accent hover:bg-inferay-accent/90 px-3 py-2 text-[10px] font-medium text-[var(--color-inferay-accent-foreground)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
 				>
 					<svg
 						className="w-3 h-3"
@@ -415,7 +415,7 @@ function CommitDetailsPanel({
 						className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-inferay-text/5 cursor-pointer"
 					>
 						<FileStatusIcon status={file.status} />
-						<span className="flex-1 truncate text-[10px] font-mono text-inferay-text-2">
+						<span className="flex-1 truncate text-[10px] font-medium text-inferay-text-2">
 							{file.path.split("/").pop()}
 						</span>
 						<div className="shrink-0 flex items-center gap-1 text-[9px] tabular-nums">
@@ -448,11 +448,19 @@ export function FileStatusIcon({ status }: { status: string }) {
 	switch (status) {
 		case "M":
 			return (
-				<span
-					className={`${base} text-amber-400 bg-amber-400/15`}
-					title="Modified"
-				>
-					M
+				<span className={`${base} text-amber-400`} title="Modified">
+					<svg
+						className="h-2.5 w-2.5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					>
+						<path d="M12 20h9" />
+						<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+					</svg>
 				</span>
 			);
 		case "A":
@@ -484,11 +492,17 @@ export function FileStatusIcon({ status }: { status: string }) {
 			);
 		case "?":
 			return (
-				<span
-					className={`${base} text-inferay-text-3 bg-inferay-text/8`}
-					title="Untracked"
-				>
-					U
+				<span className={`${base} text-git-added`} title="Untracked">
+					<svg
+						className="h-2.5 w-2.5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.2"
+						strokeLinecap="round"
+					>
+						<path d="M12 5v14M5 12h14" />
+					</svg>
 				</span>
 			);
 		default:
@@ -541,6 +555,19 @@ function buildFileTree(files: GitFileEntry[]): TreeNode {
 	return root;
 }
 
+function getExpandedDirs(files: GitFileEntry[]): Set<string> {
+	const dirs = new Set<string>();
+	for (const f of files) {
+		const parts = f.path.split("/");
+		let path = "";
+		for (let i = 0; i < parts.length - 1; i++) {
+			path = path ? `${path}/${parts[i]}` : parts[i]!;
+			dirs.add(path);
+		}
+	}
+	return dirs;
+}
+
 function TreeNodeRow({
 	node,
 	depth,
@@ -577,12 +604,12 @@ function TreeNodeRow({
 	return (
 		<>
 			<div
-				className={`group flex h-[28px] items-center gap-1.5 cursor-pointer transition-colors border-l-2 ${
+				className={`group relative flex h-6 items-center gap-1 cursor-pointer transition-colors border-l-2 ${
 					active
 						? "border-inferay-accent bg-inferay-accent/8"
 						: "border-transparent hover:bg-inferay-text/[0.04]"
 				}`}
-				style={{ paddingLeft: `${6 + depth * 14}px`, paddingRight: 8 }}
+				style={{ paddingLeft: `${5 + depth * 11}px`, paddingRight: 8 }}
 				onClick={() => {
 					if (isDir) {
 						toggleDir(node.path);
@@ -594,7 +621,7 @@ function TreeNodeRow({
 				{isDir ? (
 					<>
 						<svg
-							className={`w-2.5 h-2.5 text-inferay-text-3 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}
+							className={`h-2.5 w-2.5 shrink-0 text-inferay-text-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -603,13 +630,13 @@ function TreeNodeRow({
 							<polyline points="9 18 15 12 9 6" />
 						</svg>
 						<svg
-							className={`w-3.5 h-3.5 shrink-0 transition-colors ${isExpanded ? "text-inferay-accent/60" : "text-inferay-text-3/70"}`}
+							className={`h-3 w-3 shrink-0 transition-colors ${isExpanded ? "text-inferay-accent/60" : "text-inferay-text-3/70"}`}
 							viewBox="0 0 24 24"
 							fill="currentColor"
 						>
 							<path d="M2 6a2 2 0 012-2h5l2 2h9a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
 						</svg>
-						<span className="truncate text-[10px] font-medium text-inferay-text-2">
+						<span className="truncate text-[9.5px] font-medium text-inferay-text-2">
 							{node.name}
 						</span>
 					</>
@@ -618,7 +645,7 @@ function TreeNodeRow({
 						<span className="w-2.5 shrink-0" />
 						<FileStatusIcon status={file.status} />
 						<span
-							className={`flex-1 truncate text-[10px] font-mono transition-colors ${
+							className={`min-w-0 flex-1 truncate text-[9.5px] font-medium transition-colors ${
 								active
 									? "text-inferay-text"
 									: "text-inferay-text-2 group-hover:text-inferay-text"
@@ -633,7 +660,7 @@ function TreeNodeRow({
 									e.stopPropagation();
 									onAction(file.path);
 								}}
-								className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 rounded-md border border-inferay-border/50 bg-inferay-surface px-1.5 py-0.5 text-[8px] text-inferay-text-3 hover:text-inferay-text-2 hover:border-inferay-border transition-all"
+								className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md border border-inferay-border/50 bg-inferay-surface px-1.5 py-0.5 text-[8px] text-inferay-text-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-inferay-text-2 hover:border-inferay-border transition-all"
 							>
 								{actionLabel}
 							</button>
@@ -687,18 +714,15 @@ function FileGroup({
 	maxHeight?: number;
 }) {
 	const [isCollapsed, setIsCollapsed] = useState(false);
-	const [expandedDirs, setExpandedDirs] = useState<Set<string>>(() => {
-		const dirs = new Set<string>();
-		for (const f of files) {
-			const parts = f.path.split("/");
-			let path = "";
-			for (let i = 0; i < parts.length - 1; i++) {
-				path = path ? `${path}/${parts[i]}` : parts[i]!;
-				dirs.add(path);
-			}
+	const [expandedDirs, setExpandedDirs] = useState<Set<string>>(() =>
+		getExpandedDirs(files)
+	);
+
+	useEffect(() => {
+		if (viewMode === "tree") {
+			setExpandedDirs(getExpandedDirs(files));
 		}
-		return dirs;
-	});
+	}, [files, viewMode]);
 
 	const toggleDir = useCallback((path: string) => {
 		setExpandedDirs((prev) => {
@@ -774,7 +798,7 @@ function FileGroup({
 							return (
 								<div
 									key={`${f.staged ? "s" : "u"}-${f.path}`}
-									className={`group flex items-center gap-1.5 px-2 py-1 border-l-2 transition-colors ${
+									className={`group relative flex items-center gap-1.5 px-2 py-1 border-l-2 transition-colors ${
 										active
 											? "border-inferay-accent bg-inferay-accent/8"
 											: "border-transparent hover:bg-inferay-text/[0.04]"
@@ -788,12 +812,12 @@ function FileGroup({
 										title={f.path}
 									>
 										<span
-											className={`truncate text-[10px] font-mono leading-tight transition-colors ${active ? "text-inferay-text" : "text-inferay-text-2 group-hover:text-inferay-text"}`}
+											className={`truncate text-[10px] font-medium leading-tight transition-colors ${active ? "text-inferay-text" : "text-inferay-text-2 group-hover:text-inferay-text"}`}
 										>
 											{name}
 										</span>
 										{dir && (
-											<span className="truncate text-[8px] leading-tight text-inferay-text-3/50">
+											<span className="truncate text-[8px] leading-tight text-inferay-text-3/60">
 												{dir}
 											</span>
 										)}
@@ -805,7 +829,7 @@ function FileGroup({
 												e.stopPropagation();
 												onAction(f.path);
 											}}
-											className="shrink-0 opacity-0 group-hover:opacity-100 rounded px-1.5 py-0.5 text-[8px] text-inferay-text-3 hover:bg-inferay-text/10 hover:text-inferay-text transition-all"
+											className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded px-1.5 py-0.5 text-[8px] text-inferay-text-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-inferay-text/10 hover:text-inferay-text transition-all"
 											title={`${actionLabel} ${f.path}`}
 										>
 											{actionLabel}

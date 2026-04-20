@@ -25,7 +25,7 @@ const jsBuild = await Bun.build({
 	outdir: distDir,
 	target: "browser",
 	format: "esm",
-	splitting: false,
+	splitting: true,
 	sourcemap: "external",
 	minify: false,
 });

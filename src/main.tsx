@@ -4,20 +4,15 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { TerminalShellHeader } from "./components/layout/TerminalShellHeader.tsx";
+import { preloadPrompts } from "./hooks/usePrompts.ts";
 import { applyAppTheme, loadAppThemeId } from "./lib/app-theme.ts";
 import { getServerOrigin, resolveServerUrl } from "./lib/server-origin.ts";
+import { GitPage } from "./pages/GitPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { PromptsPage } from "./pages/PromptsPage";
 
 const TerminalPage = lazy(() =>
 	import("./pages/Terminal").then((m) => ({ default: m.TerminalPage }))
-);
-const GitPage = lazy(() =>
-	import("./pages/GitPage").then((m) => ({ default: m.GitPage }))
-);
-const PromptsPage = lazy(() =>
-	import("./pages/PromptsPage").then((m) => ({ default: m.PromptsPage }))
-);
-const ProfilePage = lazy(() =>
-	import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage }))
 );
 
 if (window.location.origin !== getServerOrigin()) {
@@ -46,6 +41,15 @@ if (window.location.origin !== getServerOrigin()) {
 }
 
 applyAppTheme(loadAppThemeId());
+
+if (typeof window !== "undefined") {
+	const idle =
+		window.requestIdleCallback ??
+		((cb: IdleRequestCallback) => window.setTimeout(cb, 150));
+	idle(() => {
+		void preloadPrompts();
+	});
+}
 
 const rootElement = document.getElementById("root");
 

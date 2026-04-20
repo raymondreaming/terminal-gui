@@ -53,9 +53,9 @@ function IconSlash({
 			strokeLinejoin="round"
 			className={className}
 		>
-			<path d="M4 17V7l7-4 7 4v10l-7 4z" />
-			<path d="M11 3v10" />
-			<path d="M4 7l7 4 7-4" />
+			<rect x="3.5" y="5" width="17" height="14" rx="3" />
+			<path d="m8 10 3 2-3 2" />
+			<path d="M14 14h3" />
 		</svg>
 	);
 }
@@ -140,7 +140,7 @@ export function Sidebar() {
 							key={item.path}
 							to={item.path}
 							className={({ isActive }) =>
-								`mx-1 mb-px flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors ${
+								`mx-1 mb-px flex h-10 items-center gap-2 rounded-md px-2 text-[12px] transition-colors ${
 									isActive
 										? "bg-inferay-text/[0.06] text-inferay-text"
 										: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
@@ -148,7 +148,9 @@ export function Sidebar() {
 							}
 							title={collapsed ? item.label : undefined}
 						>
-							<Icon size={14} className="shrink-0" />
+							<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+								<Icon size={15} className="shrink-0" />
+							</span>
 							{!collapsed && <span>{item.label}</span>}
 						</NavLink>
 					);
@@ -160,16 +162,18 @@ export function Sidebar() {
 					onClick={() =>
 						window.dispatchEvent(new Event("terminal-open-theme-panel"))
 					}
-					className={`w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2 ${collapsed ? "justify-center !px-0" : ""}`}
+					className={`flex h-10 w-full items-center gap-2 rounded-md px-2 text-[12px] transition-colors text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2 ${collapsed ? "justify-center !px-0" : ""}`}
 					title={collapsed ? "Settings" : undefined}
 				>
-					<IconSettings size={14} className="shrink-0" />
+					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+						<IconSettings size={15} className="shrink-0" />
+					</span>
 					{!collapsed ? <span>Settings</span> : null}
 				</button>
 				<NavLink
 					to="/profile"
 					className={({ isActive }) =>
-						`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] transition-colors ${
+						`flex h-10 items-center gap-2 rounded-md px-2 text-[12px] transition-colors ${
 							isActive
 								? "bg-inferay-text/[0.06] text-inferay-text"
 								: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
@@ -177,7 +181,9 @@ export function Sidebar() {
 					}
 					title={collapsed ? "Profile" : undefined}
 				>
-					<IconUser size={14} className="shrink-0" />
+					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+						<IconUser size={15} className="shrink-0" />
+					</span>
 					{!collapsed ? <span>Profile</span> : null}
 				</NavLink>
 			</div>

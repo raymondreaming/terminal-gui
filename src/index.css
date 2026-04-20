@@ -13,6 +13,7 @@
 
 	--color-inferay-accent: #e5e5e7;
 	--color-inferay-accent-hover: #ffffff;
+	--color-inferay-accent-foreground: #111111;
 	--color-inferay-success: #30d158;
 	--color-inferay-warning: #ff9f0a;
 	--color-inferay-error: #ff453a;
@@ -46,6 +47,7 @@
 	--font-sans:
 		"Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 	--font-mono: "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+	--font-diff: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
 
 	--animate-fade-in: fade-in 0.2s ease-out;
 	--animate-slide-up: slide-up 0.25s ease-out;
@@ -148,6 +150,10 @@ textarea::placeholder {
 /* Diff row hover - uses CSS custom property set inline */
 .diff-row:hover {
 	background-color: var(--hover-bg, inherit) !important;
+}
+
+.font-diff {
+	font-family: var(--font-diff);
 }
 
 .inset-separator {

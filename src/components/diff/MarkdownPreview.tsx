@@ -29,7 +29,7 @@ function loadMermaid(): Promise<unknown> {
 					lineColor: "rgba(255,255,255,0.3)",
 					secondaryColor: "rgba(255,255,255,0.05)",
 					tertiaryColor: "rgba(255,255,255,0.03)",
-					fontFamily: '"Geist Mono", "SF Mono", Menlo, Consolas, monospace',
+					fontFamily: '"JetBrains Mono", "SF Mono", Menlo, Consolas, monospace',
 					fontSize: "11px",
 				},
 			});
@@ -127,7 +127,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "code":
 			return (
-				<code className="rounded bg-inferay-surface border border-inferay-border px-1.5 py-0.5 text-[10px] font-mono text-inferay-text">
+				<code className="rounded bg-inferay-surface border border-inferay-border px-1.5 py-0.5 text-[10px] font-diff text-inferay-text">
 					{token.text}
 				</code>
 			);
@@ -238,12 +238,12 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 			return (
 				<div className="relative group">
 					{block.lang && (
-						<span className="absolute top-1.5 right-2 text-[8px] font-mono uppercase tracking-wider text-inferay-text-3/40">
+						<span className="absolute top-1.5 right-2 text-[8px] font-diff uppercase tracking-wider text-inferay-text-3/40">
 							{block.lang}
 						</span>
 					)}
 					<pre className="overflow-x-auto rounded-md border border-inferay-border bg-inferay-surface p-3">
-						<code className="text-[10px] font-mono text-inferay-text-2 leading-[18px] whitespace-pre">
+						<code className="text-[10px] font-diff text-inferay-text-2 leading-[18px] whitespace-pre">
 							{block.content}
 						</code>
 					</pre>

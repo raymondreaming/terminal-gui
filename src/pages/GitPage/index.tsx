@@ -1,11 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
 import { useGitDiff } from "../../hooks/useGitDiff.ts";
 import { type GitFileEntry, useGitStatus } from "../../hooks/useGitStatus.ts";
 import { fetchJson } from "../../lib/fetch-json.ts";
 import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
-import { GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { InlineDirectoryPicker } from "../Terminal/InlineDirectoryPicker.tsx";
+
+const GitDiffView = lazy(() =>
+	import("../Terminal/GitDiffView.tsx").then((m) => ({
+		default: m.GitDiffView,
+	}))
+);
 
 function persist(dirs: string[]) {
 	writeStoredJson("git-watched-dirs", dirs);
@@ -322,16 +335,29 @@ export function GitPage() {
 							</div>
 						</div>
 					) : diff && diffReq ? (
-						<GitDiffView
-							diff={diff}
-							filePath={diffReq.file}
-							staged={diffReq.staged}
-							loading={false}
-							onClose={() => {
-								clearDiff();
-								setSelFile(null);
-							}}
-						/>
+						<Suspense
+							fallback={
+								<div className="flex h-full items-center justify-center">
+									<div className="flex items-center gap-2">
+										<div className="w-3 h-3 border border-inferay-text-3 border-t-transparent rounded-full animate-spin" />
+										<span className="text-[11px] text-inferay-text-3">
+											Loading diff viewer...
+										</span>
+									</div>
+								</div>
+							}
+						>
+							<GitDiffView
+								diff={diff}
+								filePath={diffReq.file}
+								staged={diffReq.staged}
+								loading={false}
+								onClose={() => {
+									clearDiff();
+									setSelFile(null);
+								}}
+							/>
+						</Suspense>
 					) : (
 						<div className="flex h-full items-center justify-center">
 							<p className="text-[11px] text-inferay-text-3/40">

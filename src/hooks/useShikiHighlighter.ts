@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	type BundledLanguage,
-	type BundledTheme,
-	type Highlighter,
-	createHighlighter,
-} from "shiki";
+import type { BundledLanguage, BundledTheme, Highlighter } from "shiki";
 
 // Map file extensions to Shiki language IDs
 const EXTENSION_TO_LANG: Record<string, BundledLanguage> = {
@@ -55,17 +50,16 @@ async function getHighlighter(): Promise<Highlighter> {
 	if (highlighterInstance) return highlighterInstance;
 	if (highlighterPromise) return highlighterPromise;
 
-	highlighterPromise = createHighlighter({
-		themes: ["github-dark-default"],
-		langs: [], // Load languages on demand
-	});
+	highlighterPromise = import("shiki").then(({ createHighlighter }) =>
+		createHighlighter({
+			themes: ["github-dark-default"],
+			langs: [], // Load languages on demand
+		})
+	);
 
 	highlighterInstance = await highlighterPromise;
 	return highlighterInstance;
 }
-
-// Kick off creation immediately so it's warm by the time the first diff opens
-getHighlighter().catch(() => {});
 
 function getLanguageFromPath(filePath: string): BundledLanguage | null {
 	const ext = filePath.split(".").pop()?.toLowerCase();

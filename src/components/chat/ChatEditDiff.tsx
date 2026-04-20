@@ -199,7 +199,7 @@ function EditDiffCard({
 
 	return (
 		<div
-			className="rounded-lg border overflow-hidden text-[11px] font-mono"
+			className="rounded-lg border overflow-hidden text-[11px] font-diff"
 			style={{
 				backgroundColor: theme?.surface ?? "var(--color-inferay-surface)",
 				borderColor: theme?.border ?? "var(--color-inferay-border)",
