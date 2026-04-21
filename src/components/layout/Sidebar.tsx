@@ -163,37 +163,40 @@ function WorkspaceItem({
 
 	return (
 		<div
-			className={`group mx-1 mb-px flex h-8 items-center rounded-md px-2 text-[11px] transition-colors ${
+			className={`group mx-1 mb-px flex h-8 items-center rounded-md px-2 text-[11px] cursor-pointer transition-colors ${
 				isActive
 					? "bg-inferay-text/[0.06] text-inferay-text"
 					: "text-inferay-text-3 hover:bg-inferay-text/[0.03] hover:text-inferay-text-2"
 			}`}
+			onClick={onSelect}
 		>
-			{editing ? (
-				<input
-					ref={inputRef}
-					value={editValue}
-					onChange={(e) => setEditValue(e.target.value)}
-					onBlur={commitRename}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") commitRename();
-						if (e.key === "Escape") setEditing(false);
-					}}
-					className="flex-1 min-w-0 bg-transparent text-[11px] text-inferay-text outline-none border-b border-inferay-accent"
-				/>
-			) : (
-				<button
-					type="button"
-					onClick={onSelect}
-					onDoubleClick={() => {
-						setEditValue(group.name);
-						setEditing(true);
-					}}
-					className="flex-1 min-w-0 text-left truncate"
-				>
-					{group.name}
-				</button>
-			)}
+			<div className="flex-1 min-w-0">
+				{editing ? (
+					<input
+						ref={inputRef}
+						value={editValue}
+						onChange={(e) => setEditValue(e.target.value)}
+						onBlur={commitRename}
+						onClick={(e) => e.stopPropagation()}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") commitRename();
+							if (e.key === "Escape") setEditing(false);
+						}}
+						className="w-full bg-transparent text-[11px] text-inferay-text outline-none border-b border-inferay-accent"
+					/>
+				) : (
+					<div
+						className="truncate"
+						onDoubleClick={(e) => {
+							e.stopPropagation();
+							setEditValue(group.name);
+							setEditing(true);
+						}}
+					>
+						{group.name}
+					</div>
+				)}
+			</div>
 			<span className="ml-1 text-[9px] text-inferay-text-3 shrink-0">
 				{group.panes.length}
 			</span>
@@ -263,11 +266,15 @@ export function Sidebar() {
 
 	const selectWorkspace = useCallback(
 		(groupId: string) => {
+			// Optimistic update — render immediately, then persist
+			setWorkspaces((prev) => ({ ...prev, selectedGroupId: groupId }));
 			const state = loadTerminalState();
 			if (!state) return;
 			saveTerminalState({ ...state, selectedGroupId: groupId as never });
 			window.dispatchEvent(new Event("terminal-shell-change"));
-			navigate("/terminal");
+			if (window.location.hash !== "#/terminal") {
+				navigate("/terminal");
+			}
 		},
 		[navigate]
 	);
