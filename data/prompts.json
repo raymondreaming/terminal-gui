@@ -34,10 +34,10 @@
 		"category": "learning",
 		"tags": ["explain", "learning"],
 		"isBuiltIn": true,
-		"executionCount": 1,
+		"executionCount": 2,
 		"createdAt": 1700000000000,
 		"updatedAt": 1700000000000,
-		"lastUsed": 1776351879592
+		"lastUsed": 1776806973019
 	},
 	{
 		"_id": "builtin-test",
@@ -234,6 +234,25 @@
 		"promptTemplate": "Preview `goodbot-ai` guardrail generation for this project before writing any agent instruction files.\n\nExecution rules:\n1. Find the repo root first. Use the current working directory unless `{args}` gives a different path.\n2. If `.goodbot/config.json` is missing, run `npx goodbot-ai init --preset recommended` first.\n3. Run `npx goodbot-ai generate --dry-run`.\n4. Show the exact command or commands you ran.\n\nHow to report the result:\n1. **Files affected** — which guardrail files would be created or updated\n2. **Main rules** — the main conventions and guardrails each file would encode\n3. **Overlap** — which generated files may overlap with existing instructions in this repo\n4. **Recommendation** — whether generation looks safe as-is or should be reviewed first\n\nStop after the preview and ask for confirmation. Do not run `npx goodbot-ai generate --force` unless the user explicitly approves writing files. {args}",
 		"category": "architecture",
 		"tags": ["goodbot", "guardrails", "generate", "claude-md"],
+		"isBuiltIn": true,
+		"executionCount": 0,
+		"createdAt": 1700000000000,
+		"updatedAt": 1700000000000
+	},
+	{
+		"_id": "builtin-fallow-scan",
+		"name": "Fallow Codebase Scan",
+		"description": "Read the Fallow docs, then use it to scan TS/JS repos for dead code, duplication, complexity, and architecture drift",
+		"command": "fallow",
+		"promptTemplate": "Use `fallow` for this project, following the official docs at `https://github.com/fallow-rs/fallow` first.\n\nExecution rules:\n1. Read the Fallow README at that URL before running commands so you follow the tool correctly.\n2. Determine the repo root first. Use the current working directory unless `{args}` gives a specific path.\n3. Confirm the target project is primarily TypeScript or JavaScript. If it is not, say Fallow is not the right tool here and stop.\n4. Prefer running without installing dependencies into the repo:\n   - First try `npx fallow --summary`\n   - Then run `npx fallow dead-code`\n   - Then run `npx fallow dupes`\n   - Then run `npx fallow health`\n5. If `npx fallow` fails because the CLI is unavailable, fall back to one install path and then retry:\n   - `npm install -g fallow`, or\n   - `cargo install fallow-cli`\n6. If Fallow suggests automatic cleanup, only preview it with `fallow fix --dry-run` unless the user explicitly asks you to apply changes.\n7. Show the exact command or commands you ran before summarizing the results.\n\nHow to report the result:\n1. **Dead Code** — unused files, exports, types, dependencies, and cycles\n2. **Duplication** — repeated logic, clone groups, and duplication rate\n3. **Health** — complexity hotspots, risky files, and maintainability concerns\n4. **Architecture Drift** — boundary or layering issues if Fallow reports them\n5. **Best Next Moves** — the top cleanup actions to do first, ordered by impact\n6. **Safe Follow-up** — whether `fallow fix --dry-run` looks worth reviewing next\n\nDo not apply automatic fixes without explicit approval. {args}",
+		"category": "architecture",
+		"tags": [
+			"fallow",
+			"dead-code",
+			"duplication",
+			"complexity",
+			"architecture"
+		],
 		"isBuiltIn": true,
 		"executionCount": 0,
 		"createdAt": 1700000000000,
