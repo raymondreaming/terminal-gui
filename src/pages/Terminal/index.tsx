@@ -460,11 +460,23 @@ export function TerminalPage({
 			if (saved?.themeId && saved.themeId !== themeId) {
 				setAppearance((prev) => ({ ...prev, themeId: saved.themeId }));
 			}
-			// Skip restore check if we have a pending save - this prevents undoing local changes
+			const savedState = saved;
+			// Always allow selectedGroupId changes (workspace switching) even during pending saves
+			if (
+				savedState?.selectedGroupId &&
+				savedState.selectedGroupId !== selectedGroupId
+			) {
+				setSelectedGroupId(savedState.selectedGroupId);
+				// Sync the ref immediately so the pending save doesn't revert
+				latestStateRef.current = {
+					...latestStateRef.current,
+					selectedGroupId: savedState.selectedGroupId,
+				};
+			}
+			// Skip full restore check if we have a pending save - this prevents undoing local changes
 			if (pendingSaveRef.current) {
 				return;
 			}
-			const savedState = saved;
 			if (savedState) {
 				const savedShellKey = JSON.stringify({
 					selectedGroupId: savedState.selectedGroupId,
@@ -484,7 +496,7 @@ export function TerminalPage({
 					})),
 				});
 				const currentShellKey = JSON.stringify({
-					selectedGroupId,
+					selectedGroupId: savedState.selectedGroupId,
 					groups: groups.map((group) => ({
 						id: group.id,
 						name: group.name,
