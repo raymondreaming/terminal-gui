@@ -1,6 +1,12 @@
 import type React from "react";
 import { useMemo, useRef } from "react";
-import { IconCheck, IconPencil, IconTrash, IconX } from "../ui/Icons.tsx";
+import {
+	IconCheck,
+	IconPlus,
+	IconPencil,
+	IconTrash,
+	IconX,
+} from "../ui/Icons.tsx";
 import { Markdown } from "./ChatRichContent.tsx";
 import { renderInputHighlights } from "./chat-token-decorators.tsx";
 
@@ -80,6 +86,7 @@ export function ChatComposer({
 	mdPreview,
 	setMdPreview,
 	onMdFileClick,
+	statusBar,
 }: {
 	showInput: boolean;
 	theme?: { bg: string; fg: string; cursor: string };
@@ -156,6 +163,7 @@ export function ChatComposer({
 		}>
 	>;
 	onMdFileClick: (path: string) => void;
+	statusBar?: React.ReactNode;
 }) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const inputHighlightTheme = useMemo(
@@ -169,25 +177,62 @@ export function ChatComposer({
 
 	return (
 		<>
+			<input
+				type="file"
+				ref={fileInputRef}
+				accept="image/*"
+				multiple
+				className="hidden"
+				onChange={async (e) => {
+					for (const file of Array.from(e.target.files || [])) {
+						if (file.type.startsWith("image/")) await attachImage(file);
+					}
+					e.target.value = "";
+				}}
+			/>
+
+			{attachedImages.length > 0 && (
+				<div
+					role="group"
+					className="shrink-0 flex items-center gap-2 overflow-x-auto overflow-y-hidden px-3 py-1.5"
+					aria-label="Attached images"
+				>
+					{attachedImages.map((img) => (
+						<div
+							key={img.path}
+							className="relative group h-14 w-14 shrink-0 overflow-hidden rounded-lg"
+							style={{
+								border: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
+							}}
+						>
+							<img
+								src={img.previewUrl}
+								alt={img.name}
+								title={img.name}
+								className="h-full w-full object-cover"
+							/>
+							<button
+								type="button"
+								onClick={() => removeAttachedImage(img.path)}
+								className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+								title="Remove image"
+							>
+								<IconX size={10} />
+							</button>
+						</div>
+					))}
+				</div>
+			)}
+
 			{queuedMessages.length > 0 && (
 				<div
 					className="shrink-0 overflow-y-auto"
-					style={{
-						maxHeight: "140px",
-						borderTop: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
-						backgroundColor: theme ? `${bgColor}cc` : "rgba(0,0,0,0.4)",
-					}}
+					style={{ maxHeight: "140px" }}
 				>
 					{queuedMessages.map((qm, idx) => (
 						<div
 							key={qm.id}
-							className="group flex items-start gap-2 px-3 py-1.5 transition-colors"
-							style={{
-								borderBottom:
-									idx < queuedMessages.length - 1
-										? `1px solid ${theme ? `${borderColor}40` : "rgba(255,255,255,0.04)"}`
-										: undefined,
-							}}
+							className="group flex items-start gap-2 px-3 py-1 transition-colors"
 						>
 							<span
 								className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums"
@@ -272,7 +317,7 @@ export function ChatComposer({
 								<>
 									{qm.images && qm.images.length > 0 && (
 										<img
-											src={`/api/file?path=${encodeURIComponent(qm.images[0])}`}
+											src={`/api/file?path=${encodeURIComponent(qm.images[0]!)}`}
 											alt=""
 											className="shrink-0 h-6 w-6 rounded object-cover"
 										/>
@@ -324,62 +369,10 @@ export function ChatComposer({
 				</div>
 			)}
 
+			{statusBar}
+
 			{showInput && (
 				<div className="shrink-0 px-3 pb-2 pt-1">
-					<input
-						type="file"
-						ref={fileInputRef}
-						accept="image/*"
-						multiple
-						className="hidden"
-						onChange={async (e) => {
-							for (const file of Array.from(e.target.files || [])) {
-								if (file.type.startsWith("image/")) await attachImage(file);
-							}
-							e.target.value = "";
-						}}
-					/>
-					{attachedImages.length > 0 && (
-						<div
-							role="group"
-							className="mb-2 flex min-h-[72px] items-center gap-2 overflow-x-auto overflow-y-hidden rounded-lg border px-2 py-2"
-							aria-label="Attached images"
-							style={{
-								borderColor: theme
-									? borderColor
-									: "var(--color-inferay-border)",
-								backgroundColor: theme
-									? `${surfaceColor ?? bgColor}cc`
-									: "var(--color-inferay-surface)",
-							}}
-						>
-							{attachedImages.map((img) => (
-								<div
-									key={img.path}
-									className="relative group h-14 w-14 shrink-0 overflow-hidden rounded-lg"
-									style={{
-										border: `1px solid ${theme ? borderColor : "var(--color-inferay-border)"}`,
-										backgroundColor: theme ? bgColor : "rgba(0,0,0,0.18)",
-									}}
-								>
-									<img
-										src={img.previewUrl}
-										alt={img.name}
-										title={img.name}
-										className="h-full w-full object-cover"
-									/>
-									<button
-										type="button"
-										onClick={() => removeAttachedImage(img.path)}
-										className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-										title="Remove image"
-									>
-										<IconX size={10} />
-									</button>
-								</div>
-							))}
-						</div>
-					)}
 					<div
 						className="relative flex flex-col rounded-xl overflow-visible"
 						ref={inputContainerRef}
@@ -525,20 +518,7 @@ export function ChatComposer({
 								}}
 								title="Attach image"
 							>
-								<svg
-									aria-hidden="true"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								>
-									<line x1="12" y1="5" x2="12" y2="19" />
-									<line x1="5" y1="12" x2="19" y2="12" />
-								</svg>
+								<IconPlus size={16} />
 							</button>
 
 							<div

@@ -1,5 +1,12 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import type { GraphNode, GraphRow } from "../../hooks/useGitGraph";
+import {
+	CommitGraphLinesLayer,
+	IconCheck,
+	IconCloud,
+	IconGitBranch,
+	IconTag,
+} from "../ui/Icons.tsx";
 
 interface WipFile {
 	path: string;
@@ -111,91 +118,15 @@ function loadColumns(): ColumnVisibility {
 function RefIcon({ kind }: { kind: ParsedRef["kind"] }) {
 	const size = 10;
 	if (kind === "head") {
-		// Checkmark
-		return (
-			<svg
-				aria-hidden="true"
-				focusable="false"
-				width={size}
-				height={size}
-				viewBox="0 0 10 10"
-				fill="none"
-				className="shrink-0"
-			>
-				<path
-					d="M2 5.5 L4 7.5 L8 3"
-					stroke="currentColor"
-					strokeWidth="1.5"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				/>
-			</svg>
-		);
+		return <IconCheck size={size} className="shrink-0" />;
 	}
 	if (kind === "tag") {
-		// Tag
-		return (
-			<svg
-				aria-hidden="true"
-				focusable="false"
-				width={size}
-				height={size}
-				viewBox="0 0 10 10"
-				fill="none"
-				className="shrink-0"
-			>
-				<path
-					d="M1.5 5.5V2a.5.5 0 01.5-.5h3.5L9 5l-3.5 3.5L1.5 5.5z"
-					stroke="currentColor"
-					strokeWidth="1"
-					strokeLinejoin="round"
-				/>
-				<circle cx="3.5" cy="3.5" r=".7" fill="currentColor" />
-			</svg>
-		);
+		return <IconTag size={size} className="shrink-0" />;
 	}
 	if (kind === "remote") {
-		// Cloud / remote
-		return (
-			<svg
-				aria-hidden="true"
-				focusable="false"
-				width={size}
-				height={size}
-				viewBox="0 0 10 10"
-				fill="none"
-				className="shrink-0"
-			>
-				<path
-					d="M2.5 7h5a2 2 0 000-4 2.5 2.5 0 00-5 1 1.5 1.5 0 000 3z"
-					stroke="currentColor"
-					strokeWidth="1"
-					strokeLinejoin="round"
-				/>
-			</svg>
-		);
+		return <IconCloud size={size} className="shrink-0" />;
 	}
-	// Local branch
-	return (
-		<svg
-			aria-hidden="true"
-			focusable="false"
-			width={size}
-			height={size}
-			viewBox="0 0 10 10"
-			fill="none"
-			className="shrink-0"
-		>
-			<path
-				d="M5 1.5v4M3 3l2-1.5L7 3"
-				stroke="currentColor"
-				strokeWidth="1.2"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-			<circle cx="5" cy="7.5" r="1.2" stroke="currentColor" strokeWidth="1" />
-		</svg>
-	);
+	return <IconGitBranch size={size} className="shrink-0" />;
 }
 
 function RefBadge({
@@ -702,47 +633,19 @@ export const CommitGraph = memo(function CommitGraph({
 			/>
 
 			{/* SVG lines layer — clipped to ref+graph area */}
-			<svg
-				aria-hidden="true"
-				overflow="hidden"
+			<CommitGraphLinesLayer
 				className="pointer-events-none absolute top-7 left-0"
 				width={REF_WIDTH + graphWidth}
 				height={totalHeight}
 				style={{ zIndex: 1 }}
-			>
-				{/* Row-local rails keep width and ownership consistent per lane */}
-				{railSegments.map((segment) => {
-					const x = colX(segment.column);
-					return (
-						<line
-							key={segment.key}
-							x1={x}
-							y1={rowTop(segment.row)}
-							x2={x}
-							y2={rowBottom(segment.row)}
-							stroke={segment.color}
-							strokeWidth={LINE_WIDTH}
-							strokeOpacity={0.98}
-							strokeLinecap="round"
-						/>
-					);
-				})}
-
-				{/* Lane-switch elbows */}
-				{transitions.map((transition, i) => {
-					return (
-						<path
-							key={i}
-							d={buildConnection(transition)}
-							stroke={transition.color}
-							strokeWidth={LINE_WIDTH}
-							strokeOpacity={0.9}
-							strokeLinecap="round"
-							fill="none"
-						/>
-					);
-				})}
-			</svg>
+				railSegments={railSegments}
+				transitions={transitions}
+				colX={colX}
+				rowTop={rowTop}
+				rowBottom={rowBottom}
+				buildConnection={buildConnection}
+				lineWidth={LINE_WIDTH}
+			/>
 
 			{/* Rows layer — avatar nodes sit on top of lines */}
 			<div className="relative" style={{ zIndex: 2 }}>

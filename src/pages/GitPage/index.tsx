@@ -8,6 +8,7 @@ import {
 	useState,
 } from "react";
 import { GroupTabs } from "../../components/ui/GroupTabs.tsx";
+import { IconGitBranch, IconPlus } from "../../components/ui/Icons.tsx";
 import { useGitDiff } from "../../hooks/useGitDiff.ts";
 import { type GitFileEntry, useGitStatus } from "../../hooks/useGitStatus.ts";
 import { fetchJson } from "../../lib/fetch-json.ts";
@@ -183,23 +184,7 @@ export function GitPage() {
 			<div className="flex h-full items-center justify-center bg-inferay-bg">
 				<div className="text-center">
 					<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-inferay-surface border border-inferay-border">
-						<svg
-							aria-hidden="true"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="text-inferay-text-3"
-						>
-							<circle cx="18" cy="18" r="3" />
-							<circle cx="6" cy="6" r="3" />
-							<path d="M13 6h3a2 2 0 0 1 2 2v7" />
-							<path d="M6 9v12" />
-						</svg>
+						<IconGitBranch size={24} className="text-inferay-text-3" />
 					</div>
 					<p className="text-[12px] text-inferay-text mb-1">No repositories</p>
 					<p className="text-[10px] text-inferay-text-3 mb-4">
@@ -250,39 +235,12 @@ export function GitPage() {
 					className="flex items-center justify-center h-7 w-7 rounded-lg border border-inferay-border bg-inferay-surface text-inferay-text-3 hover:bg-inferay-text/[0.06] hover:text-inferay-text-2 transition-colors"
 					title="Add repository"
 				>
-					<svg
-						aria-hidden="true"
-						width="10"
-						height="10"
-						viewBox="0 0 12 12"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.5"
-						strokeLinecap="round"
-					>
-						<path d="M6 2v8M2 6h8" />
-					</svg>
+					<IconPlus size={10} />
 				</button>
 				{project && (
 					<>
 						<div className="w-px h-4 bg-inferay-border/40" />
-						<svg
-							aria-hidden="true"
-							width="11"
-							height="11"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="text-inferay-text-3 shrink-0"
-						>
-							<circle cx="18" cy="18" r="3" />
-							<circle cx="6" cy="6" r="3" />
-							<path d="M13 6h3a2 2 0 0 1 2 2v7" />
-							<path d="M6 9v12" />
-						</svg>
+						<IconGitBranch size={11} className="text-inferay-text-3 shrink-0" />
 						<span className="text-[10px] text-inferay-text-3">
 							{project.branch}
 						</span>

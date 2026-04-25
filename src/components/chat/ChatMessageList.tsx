@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { GroupedEditDiff, MiniEditDiff } from "./ChatEditDiff.tsx";
 import { AskUserQuestionCard, Markdown } from "./ChatRichContent.tsx";
 import { renderTextPills } from "./chat-token-decorators.tsx";
+import { IconClock, IconChevronDown } from "../ui/Icons.tsx";
 
 type ChatTheme = {
 	bg: string;
@@ -200,20 +201,7 @@ function CheckpointMarker({
 			}}
 		>
 			<div className="flex items-center gap-2 px-2 py-1">
-				<svg
-					aria-hidden="true"
-					width="11"
-					height="11"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke={`${baseColor}80`}
-					strokeWidth="2"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<path d="M12 6v6l4 2" />
-				</svg>
+				<IconClock size={11} style={{ color: `${baseColor}80` }} />
 				<button
 					type="button"
 					onClick={() => setExpanded(!expanded)}
@@ -500,18 +488,10 @@ const Bubble = React.memo(function Bubble({
 					className="flex items-center gap-1 text-[10px]"
 					style={theme ? { color: theme.fgDim } : undefined}
 				>
-					<svg
-						aria-hidden="true"
-						width="7"
-						height="7"
-						viewBox="0 0 8 8"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.5"
+					<IconChevronDown
+						size={7}
 						className={`transition-transform ${collapsed ? "-rotate-90" : ""}`}
-					>
-						<path d="M2 2.5L4 5.5L6 2.5" />
-					</svg>
+					/>
 					<span className="font-mono text-[9px]">{msg.toolName}</span>
 				</button>
 				{!collapsed && msg.content && (

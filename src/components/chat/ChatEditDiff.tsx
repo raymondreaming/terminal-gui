@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShikiSnippet } from "../../hooks/useShikiHighlighter.ts";
+import { IconChevronRight, IconFilePlus } from "../ui/Icons.tsx";
 
 type DiffTheme = {
 	bg: string;
@@ -217,28 +218,14 @@ function EditDiffCard({
 						: "none",
 				}}
 			>
-				<svg
-					className={`w-2.5 h-2.5 opacity-40 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<polyline points="9 18 15 12 9 6" />
-				</svg>
+				<IconChevronRight
+					size={10}
+					className={`opacity-40 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
+				/>
 				{isStreaming ? (
 					<span className="w-2 h-2 rounded-full bg-current opacity-50 animate-pulse" />
 				) : (
-					<svg
-						className="w-2.5 h-2.5 opacity-40"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-						<polyline points="14 2 14 8 20 8" />
-					</svg>
+					<IconFilePlus size={10} className="opacity-40" />
 				)}
 				<span className="flex-1 truncate opacity-80">{fileName}</span>
 				<span className="flex items-center gap-1 text-[10px]">
@@ -264,7 +251,7 @@ function EditDiffCard({
 				)}
 			</button>
 			{isExpanded && (
-				<div className="max-h-60 overflow-auto">
+				<div className="max-h-60 overflow-auto overflow-x-auto">
 					{hunks.map((hunk, hunkIdx) => {
 						let hunkLineIdx = globalLineIdx;
 						const changedLines = hunk.filter(
@@ -299,7 +286,7 @@ function EditDiffCard({
 									return (
 										<div
 											key={`${hunkIdx}-${lineIdx}`}
-											className="flex leading-[15px]"
+											className="flex leading-[15px] w-fit min-w-full"
 											style={{
 												backgroundColor: isRemoved
 													? removedBg
@@ -320,7 +307,7 @@ function EditDiffCard({
 												{isRemoved ? "−" : "+"}
 											</span>
 											<span
-												className="flex-1 whitespace-pre pr-2 overflow-hidden text-[10px] shiki-line"
+												className="flex-1 whitespace-pre pr-2 text-[10px] shiki-line"
 												style={{
 													color: theme?.fg ?? "var(--color-inferay-text)",
 												}}

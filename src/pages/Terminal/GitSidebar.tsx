@@ -3,6 +3,7 @@ import type {
 	GitFileEntry,
 	GitProjectStatus,
 } from "../../hooks/useGitStatus.ts";
+import { IconChevronRight, IconGitBranch } from "../../components/ui/Icons.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
 
 interface GitSidebarProps {
@@ -89,16 +90,10 @@ function ProjectSection({
 				onClick={() => setExpanded(!expanded)}
 				className="w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors hover:bg-inferay-surface/50"
 			>
-				<svg
-					aria-hidden="true"
-					width="8"
-					height="8"
-					viewBox="0 0 8 8"
+				<IconChevronRight
+					size={8}
 					className={`shrink-0 text-inferay-text-3 transition-transform ${expanded ? "rotate-90" : ""}`}
-					fill="currentColor"
-				>
-					<path d="M2 1l4 3-4 3z" />
-				</svg>
+				/>
 				<span className="text-[11px] font-medium text-inferay-text truncate flex-1">
 					{project.name}
 				</span>
@@ -183,24 +178,7 @@ export const GitSidebar = memo(function GitSidebar({
 
 	return (
 		<CollapsibleSidebarSection
-			icon={
-				<svg
-					aria-hidden="true"
-					width="12"
-					height="12"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				>
-					<circle cx="18" cy="18" r="3" />
-					<circle cx="6" cy="6" r="3" />
-					<path d="M13 6h3a2 2 0 0 1 2 2v7" />
-					<path d="M6 9v12" />
-				</svg>
-			}
+			icon={<IconGitBranch size={12} />}
 			label="Git"
 			count={totalChanges}
 			countColor={totalChanges > 0 ? "text-yellow-400" : "text-inferay-text-3"}

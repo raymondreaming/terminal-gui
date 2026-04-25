@@ -17,6 +17,7 @@ import {
 	saveTerminalState,
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
+import { IconX } from "../../components/ui/Icons.tsx";
 
 interface TerminalSettingsPanelProps {
 	themeId: ThemeId;
@@ -184,18 +185,7 @@ function SearchFoldersSection() {
 							className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-4 w-4 rounded transition-opacity text-inferay-text-3 hover:text-red-400"
 							title="Remove"
 						>
-							<svg
-								aria-hidden
-								width="8"
-								height="8"
-								viewBox="0 0 8 8"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-							>
-								<path d="M1 1l6 6M7 1l-6 6" />
-							</svg>
+							<IconX size={8} />
 						</button>
 					</div>
 				))}

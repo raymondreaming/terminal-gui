@@ -16,10 +16,21 @@ import {
 import { clearAgentChatMessages } from "../../components/chat/chat-session-store.ts";
 import { CommitGraph } from "../../components/git/CommitGraph.tsx";
 import {
+	IconCheck,
+	IconEye,
+	IconFilePlus,
 	IconGitBranch,
 	IconLayoutGrid,
 	IconLayoutRows,
+	IconPencil,
+	IconPlus,
+	IconSend,
 	IconSettings,
+	IconStop,
+	IconTrash,
+	IconUsers,
+	IconWrench,
+	IconX,
 } from "../../components/ui/Icons.tsx";
 import { useActivityFeed } from "../../features/activity-feed/useActivityFeed.ts";
 import { useFileWatcher } from "../../features/file-watcher/useFileWatcher.ts";
@@ -852,104 +863,24 @@ function getZenToolIcon(toolName: string, isAnimated = false): React.ReactNode {
 	const tool = toolName.toLowerCase();
 
 	if (tool === "read") {
-		return (
-			<svg
-				className={`${baseClass} ${animateClass}`}
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-			>
-				<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-				<circle cx="12" cy="12" r="3" />
-			</svg>
-		);
+		return <IconEye className={`${baseClass} ${animateClass}`} />;
 	}
 	if (tool === "edit" || tool === "patch") {
-		return (
-			<svg
-				className={`${baseClass} ${animateClass}`}
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-			>
-				<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-				<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-			</svg>
-		);
+		return <IconPencil className={`${baseClass} ${animateClass}`} />;
 	}
 	if (tool === "write") {
-		return (
-			<svg
-				className={`${baseClass} ${animateClass}`}
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-			>
-				<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-				<polyline points="14 2 14 8 20 8" />
-				<line x1="12" y1="18" x2="12" y2="12" />
-				<line x1="9" y1="15" x2="15" y2="15" />
-			</svg>
-		);
+		return <IconFilePlus className={`${baseClass} ${animateClass}`} />;
 	}
 	if (tool === "bash" || tool === "exec") {
-		return (
-			<svg
-				className={`${baseClass} ${animateClass}`}
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-			>
-				<polyline points="4 17 10 11 4 5" />
-				<line x1="12" y1="19" x2="20" y2="19" />
-			</svg>
-		);
+		return <IconWrench className={`${baseClass} ${animateClass}`} />;
 	}
 	if (tool === "grep" || tool === "glob") {
-		return (
-			<svg
-				className={`${baseClass} ${animateClass}`}
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-			>
-				<circle cx="11" cy="11" r="8" />
-				<line x1="21" y1="21" x2="16.65" y2="16.65" />
-			</svg>
-		);
+		return <IconWrench className={`${baseClass} ${animateClass}`} />;
 	}
 	if (tool === "task") {
-		return (
-			<svg
-				className={`${baseClass} ${animateClass}`}
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-			>
-				<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-				<circle cx="9" cy="7" r="4" />
-				<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-				<path d="M16 3.13a4 4 0 0 1 0 7.75" />
-			</svg>
-		);
+		return <IconUsers className={`${baseClass} ${animateClass}`} />;
 	}
-	return (
-		<svg
-			className={`${baseClass} ${animateClass}`}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="2"
-		>
-			<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-		</svg>
-	);
+	return <IconWrench className={`${baseClass} ${animateClass}`} />;
 }
 function ZenModeInput({
 	chatRef,
@@ -1085,9 +1016,7 @@ function ZenModeInput({
 							onClick={handleStop}
 							className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3 border border-inferay-border"
 						>
-							<svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-								<rect x="6" y="6" width="12" height="12" rx="1" />
-							</svg>
+							<IconStop className="w-3 h-3" />
 							Stop
 						</button>
 					</div>
@@ -1147,15 +1076,7 @@ function ZenModeInput({
 											className="shrink-0 p-0.5 rounded text-inferay-accent"
 											title="Save"
 										>
-											<svg
-												className="w-3 h-3"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												strokeWidth="2"
-											>
-												<polyline points="20 6 9 17 4 12" />
-											</svg>
+											<IconCheck size={12} />
 										</button>
 										<button
 											type="button"
@@ -1163,16 +1084,7 @@ function ZenModeInput({
 											className="shrink-0 p-0.5 rounded text-inferay-text-3"
 											title="Cancel"
 										>
-											<svg
-												className="w-3 h-3"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												strokeWidth="2"
-											>
-												<line x1="18" y1="6" x2="6" y2="18" />
-												<line x1="6" y1="6" x2="18" y2="18" />
-											</svg>
+											<IconX size={12} />
 										</button>
 									</div>
 								) : (
@@ -1190,16 +1102,7 @@ function ZenModeInput({
 												className="p-0.5 rounded transition-colors hover:bg-white/10 text-inferay-text-3"
 												title="Edit"
 											>
-												<svg
-													className="w-3 h-3"
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="2"
-												>
-													<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-													<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-												</svg>
+												<IconPencil size={12} />
 											</button>
 											<button
 												type="button"
@@ -1209,16 +1112,7 @@ function ZenModeInput({
 												className="p-0.5 rounded transition-colors hover:bg-red-500/20 text-red-400"
 												title="Remove from queue"
 											>
-												<svg
-													className="w-3 h-3"
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="2"
-												>
-													<polyline points="3 6 5 6 21 6" />
-													<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-												</svg>
+												<IconTrash size={12} />
 											</button>
 										</div>
 									</>
@@ -1272,18 +1166,7 @@ function ZenModeInput({
 						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-inferay-text-3 hover:text-inferay-text-2 hover:bg-inferay-text/10 transition-colors"
 						title="Attach image"
 					>
-						<svg
-							className="w-4 h-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						>
-							<line x1="12" y1="5" x2="12" y2="19" />
-							<line x1="5" y1="12" x2="19" y2="12" />
-						</svg>
+						<IconPlus size={16} />
 					</button>
 
 					<span className="shrink-0 text-inferay-accent">
@@ -1316,18 +1199,7 @@ function ZenModeInput({
 						disabled={!input.trim()}
 						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-inferay-accent/20 text-inferay-accent hover:bg-inferay-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
 					>
-						<svg
-							className="w-4 h-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						>
-							<line x1="22" y1="2" x2="11" y2="13" />
-							<polygon points="22 2 15 22 11 13 2 9 22 2" />
-						</svg>
+						<IconSend size={16} />
 					</button>
 				</div>
 			</div>

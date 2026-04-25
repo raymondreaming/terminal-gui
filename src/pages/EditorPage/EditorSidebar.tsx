@@ -1,4 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	IconChevronRight,
+	IconFolderFill,
+	IconGitCommit,
+	IconPencil,
+	IconPlus,
+} from "../../components/ui/Icons.tsx";
 import type { GitFileEntry } from "../../hooks/useGitStatus.ts";
 
 export interface SelectedFile {
@@ -261,17 +268,7 @@ function CommitSection({
 			{/* Commit header */}
 			<div className="flex items-center justify-between px-2.5 h-8 border-b border-inferay-border/40">
 				<div className="flex items-center gap-1.5">
-					<svg
-						className="w-3 h-3 text-inferay-text-3"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<circle cx="12" cy="12" r="4" />
-						<line x1="1.05" y1="12" x2="7" y2="12" />
-						<line x1="17.01" y1="12" x2="22.96" y2="12" />
-					</svg>
+					<IconGitCommit size={12} className="text-inferay-text-3" />
 					<span className="text-[9px] font-medium text-inferay-text-2">
 						Commit
 					</span>
@@ -344,17 +341,7 @@ function CommitSection({
 					disabled={!commitMessage.trim() || !stagedCount || isCommitting}
 					className="w-full flex items-center justify-center gap-1.5 rounded-md bg-inferay-accent hover:bg-inferay-accent/90 px-3 py-2 text-[10px] font-medium text-[var(--color-inferay-accent-foreground)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
 				>
-					<svg
-						className="w-3 h-3"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<circle cx="12" cy="12" r="4" />
-						<line x1="1.05" y1="12" x2="7" y2="12" />
-						<line x1="17.01" y1="12" x2="22.96" y2="12" />
-					</svg>
+					<IconGitCommit size={12} />
 					{isCommitting
 						? "Committing..."
 						: stagedCount
@@ -449,18 +436,7 @@ export function FileStatusIcon({ status }: { status: string }) {
 		case "M":
 			return (
 				<span className={`${base} text-amber-400`} title="Modified">
-					<svg
-						className="h-2.5 w-2.5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					>
-						<path d="M12 20h9" />
-						<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-					</svg>
+					<IconPencil size={10} />
 				</span>
 			);
 		case "A":
@@ -493,16 +469,7 @@ export function FileStatusIcon({ status }: { status: string }) {
 		case "?":
 			return (
 				<span className={`${base} text-git-added`} title="Untracked">
-					<svg
-						className="h-2.5 w-2.5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-					>
-						<path d="M12 5v14M5 12h14" />
-					</svg>
+					<IconPlus size={10} />
 				</span>
 			);
 		default:
@@ -620,22 +587,14 @@ function TreeNodeRow({
 			>
 				{isDir ? (
 					<>
-						<svg
-							className={`h-2.5 w-2.5 shrink-0 text-inferay-text-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-						>
-							<polyline points="9 18 15 12 9 6" />
-						</svg>
-						<svg
-							className={`h-3 w-3 shrink-0 transition-colors ${isExpanded ? "text-inferay-accent/60" : "text-inferay-text-3/70"}`}
-							viewBox="0 0 24 24"
-							fill="currentColor"
-						>
-							<path d="M2 6a2 2 0 012-2h5l2 2h9a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-						</svg>
+						<IconChevronRight
+							size={10}
+							className={`shrink-0 text-inferay-text-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+						/>
+						<IconFolderFill
+							size={12}
+							className={`shrink-0 transition-colors ${isExpanded ? "text-inferay-accent/60" : "text-inferay-text-3/70"}`}
+						/>
 						<span className="truncate text-[9.5px] font-medium text-inferay-text-2">
 							{node.name}
 						</span>
@@ -754,15 +713,10 @@ function FileGroup({
 					className={`flex items-center gap-1.5 ${isCollapsible ? "cursor-pointer" : "cursor-default"}`}
 				>
 					{isCollapsible && (
-						<svg
-							className={`w-2.5 h-2.5 text-inferay-text-3 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-						>
-							<polyline points="9 18 15 12 9 6" />
-						</svg>
+						<IconChevronRight
+							size={10}
+							className={`text-inferay-text-3 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+						/>
 					)}
 					<span className="text-[9px] font-medium text-inferay-text-2">
 						{title} Files

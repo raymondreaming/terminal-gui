@@ -51,11 +51,20 @@ import {
 } from "./chat-session-store.ts";
 import {
 	IconAlertTriangle,
+	IconArrowDown,
 	IconCircle,
+	IconEye,
+	IconFilePlus,
+	IconGitBranch,
+	IconGlobe,
 	IconMessageCircle,
+	IconPencil,
+	IconSearch,
 	IconSparkles,
+	IconStop,
 	IconTerminal,
 	IconWrench,
+	IconX,
 } from "../ui/Icons.tsx";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
@@ -417,6 +426,25 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			if (!el) return;
 			el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
 		}, []);
+
+		useEffect(() => {
+			if (!isSelected) return;
+			const onKeyDown = (e: KeyboardEvent) => {
+				if (e.key !== "ArrowDown") return;
+				const active = document.activeElement;
+				if (
+					active &&
+					(active.tagName === "TEXTAREA" || active.tagName === "INPUT")
+				)
+					return;
+				if (!isAtBottom) {
+					e.preventDefault();
+					scrollToBottom();
+				}
+			};
+			window.addEventListener("keydown", onKeyDown);
+			return () => window.removeEventListener("keydown", onKeyDown);
+		}, [isSelected, isAtBottom, scrollToBottom]);
 
 		const handleMdFileClick = useCallback((filePath: string) => {
 			setMdPreview({
@@ -1611,7 +1639,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			<div
 				ref={containerRef}
 				className={`flex h-full flex-col transition-all ${isDragOver ? "ring-2 ring-inset ring-blue-500/60" : ""}`}
-				style={theme ? { backgroundColor: bgColor, color: fgColor } : undefined}
+				style={theme ? { color: fgColor } : undefined}
 				onDragOver={(e) => {
 					e.preventDefault();
 					setIsDragOver(true);
@@ -1714,6 +1742,10 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 										<span className="text-[9px]" style={dimStyle}>
 											›
 										</span>
+										<IconGitBranch
+											size={9}
+											className="text-inferay-text-3 shrink-0"
+										/>
 										<span
 											className="text-[9px] font-medium text-inferay-text-3 truncate max-w-[80px]"
 											title={gitBranch}
@@ -1736,18 +1768,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 										className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-red-400 hover:bg-red-500/15"
 										title="Close"
 									>
-										<svg
-											aria-hidden="true"
-											width="8"
-											height="8"
-											viewBox="0 0 8 8"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="1.5"
-											strokeLinecap="round"
-										>
-											<path d="M1 1l6 6M7 1l-6 6" />
-										</svg>
+										<IconX size={8} />
 									</button>
 								)}
 							</div>
@@ -1778,88 +1799,79 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						<button
 							type="button"
 							onClick={scrollToBottom}
-							className="absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border border-inferay-border bg-inferay-surface shadow-sm transition-opacity hover:bg-inferay-surface-2"
+							className="absolute bottom-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-inferay-border bg-inferay-surface shadow-sm transition-opacity hover:bg-inferay-surface-2"
 						>
-							<svg
-								aria-hidden="true"
-								width="12"
-								height="12"
-								viewBox="0 0 12 12"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="text-inferay-text-2"
-							>
-								<path d="M6 2v8M3 7l3 3 3-3" />
-							</svg>
+							<IconArrowDown size={12} className="text-inferay-text-2" />
 						</button>
 					)}
 				</div>
 
-				<div className="relative shrink-0" style={{ backgroundColor: bgColor }}>
-					{/* Gradient fade from transparent → solid above the bottom bar */}
+				<div className="relative shrink-0">
+					{/* Eased gradient fade behind the bottom bar */}
 					<div
-						className="pointer-events-none absolute bottom-full left-0 right-0 h-[50px]"
+						className="pointer-events-none absolute left-0 right-0 bottom-0"
 						style={{
-							background: `linear-gradient(to bottom, transparent, ${bgColor})`,
+							top: "-64px",
+							background: `linear-gradient(to bottom, ${bgColor}00 0%, ${bgColor}18 12%, ${bgColor}50 24%, ${bgColor}90 36%, ${bgColor}cc 48%, ${bgColor} 60%, ${bgColor} 100%)`,
 						}}
 					/>
-					<ChatStatusBar
-						messages={messages}
-						isLoading={isLoading}
-						status={status}
-						onStop={stopGeneration}
-						theme={theme}
-						borderColor={borderColor}
-						bgColor={bgColor}
-						fgDim={fgDim}
-					/>
-
-					<ChatComposer
-						showInput={showInput}
-						theme={theme}
-						bgColor={bgColor}
-						fgColor={fgColor}
-						cursorColor={cursorColor}
-						fgDim={fgDim}
-						borderColor={borderColor}
-						surfaceColor={surfaceColor}
-						bubbleTheme={bubbleTheme}
-						input={input}
-						setInput={setInput}
-						isLoading={isLoading}
-						attachedImages={attachedImages}
-						removeAttachedImage={removeAttachedImage}
-						attachImage={attachImage}
-						queuedMessages={queuedMessages}
-						editingQueueId={editingQueueId}
-						setEditingQueueId={setEditingQueueId}
-						editingQueueText={editingQueueText}
-						setEditingQueueText={setEditingQueueText}
-						queueRef={queueRef}
-						setQueuedMessages={setQueuedMessages}
-						fileMenu={fileMenu}
-						setFileMenu={setFileMenu}
-						fileResults={fileResults}
-						selectFile={selectFile}
-						slashMenu={slashMenu}
-						setSlashMenu={setSlashMenu}
-						showCommands={showCommands}
-						filteredCommands={filteredCommands}
-						selectCommand={selectCommand}
-						handleInputForFileMenu={handleInputForFileMenu}
-						handleInputForSlashMenu={handleInputForSlashMenu}
-						handleKeyDown={handleKeyDown}
-						handlePaste={handlePaste}
-						textareaRef={textareaRef}
-						highlightOverlayRef={highlightOverlayRef}
-						inputContainerRef={inputContainerRef}
-						mdPreview={mdPreview}
-						setMdPreview={setMdPreview}
-						onMdFileClick={handleMdFileClick}
-					/>
+					<div className="relative z-10">
+						<ChatComposer
+							statusBar={
+								<ChatStatusBar
+									messages={messages}
+									isLoading={isLoading}
+									status={status}
+									onStop={stopGeneration}
+									theme={theme}
+									borderColor={borderColor}
+									bgColor={bgColor}
+									fgDim={fgDim}
+								/>
+							}
+							showInput={showInput}
+							theme={theme}
+							bgColor={bgColor}
+							fgColor={fgColor}
+							cursorColor={cursorColor}
+							fgDim={fgDim}
+							borderColor={borderColor}
+							surfaceColor={surfaceColor}
+							bubbleTheme={bubbleTheme}
+							input={input}
+							setInput={setInput}
+							isLoading={isLoading}
+							attachedImages={attachedImages}
+							removeAttachedImage={removeAttachedImage}
+							attachImage={attachImage}
+							queuedMessages={queuedMessages}
+							editingQueueId={editingQueueId}
+							setEditingQueueId={setEditingQueueId}
+							editingQueueText={editingQueueText}
+							setEditingQueueText={setEditingQueueText}
+							queueRef={queueRef}
+							setQueuedMessages={setQueuedMessages}
+							fileMenu={fileMenu}
+							setFileMenu={setFileMenu}
+							fileResults={fileResults}
+							selectFile={selectFile}
+							slashMenu={slashMenu}
+							setSlashMenu={setSlashMenu}
+							showCommands={showCommands}
+							filteredCommands={filteredCommands}
+							selectCommand={selectCommand}
+							handleInputForFileMenu={handleInputForFileMenu}
+							handleInputForSlashMenu={handleInputForSlashMenu}
+							handleKeyDown={handleKeyDown}
+							handlePaste={handlePaste}
+							textareaRef={textareaRef}
+							highlightOverlayRef={highlightOverlayRef}
+							inputContainerRef={inputContainerRef}
+							mdPreview={mdPreview}
+							setMdPreview={setMdPreview}
+							onMdFileClick={handleMdFileClick}
+						/>
+					</div>
 				</div>
 			</div>
 		);
@@ -1927,103 +1939,24 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 		const baseClass = "w-3 h-3 shrink-0";
 		switch (toolName.toLowerCase()) {
 			case "read":
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-						<circle cx="12" cy="12" r="3" />
-					</svg>
-				);
+				return <IconEye className={baseClass} />;
 			case "edit":
 			case "patch": // Codex patch tool
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-					</svg>
-				);
+				return <IconPencil className={baseClass} />;
 			case "write":
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-						<polyline points="14 2 14 8 20 8" />
-						<line x1="12" y1="18" x2="12" y2="12" />
-						<line x1="9" y1="15" x2="15" y2="15" />
-					</svg>
-				);
+				return <IconFilePlus className={baseClass} />;
 			case "bash":
 			case "exec": // Codex exec tool
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<polyline points="4 17 10 11 4 5" />
-						<line x1="12" y1="19" x2="20" y2="19" />
-					</svg>
-				);
+				return <IconTerminal className={baseClass} />;
 			case "grep":
 			case "glob":
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<circle cx="11" cy="11" r="8" />
-						<line x1="21" y1="21" x2="16.65" y2="16.65" />
-					</svg>
-				);
+				return <IconSearch className={baseClass} />;
 			case "web_search": // Codex web search
 			case "websearch":
 			case "webfetch":
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<circle cx="12" cy="12" r="10" />
-						<line x1="2" y1="12" x2="22" y2="12" />
-						<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-					</svg>
-				);
+				return <IconGlobe className={baseClass} />;
 			default:
-				return (
-					<svg
-						className={baseClass}
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-					</svg>
-				);
+				return <IconWrench className={baseClass} />;
 		}
 	};
 	const displayToolName = latestActivity?.toolName ?? statusToolName;
@@ -2031,10 +1964,7 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 	const activityCount = toolActivities.length;
 
 	return (
-		<div
-			className="shrink-0 flex items-center justify-between gap-2 px-3 py-1"
-			style={{ backgroundColor: bgColor }}
-		>
+		<div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1">
 			{hasActivity ? (
 				<div
 					className="relative"
@@ -2100,9 +2030,7 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 				onClick={onStop}
 				className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-inferay-surface-2 text-inferay-text-2 hover:bg-inferay-surface-3 border border-inferay-border"
 			>
-				<svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-					<rect x="6" y="6" width="12" height="12" rx="1" />
-				</svg>
+				<IconStop className="w-3 h-3" />
 				Stop
 			</button>
 		</div>

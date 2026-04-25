@@ -1,4 +1,17 @@
 import React, { memo, useEffect, useRef } from "react";
+import {
+	IconBookmark,
+	IconClock,
+	IconEye,
+	IconFilePlus,
+	IconGlobe,
+	IconMessageSquare,
+	IconPencil,
+	IconSearch,
+	IconUsers,
+	IconWrench,
+	IconX,
+} from "../../components/ui/Icons.tsx";
 import type { ActivityEvent, ActivityType } from "./useActivityFeed.ts";
 
 interface ActivityFeedProps {
@@ -12,144 +25,26 @@ function getToolIcon(toolName: string, isActive: boolean): React.ReactNode {
 
 	switch (toolName.toLowerCase()) {
 		case "read":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-accent`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-					<circle cx="12" cy="12" r="3" />
-				</svg>
-			);
+			return <IconEye className={`${baseClass} text-inferay-accent`} />;
 		case "edit":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-accent`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-					<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-				</svg>
-			);
+			return <IconPencil className={`${baseClass} text-inferay-accent`} />;
 		case "write":
-			return (
-				<svg
-					className={`${baseClass} text-git-added`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-					<polyline points="14 2 14 8 20 8" />
-					<line x1="12" y1="18" x2="12" y2="12" />
-					<line x1="9" y1="15" x2="15" y2="15" />
-				</svg>
-			);
+			return <IconFilePlus className={`${baseClass} text-git-added`} />;
 		case "grep":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-text-2`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<circle cx="11" cy="11" r="8" />
-					<line x1="21" y1="21" x2="16.65" y2="16.65" />
-				</svg>
-			);
+			return <IconSearch className={`${baseClass} text-inferay-text-2`} />;
 		case "glob":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-text-2`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-				</svg>
-			);
+			return <IconWrench className={`${baseClass} text-inferay-text-2`} />;
 		case "bash":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-text-2`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<polyline points="4 17 10 11 4 5" />
-					<line x1="12" y1="19" x2="20" y2="19" />
-				</svg>
-			);
+			return <IconWrench className={`${baseClass} text-inferay-text-2`} />;
 		case "task":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-accent`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-					<circle cx="9" cy="7" r="4" />
-					<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-					<path d="M16 3.13a4 4 0 0 1 0 7.75" />
-				</svg>
-			);
+			return <IconUsers className={`${baseClass} text-inferay-accent`} />;
 		case "todowrite":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-text-3`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<line x1="8" y1="6" x2="21" y2="6" />
-					<line x1="8" y1="12" x2="21" y2="12" />
-					<line x1="8" y1="18" x2="21" y2="18" />
-					<line x1="3" y1="6" x2="3.01" y2="6" />
-					<line x1="3" y1="12" x2="3.01" y2="12" />
-					<line x1="3" y1="18" x2="3.01" y2="18" />
-				</svg>
-			);
+			return <IconWrench className={`${baseClass} text-inferay-text-3`} />;
 		case "webfetch":
 		case "websearch":
-			return (
-				<svg
-					className={`${baseClass} text-inferay-accent`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<line x1="2" y1="12" x2="22" y2="12" />
-					<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-				</svg>
-			);
+			return <IconGlobe className={`${baseClass} text-inferay-accent`} />;
 		default:
-			// Generic tool icon
-			return (
-				<svg
-					className={`${baseClass} text-inferay-text-3`}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-				</svg>
-			);
+			return <IconWrench className={`${baseClass} text-inferay-text-3`} />;
 	}
 }
 
@@ -160,73 +55,22 @@ function getActivityIcon(
 	switch (type) {
 		case "thinking":
 			return (
-				<svg
-					className="w-3 h-3 text-inferay-text-3 animate-pulse"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<path d="M12 6v6l4 2" />
-				</svg>
+				<IconClock className="w-3 h-3 text-inferay-text-3 animate-pulse" />
 			);
 		case "responding":
 			return (
-				<svg
-					className="w-3 h-3 text-inferay-accent animate-pulse"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-				</svg>
+				<IconMessageSquare className="w-3 h-3 text-inferay-accent animate-pulse" />
 			);
 		case "tool_start":
 			return getToolIcon(toolName ?? "", true);
 		case "tool_end":
 			return getToolIcon(toolName ?? "", false);
 		case "file_changed":
-			return (
-				<svg
-					className="w-3 h-3 text-inferay-accent"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-					<polyline points="14 2 14 8 20 8" />
-					<circle cx="12" cy="14" r="2" />
-				</svg>
-			);
+			return <IconFilePlus className="w-3 h-3 text-inferay-accent" />;
 		case "checkpoint":
-			return (
-				<svg
-					className="w-3 h-3 text-inferay-accent"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-				</svg>
-			);
+			return <IconBookmark className="w-3 h-3 text-inferay-accent" />;
 		case "error":
-			return (
-				<svg
-					className="w-3 h-3 text-git-removed"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<line x1="15" y1="9" x2="9" y2="15" />
-					<line x1="9" y1="9" x2="15" y2="15" />
-				</svg>
-			);
+			return <IconX className="w-3 h-3 text-git-removed" />;
 		default:
 			return <div className="w-1.5 h-1.5 rounded-full bg-inferay-text-3" />;
 	}

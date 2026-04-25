@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { parseInlineTokens, parseMarkdownBlocks } from "./chat-text.ts";
+import { IconCheck, IconCopy, IconHelpCircle, IconSend } from "../ui/Icons.tsx";
 
 type ChatTheme = {
 	bg: string;
@@ -47,36 +48,7 @@ function CopyButton({
 			}}
 			title={copied ? "Copied!" : "Copy"}
 		>
-			{copied ? (
-				<svg
-					aria-hidden="true"
-					width="10"
-					height="10"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2.5"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				>
-					<path d="M20 6L9 17l-5-5" />
-				</svg>
-			) : (
-				<svg
-					aria-hidden="true"
-					width="10"
-					height="10"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				>
-					<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-					<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-				</svg>
-			)}
+			{copied ? <IconCheck size={10} /> : <IconCopy size={10} />}
 		</button>
 	);
 }
@@ -427,21 +399,7 @@ export function AskUserQuestionCard({
 							className="flex items-center gap-2 px-3 py-1.5"
 							style={{ borderBottom: `1px solid ${borderClr}` }}
 						>
-							<svg
-								aria-hidden="true"
-								width="12"
-								height="12"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke={accentColor}
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							>
-								<circle cx="12" cy="12" r="10" />
-								<path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
-								<line x1="12" y1="17" x2="12.01" y2="17" />
-							</svg>
+							<IconHelpCircle size={12} style={{ color: accentColor }} />
 							{q.header && (
 								<span
 									className="rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider"
@@ -508,19 +466,7 @@ export function AskUserQuestionCard({
 												}}
 											>
 												{isSelected ? (
-													<svg
-														aria-hidden="true"
-														width="8"
-														height="8"
-														viewBox="0 0 24 24"
-														fill="none"
-														stroke="currentColor"
-														strokeWidth="3"
-														strokeLinecap="round"
-														strokeLinejoin="round"
-													>
-														<path d="M20 6L9 17l-5-5" />
-													</svg>
+													<IconCheck size={8} />
 												) : (
 													String.fromCharCode(65 + oi)
 												)}
@@ -559,20 +505,7 @@ export function AskUserQuestionCard({
 						opacity: hasSelections ? 1 : 0.6,
 					}}
 				>
-					<svg
-						aria-hidden="true"
-						width="10"
-						height="10"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					>
-						<line x1="22" y1="2" x2="11" y2="13" />
-						<polygon points="22 2 15 22 11 13 2 9 22 2" />
-					</svg>
+					<IconSend size={10} />
 					Send selections
 				</button>
 			)}

@@ -5,7 +5,7 @@ import type React from "react";
 import { memo, useEffect, useRef } from "react";
 import type { AgentChatHandle } from "../../components/chat/AgentChatView.tsx";
 import { AgentChatView } from "../../components/chat/AgentChatView.tsx";
-import { IconTerminal } from "../../components/ui/Icons.tsx";
+import { IconTerminal, IconX } from "../../components/ui/Icons.tsx";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
 import type {
@@ -239,18 +239,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-red-400 hover:bg-red-500/15"
 						title="Close pane"
 					>
-						<svg
-							aria-hidden="true"
-							width="8"
-							height="8"
-							viewBox="0 0 8 8"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-						>
-							<path d="M1 1l6 6M7 1l-6 6" />
-						</svg>
+						<IconX size={8} />
 					</button>
 				</div>
 				<div className="flex-1 flex items-center justify-center">
@@ -333,18 +322,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-text-3 hover:text-red-400 hover:bg-red-500/15"
 						title="Close pane"
 					>
-						<svg
-							aria-hidden="true"
-							width="8"
-							height="8"
-							viewBox="0 0 8 8"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-						>
-							<path d="M1 1l6 6M7 1l-6 6" />
-						</svg>
+						<IconX size={8} />
 					</button>
 				</div>
 			)}

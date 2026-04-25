@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GitProjectStatus } from "../../hooks/useGitStatus.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
-import { IconFolder, IconGitBranch } from "../ui/Icons.tsx";
+import {
+	IconFolder,
+	IconGitBranch,
+	ProjectGraphConnectionsLayer,
+} from "../ui/Icons.tsx";
 
 interface FileSearchEntry {
 	readonly name: string;
@@ -244,38 +248,12 @@ export function ProjectFileGraphView({
 						</div>
 					) : (
 						<div className="relative mx-auto h-[640px] min-w-[820px] max-w-[980px]">
-							<svg
-								aria-hidden="true"
+							<ProjectGraphConnectionsLayer
 								className="absolute inset-0 h-full w-full"
-							>
-								{nodes.flatMap((node) =>
-									node.connections.map((targetId) => {
-										const target = nodes.find((item) => item.id === targetId);
-										if (!target) return null;
-										const active =
-											hoveredNodeId === node.id ||
-											hoveredNodeId === targetId ||
-											selectedNodeId === node.id ||
-											selectedNodeId === targetId;
-										return (
-											<line
-												key={`${node.id}-${targetId}`}
-												x1={node.x + 56}
-												y1={node.y + 16}
-												x2={target.x + 56}
-												y2={target.y + 16}
-												stroke={
-													active
-														? "rgba(255,255,255,0.28)"
-														: "rgba(255,255,255,0.1)"
-												}
-												strokeDasharray={active ? "none" : "4 4"}
-												strokeWidth={active ? 1.5 : 1}
-											/>
-										);
-									})
-								)}
-							</svg>
+								nodes={nodes}
+								hoveredNodeId={hoveredNodeId}
+								selectedNodeId={selectedNodeId}
+							/>
 							{nodes.map((node) => {
 								const styles = statusClasses(node.status);
 								const selected = node.id === selectedNodeId;

@@ -11,89 +11,15 @@ import {
 	loadTerminalState,
 	saveTerminalState,
 } from "../../lib/terminal-utils.ts";
-import { IconPlus, IconSettings, IconTrash, IconUser } from "../ui/Icons.tsx";
-
-function IconBranch({
-	size = 15,
-	className = "",
-}: {
-	size?: number;
-	className?: string;
-}) {
-	return (
-		<svg
-			aria-hidden="true"
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className={className}
-		>
-			<circle cx="18" cy="18" r="3" />
-			<circle cx="6" cy="6" r="3" />
-			<path d="M13 6h3a2 2 0 0 1 2 2v7" />
-			<path d="M6 9v12" />
-		</svg>
-	);
-}
-
-function IconSlash({
-	size = 15,
-	className = "",
-}: {
-	size?: number;
-	className?: string;
-}) {
-	return (
-		<svg
-			aria-hidden="true"
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className={className}
-		>
-			<rect x="3.5" y="5" width="17" height="14" rx="3" />
-			<path d="m8 10 3 2-3 2" />
-			<path d="M14 14h3" />
-		</svg>
-	);
-}
-
-function IconLayers({
-	size = 15,
-	className = "",
-}: {
-	size?: number;
-	className?: string;
-}) {
-	return (
-		<svg
-			aria-hidden="true"
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className={className}
-		>
-			<path d="M12 2L2 7l10 5 10-5-10-5z" />
-			<path d="M2 17l10 5 10-5" />
-			<path d="M2 12l10 5 10-5" />
-		</svg>
-	);
-}
+import {
+	IconGitBranch,
+	IconLayers,
+	IconPlus,
+	IconSettings,
+	IconSlash,
+	IconTrash,
+	IconUser,
+} from "../ui/Icons.tsx";
 
 interface NavItem {
 	label: string;
@@ -102,7 +28,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-	{ label: "Git", path: "/git", icon: IconBranch },
+	{ label: "Git", path: "/git", icon: IconGitBranch },
 	{ label: "Prompts", path: "/prompts", icon: IconSlash },
 ];
 

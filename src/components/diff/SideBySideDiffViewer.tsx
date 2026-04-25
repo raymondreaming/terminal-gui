@@ -6,6 +6,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import { IconChevronRight, IconCopy } from "../ui/Icons.tsx";
 import { useShikiHighlighter } from "../../hooks/useShikiHighlighter";
 import { type DiffLine, type ParsedDiff } from "../../services/diff-worker";
 
@@ -183,17 +184,10 @@ const VirtualizedLine = memo(function VirtualizedLine({
 					style={{ backgroundColor: "var(--color-inferay-surface-2)" }}
 					title="Copy line"
 				>
-					<svg
-						className="w-3 h-3"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
+					<IconCopy
+						size={12}
 						style={{ color: "var(--color-inferay-text-2)" }}
-					>
-						<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-					</svg>
+					/>
 				</button>
 			)}
 		</div>
@@ -569,15 +563,7 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 							className="px-1.5 py-0.5 rounded hover:bg-inferay-surface-3 transition-colors"
 							title="Previous change (k/p)"
 						>
-							<svg
-								className="w-2.5 h-2.5"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<polyline points="15 18 9 12 15 6" />
-							</svg>
+							<IconChevronRight size={10} className="rotate-180" />
 						</button>
 						<span className="px-1 tabular-nums">
 							{totalChanges} {totalChanges === 1 ? "change" : "changes"}
@@ -588,15 +574,7 @@ export const SideBySideDiffViewer = memo(function SideBySideDiffViewer({
 							className="px-1.5 py-0.5 rounded hover:bg-inferay-surface-3 transition-colors"
 							title="Next change (j/n)"
 						>
-							<svg
-								className="w-2.5 h-2.5"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<polyline points="9 18 15 12 9 6" />
-							</svg>
+							<IconChevronRight size={10} />
 						</button>
 					</div>
 				)}
