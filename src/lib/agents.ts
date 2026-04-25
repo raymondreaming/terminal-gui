@@ -7,6 +7,12 @@ export interface NativeSlashCommand {
 	readonly description: string;
 }
 
+export interface ModelOption {
+	readonly id: string;
+	readonly label: string;
+	readonly detail?: string;
+}
+
 export interface AgentDefinition {
 	readonly kind: AgentKind;
 	readonly label: string;
@@ -17,6 +23,8 @@ export interface AgentDefinition {
 	readonly supportsInteractiveTerminal: boolean;
 	readonly supportsResume: boolean;
 	readonly nativeSlashCommands: readonly NativeSlashCommand[];
+	readonly models: readonly ModelOption[];
+	readonly defaultModel: string;
 }
 
 const CLAUDE_NATIVE_COMMANDS = [
@@ -40,6 +48,18 @@ const CLAUDE_NATIVE_COMMANDS = [
 	{ name: "vim", description: "Toggle vim mode" },
 ] as const satisfies readonly NativeSlashCommand[];
 
+const CLAUDE_MODELS: readonly ModelOption[] = [
+	{ id: "claude-opus-4-6", label: "Opus 4.6", detail: "★ Most capable" },
+	{ id: "claude-sonnet-4-6", label: "Sonnet 4.6", detail: "Best value" },
+	{ id: "claude-haiku-4-5", label: "Haiku 4.5", detail: "Fastest" },
+] as const;
+
+const CODEX_MODELS: readonly ModelOption[] = [
+	{ id: "o3", label: "o3", detail: "★ Most capable" },
+	{ id: "gpt-5.2", label: "GPT-5.2", detail: "Best value" },
+	{ id: "o4-mini", label: "o4-mini", detail: "Fastest" },
+] as const;
+
 export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 	terminal: {
 		kind: "terminal",
@@ -51,6 +71,8 @@ export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 		supportsInteractiveTerminal: true,
 		supportsResume: false,
 		nativeSlashCommands: [],
+		models: [],
+		defaultModel: "",
 	},
 	claude: {
 		kind: "claude",
@@ -62,6 +84,8 @@ export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 		supportsInteractiveTerminal: true,
 		supportsResume: true,
 		nativeSlashCommands: CLAUDE_NATIVE_COMMANDS,
+		models: CLAUDE_MODELS,
+		defaultModel: "claude-sonnet-4-6",
 	},
 	codex: {
 		kind: "codex",
@@ -73,6 +97,8 @@ export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 		supportsInteractiveTerminal: true,
 		supportsResume: true,
 		nativeSlashCommands: [],
+		models: CODEX_MODELS,
+		defaultModel: "o3",
 	},
 } as const;
 

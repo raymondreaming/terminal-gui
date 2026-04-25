@@ -3,6 +3,7 @@ import type { ChatAgentKind } from "../../lib/agents.ts";
 export interface AgentRunContext {
 	readonly paneId: string;
 	readonly cwd: string;
+	readonly model?: string;
 	getSessionId(): string | null;
 	updateSessionId(nextSessionId: string): void;
 	emitChatEvent(event: unknown): void;

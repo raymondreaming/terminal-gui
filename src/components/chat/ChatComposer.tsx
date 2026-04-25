@@ -178,15 +178,6 @@ export function ChatComposer({
 						backgroundColor: theme ? `${bgColor}cc` : "rgba(0,0,0,0.4)",
 					}}
 				>
-					<div
-						className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase"
-						style={{
-							color: theme ? fgDim : "var(--color-inferay-text-3)",
-							borderBottom: `1px solid ${theme ? `${borderColor}60` : "rgba(255,255,255,0.06)"}`,
-						}}
-					>
-						Queued messages
-					</div>
 					{queuedMessages.map((qm, idx) => (
 						<div
 							key={qm.id}
@@ -279,6 +270,13 @@ export function ChatComposer({
 								</div>
 							) : (
 								<>
+									{qm.images && qm.images.length > 0 && (
+										<img
+											src={`/api/file?path=${encodeURIComponent(qm.images[0])}`}
+											alt=""
+											className="shrink-0 h-6 w-6 rounded object-cover"
+										/>
+									)}
 									<span
 										className="flex-1 text-[11px] truncate"
 										style={{
@@ -327,7 +325,7 @@ export function ChatComposer({
 			)}
 
 			{showInput && (
-				<div className="shrink-0 px-3 py-2">
+				<div className="shrink-0 px-3 pb-2 pt-1">
 					<input
 						type="file"
 						ref={fileInputRef}

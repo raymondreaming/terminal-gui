@@ -241,6 +241,9 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 					"--output-last-message",
 					state.outputPath,
 				];
+				if (ctx.model) {
+					baseArgs.push("--model", ctx.model);
+				}
 				const sessionId = ctx.getSessionId();
 				const args = sessionId
 					? [codexCmd, "exec", "resume", ...baseArgs, sessionId, "--", prompt]

@@ -214,24 +214,6 @@ export function TerminalShellHeader() {
 					<div className="flex-1 min-w-0" />
 					{shellState.mainView === "chat" && (
 						<>
-							<div className="flex items-center shrink-0 rounded-lg border border-inferay-border bg-inferay-surface overflow-hidden h-7">
-								<button
-									type="button"
-									onClick={() => updateLayoutMode("grid")}
-									className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-inferay-text/10 text-inferay-text" : "text-inferay-text-3 hover:text-inferay-text-2"}`}
-									title="Grid layout"
-								>
-									<IconLayoutGrid size={13} />
-								</button>
-								<button
-									type="button"
-									onClick={() => updateLayoutMode("rows")}
-									className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-inferay-text/10 text-inferay-text" : "text-inferay-text-3 hover:text-inferay-text-2"}`}
-									title="Row layout"
-								>
-									<IconLayoutRows size={13} />
-								</button>
-							</div>
 							{layoutMode === "grid" && selectedGroup && (
 								<>
 									<div className="flex items-center gap-1.5 shrink-0">
@@ -268,6 +250,24 @@ export function TerminalShellHeader() {
 									</div>
 								</>
 							)}
+							<div className="flex items-center shrink-0 rounded-lg border border-inferay-border bg-inferay-surface overflow-hidden h-7">
+								<button
+									type="button"
+									onClick={() => updateLayoutMode("grid")}
+									className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-inferay-text/10 text-inferay-text" : "text-inferay-text-3 hover:text-inferay-text-2"}`}
+									title="Grid layout"
+								>
+									<IconLayoutGrid size={13} />
+								</button>
+								<button
+									type="button"
+									onClick={() => updateLayoutMode("rows")}
+									className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-inferay-text/10 text-inferay-text" : "text-inferay-text-3 hover:text-inferay-text-2"}`}
+									title="Row layout"
+								>
+									<IconLayoutRows size={13} />
+								</button>
+							</div>
 						</>
 					)}
 					<div className="relative shrink-0" ref={newMenuRef}>

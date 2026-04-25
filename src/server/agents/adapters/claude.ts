@@ -68,6 +68,9 @@ export const claudeAdapter: AgentAdapter<undefined> = {
 						"--verbose",
 						"--dangerously-skip-permissions",
 					];
+					if (ctx.model) {
+						args.push("--model", ctx.model);
+					}
 					if (sessionId) {
 						args.push("--resume", sessionId);
 					}

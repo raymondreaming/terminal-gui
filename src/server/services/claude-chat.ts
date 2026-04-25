@@ -179,6 +179,7 @@ class ChatMessageBuffer {
 interface ChatSession {
 	paneId: string;
 	agentKind: ChatAgentKind;
+	model?: string;
 	sessionId: string | null;
 	clients: Set<ServerWebSocket<any>>;
 	currentHandle: AgentHandle | null;
@@ -317,6 +318,7 @@ async function runAgent(session: ChatSession, paneId: string, text: string) {
 	const ctx: AgentRunContext = {
 		paneId,
 		cwd: session.cwd,
+		model: session.model,
 		getSessionId: () => session.sessionId,
 		updateSessionId: (nextSessionId) =>
 			updateSessionId(session, paneId, nextSessionId),
@@ -358,13 +360,15 @@ export const ChatService = {
 		ws: ServerWebSocket<any>,
 		cwd?: string,
 		clientSessionId?: string | null,
-		agentKind: ChatAgentKind = "claude"
+		agentKind: ChatAgentKind = "claude",
+		model?: string
 	) {
 		let session = sessions.get(paneId);
 		if (!session) {
 			session = {
 				paneId,
 				agentKind,
+				model,
 				sessionId: clientSessionId || null,
 				clients: new Set([ws]),
 				currentHandle: null,
@@ -375,7 +379,11 @@ export const ChatService = {
 			sessions.set(paneId, session);
 		}
 		clearCleanupTimer(session);
+		if (session.agentKind !== agentKind) {
+			session.sessionId = null; // clear when switching agent kinds
+		}
 		session.agentKind = agentKind;
+		if (model) session.model = model;
 		session.clients.add(ws);
 		if (cwd) session.cwd = cwd;
 		if (!session.sessionId && clientSessionId)

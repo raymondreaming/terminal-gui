@@ -184,6 +184,30 @@ export function saveTerminalState(state: TerminalSavedState): void {
 	sendJson("/api/terminal/state", state).catch(() => {});
 }
 
+/**
+ * Change a pane's agent kind directly via localStorage + event.
+ * No prop-drilling needed — call from any component.
+ */
+export function changePaneAgentKind(
+	paneId: string,
+	agentKind: AgentKind
+): void {
+	const state = loadTerminalState();
+	if (!state) return;
+	saveTerminalState({
+		...state,
+		groups: state.groups.map((g) => ({
+			...g,
+			panes: g.panes.map((p) =>
+				p.id !== paneId
+					? p
+					: { ...p, agentKind, isClaude: agentKind === "claude" }
+			),
+		})),
+	});
+	window.dispatchEvent(new Event("terminal-shell-change"));
+}
+
 export function getPaneTitle(pane: TerminalPaneModel): string;
 
 export function getPaneTitle(agentKind: AgentKind, cwd?: string): string;

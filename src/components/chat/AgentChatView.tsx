@@ -8,9 +8,14 @@ import React, {
 	useState,
 } from "react";
 import { usePrompts } from "../../hooks/usePrompts.ts";
+import { useGitStatus } from "../../hooks/useGitStatus.ts";
 import { getAgentDefinition } from "../../lib/agents.ts";
 import { measureTextareaHeight } from "../../lib/pretext-utils.ts";
-import { type AgentKind, getStatusInfo } from "../../lib/terminal-utils.ts";
+import {
+	type AgentKind,
+	changePaneAgentKind,
+	getStatusInfo,
+} from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { ChatComposer } from "./ChatComposer.tsx";
 import { ChatMessageList } from "./ChatMessageList.tsx";
@@ -34,6 +39,7 @@ import {
 import {
 	clearAgentChatMessages,
 	clearStoredCheckpoints,
+	clearStoredSessionId,
 	loadStoredCheckpoints,
 	loadStoredInput,
 	loadStoredMessages,
@@ -259,6 +265,38 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			},
 			[paneId]
 		);
+
+		const cwdList = useMemo(() => (cwd ? [cwd] : []), [cwd]);
+		const { projects: gitProjects } = useGitStatus(cwdList);
+		const gitBranch = gitProjects[0]?.branch ?? null;
+
+		const agentKindOptions = useMemo(
+			() => [
+				{
+					id: "claude" as const,
+					label: "Claude",
+					icon: getAgentIcon("claude", 11),
+				},
+				{
+					id: "codex" as const,
+					label: "Codex",
+					icon: getAgentIcon("codex", 11),
+				},
+			],
+			[]
+		);
+
+		// Track when agent kind switches so the next message includes prior context
+		const prevAgentKindRef = useRef(agentKind);
+		const agentKindJustChanged = useRef(false);
+		useEffect(() => {
+			if (prevAgentKindRef.current !== agentKind) {
+				prevAgentKindRef.current = agentKind;
+				agentKindJustChanged.current = true;
+				clearStoredSessionId(paneId);
+			}
+		}, [agentKind, paneId]);
+
 		const [chatUiState, setChatUiState] = useState<{
 			isLoading: boolean;
 			status: string;
@@ -598,12 +636,35 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					startTime: Date.now(),
 				});
 				currentAssistantRef.current = null;
+
+				let prompt = text;
+				// On first message after switching agent kind, prepend prior conversation context
+				if (agentKindJustChanged.current) {
+					agentKindJustChanged.current = false;
+					const history = messagesRef.current;
+					if (history.length > 0) {
+						const contextLines: string[] = [];
+						// Take the last ~20 messages, skip tool/system noise
+						const recent = history.slice(-20);
+						for (const msg of recent) {
+							if (msg.role === "user") {
+								contextLines.push(`User: ${msg.content.slice(0, 500)}`);
+							} else if (msg.role === "assistant" && msg.content) {
+								contextLines.push(`Assistant: ${msg.content.slice(0, 500)}`);
+							}
+						}
+						if (contextLines.length > 0) {
+							prompt = `<prior-conversation-context>\nThe following is a summary of the prior conversation in this chat session (from a different model). Use it as context for the request below.\n\n${contextLines.join("\n\n")}\n</prior-conversation-context>\n\n${text}`;
+						}
+					}
+				}
+
 				let sessionId: string | null = null;
 				sessionId = loadStoredSessionId(paneId);
 				wsClient.send({
 					type: "chat:send",
 					paneId,
-					text,
+					text: prompt,
 					cwd,
 					sessionId,
 					agentKind,
@@ -1578,7 +1639,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 
 						return (
 							<div
-								className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border-b ${theme ? "" : "border-inferay-border"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""} select-none`}
+								className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b ${theme ? "" : "border-inferay-border"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""} select-none`}
 								style={
 									theme ? { borderColor, backgroundColor: bgColor } : undefined
 								}
@@ -1586,12 +1647,42 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 								onDragStart={onDragStart}
 								onDragEnd={onDragEnd}
 							>
-								<span className="text-inferay-accent">
-									{getAgentIcon(agentKind, 10)}
-								</span>
-								<span className="text-[9px] font-medium" style={dimStyle}>
-									{agentLabel}
-								</span>
+								{/* Agent kind selector — Claude / Codex */}
+								<div
+									draggable={false}
+									onMouseDown={(e) => e.stopPropagation()}
+									onDragStart={(e) => e.preventDefault()}
+								>
+									<DropdownButton
+										value={agentKind}
+										options={agentKindOptions}
+										onChange={(id) => {
+											changePaneAgentKind(paneId, id as AgentKind);
+											clearStoredSessionId(paneId);
+										}}
+										icon={
+											<span className="text-inferay-accent">
+												{getAgentIcon(agentKind, 10)}
+											</span>
+										}
+										minWidth={110}
+										buttonClassName="h-4 rounded-md border-transparent px-1 text-[9px] font-medium text-inferay-accent hover:bg-inferay-text/[0.06] gap-1"
+										labelClassName="text-[9px]"
+										renderOption={(opt, isSelected) => (
+											<div
+												className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
+													isSelected
+														? "bg-inferay-accent/15 text-inferay-text"
+														: "text-inferay-text-3 hover:bg-inferay-text/5 hover:text-inferay-text"
+												}`}
+											>
+												<span className="shrink-0">{opt.icon}</span>
+												<span className="font-medium">{opt.label}</span>
+											</div>
+										)}
+									/>
+								</div>
+								{/* Directory */}
 								{dirName && (
 									<>
 										<span className="text-[9px]" style={dimStyle}>
@@ -1615,6 +1706,20 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 												{dirName}
 											</span>
 										)}
+									</>
+								)}
+								{/* Git branch */}
+								{gitBranch && (
+									<>
+										<span className="text-[9px]" style={dimStyle}>
+											›
+										</span>
+										<span
+											className="text-[9px] font-medium text-inferay-text-3 truncate max-w-[80px]"
+											title={gitBranch}
+										>
+											{gitBranch}
+										</span>
 									</>
 								)}
 								<span className="flex-1" />
@@ -1693,60 +1798,69 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					)}
 				</div>
 
-				<ChatStatusBar
-					messages={messages}
-					isLoading={isLoading}
-					status={status}
-					onStop={stopGeneration}
-					theme={theme}
-					borderColor={borderColor}
-					bgColor={bgColor}
-					fgDim={fgDim}
-				/>
+				<div className="relative shrink-0" style={{ backgroundColor: bgColor }}>
+					{/* Gradient fade from transparent → solid above the bottom bar */}
+					<div
+						className="pointer-events-none absolute bottom-full left-0 right-0 h-[50px]"
+						style={{
+							background: `linear-gradient(to bottom, transparent, ${bgColor})`,
+						}}
+					/>
+					<ChatStatusBar
+						messages={messages}
+						isLoading={isLoading}
+						status={status}
+						onStop={stopGeneration}
+						theme={theme}
+						borderColor={borderColor}
+						bgColor={bgColor}
+						fgDim={fgDim}
+					/>
 
-				<ChatComposer
-					showInput={showInput}
-					theme={theme}
-					bgColor={bgColor}
-					fgColor={fgColor}
-					cursorColor={cursorColor}
-					fgDim={fgDim}
-					borderColor={borderColor}
-					surfaceColor={surfaceColor}
-					bubbleTheme={bubbleTheme}
-					input={input}
-					setInput={setInput}
-					isLoading={isLoading}
-					attachedImages={attachedImages}
-					removeAttachedImage={removeAttachedImage}
-					attachImage={attachImage}
-					queuedMessages={queuedMessages}
-					editingQueueId={editingQueueId}
-					setEditingQueueId={setEditingQueueId}
-					editingQueueText={editingQueueText}
-					setEditingQueueText={setEditingQueueText}
-					queueRef={queueRef}
-					setQueuedMessages={setQueuedMessages}
-					fileMenu={fileMenu}
-					setFileMenu={setFileMenu}
-					fileResults={fileResults}
-					selectFile={selectFile}
-					slashMenu={slashMenu}
-					setSlashMenu={setSlashMenu}
-					showCommands={showCommands}
-					filteredCommands={filteredCommands}
-					selectCommand={selectCommand}
-					handleInputForFileMenu={handleInputForFileMenu}
-					handleInputForSlashMenu={handleInputForSlashMenu}
-					handleKeyDown={handleKeyDown}
-					handlePaste={handlePaste}
-					textareaRef={textareaRef}
-					highlightOverlayRef={highlightOverlayRef}
-					inputContainerRef={inputContainerRef}
-					mdPreview={mdPreview}
-					setMdPreview={setMdPreview}
-					onMdFileClick={handleMdFileClick}
-				/>
+					<ChatComposer
+						showInput={showInput}
+						theme={theme}
+						bgColor={bgColor}
+						fgColor={fgColor}
+						cursorColor={cursorColor}
+						fgDim={fgDim}
+						borderColor={borderColor}
+						surfaceColor={surfaceColor}
+						bubbleTheme={bubbleTheme}
+						input={input}
+						setInput={setInput}
+						isLoading={isLoading}
+						attachedImages={attachedImages}
+						removeAttachedImage={removeAttachedImage}
+						attachImage={attachImage}
+						queuedMessages={queuedMessages}
+						editingQueueId={editingQueueId}
+						setEditingQueueId={setEditingQueueId}
+						editingQueueText={editingQueueText}
+						setEditingQueueText={setEditingQueueText}
+						queueRef={queueRef}
+						setQueuedMessages={setQueuedMessages}
+						fileMenu={fileMenu}
+						setFileMenu={setFileMenu}
+						fileResults={fileResults}
+						selectFile={selectFile}
+						slashMenu={slashMenu}
+						setSlashMenu={setSlashMenu}
+						showCommands={showCommands}
+						filteredCommands={filteredCommands}
+						selectCommand={selectCommand}
+						handleInputForFileMenu={handleInputForFileMenu}
+						handleInputForSlashMenu={handleInputForSlashMenu}
+						handleKeyDown={handleKeyDown}
+						handlePaste={handlePaste}
+						textareaRef={textareaRef}
+						highlightOverlayRef={highlightOverlayRef}
+						inputContainerRef={inputContainerRef}
+						mdPreview={mdPreview}
+						setMdPreview={setMdPreview}
+						onMdFileClick={handleMdFileClick}
+					/>
+				</div>
 			</div>
 		);
 	}
@@ -1917,7 +2031,10 @@ const ChatStatusBar = React.memo(function ChatStatusBar({
 	const activityCount = toolActivities.length;
 
 	return (
-		<div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 bg-inferay-bg border-t border-inferay-border">
+		<div
+			className="shrink-0 flex items-center justify-between gap-2 px-3 py-1"
+			style={{ backgroundColor: bgColor }}
+		>
 			{hasActivity ? (
 				<div
 					className="relative"

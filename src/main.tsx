@@ -4,6 +4,7 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { TerminalShellHeader } from "./components/layout/TerminalShellHeader.tsx";
+import { BottomTerminalPanel } from "./components/layout/BottomTerminalPanel.tsx";
 import { preloadPrompts } from "./hooks/usePrompts.ts";
 import { applyAppTheme, loadAppThemeId } from "./lib/app-theme.ts";
 import { getServerOrigin, resolveServerUrl } from "./lib/server-origin.ts";
@@ -81,6 +82,7 @@ root.render(
 								</Routes>
 							</Suspense>
 						</main>
+						<BottomTerminalPanel />
 					</div>
 				</div>
 			</div>
