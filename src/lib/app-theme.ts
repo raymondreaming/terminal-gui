@@ -102,13 +102,13 @@ const THEME_DATA = [
 		"default",
 		"Black",
 		"#000000",
-		"#0a0a0a",
-		"#141414",
-		"#1e1e1e",
+		"#1c1c1e",
+		"#2c2c2e",
+		"#3a3a3c",
 		"rgba(255, 255, 255, 0.08)",
 		"rgba(255, 255, 255, 0.15)",
-		"#555555",
-		"#6a6a6a",
+		"#007AFF",
+		"#3395FF",
 		"#30D158",
 		"#FF9F0A",
 		"#FF453A",
@@ -126,8 +126,8 @@ const THEME_DATA = [
 		"#26262c",
 		"rgba(255, 255, 255, 0.07)",
 		"rgba(255, 255, 255, 0.13)",
-		"#7a7a8e",
-		"#9090a4",
+		"#5A8CFF",
+		"#7AA3FF",
 		"#30D158",
 		"#FF9F0A",
 		"#FF453A",
@@ -376,15 +376,6 @@ function getAppThemeById(id: AppThemeId): AppTheme {
 export function applyAppTheme(id: AppThemeId): void {
 	const root = document.documentElement;
 	const meta = document.querySelector('meta[name="theme-color"]');
-	if (id === "default") {
-		for (const cssVar of Object.values(CSS_VAR_MAP)) {
-			root.style.removeProperty(cssVar);
-		}
-		root.style.removeProperty(ACCENT_FOREGROUND_CSS_VAR);
-		root.style.colorScheme = "dark";
-		meta?.setAttribute("content", "#09090b");
-		return;
-	}
 	const theme = getAppThemeById(id);
 	for (const [key, cssVar] of Object.entries(CSS_VAR_MAP)) {
 		const value = theme.colors[key as keyof AppThemeColors];

@@ -31,19 +31,12 @@ function findDecoratedTokenRanges(text: string): TokenRange[] {
 	return ranges;
 }
 
-export function renderInputHighlights(
-	text: string,
-	theme?: { accent?: string; text?: string }
-): React.ReactNode {
+export function renderInputHighlights(text: string): React.ReactNode {
 	if (!text) return <span style={{ color: "transparent" }}>{"\u00A0"}</span>;
 
 	const tokens = findDecoratedTokenRanges(text);
 	if (tokens.length === 0) {
-		return (
-			<span style={{ color: theme?.text ?? "var(--color-inferay-white)" }}>
-				{text}
-			</span>
-		);
+		return <span style={{ color: "var(--color-inferay-white)" }}>{text}</span>;
 	}
 
 	const segments: React.ReactNode[] = [];
@@ -56,7 +49,7 @@ export function renderInputHighlights(
 			segments.push(
 				<span
 					key={`t-${lastEnd}`}
-					style={{ color: theme?.text ?? "var(--color-inferay-white)" }}
+					style={{ color: "var(--color-inferay-white)" }}
 				>
 					{text.slice(lastEnd, token.start)}
 				</span>
@@ -69,10 +62,9 @@ export function renderInputHighlights(
 				key={`h-${token.start}`}
 				className="rounded-sm"
 				style={{
-					color: theme?.accent ?? "var(--color-inferay-accent)",
-					backgroundColor: theme?.accent
-						? `${theme.accent}20`
-						: "var(--color-inferay-accent-15, rgba(0, 122, 255, 0.15))",
+					color: "var(--color-inferay-accent)",
+					backgroundColor:
+						"var(--color-inferay-accent-15, rgba(0, 122, 255, 0.15))",
 				}}
 			>
 				{tokenText}
@@ -85,7 +77,7 @@ export function renderInputHighlights(
 		segments.push(
 			<span
 				key={`t-${lastEnd}`}
-				style={{ color: theme?.text ?? "var(--color-inferay-white)" }}
+				style={{ color: "var(--color-inferay-white)" }}
 			>
 				{text.slice(lastEnd)}
 			</span>
@@ -95,10 +87,7 @@ export function renderInputHighlights(
 	return <>{segments}</>;
 }
 
-export function renderTextPills(
-	text: string,
-	bubbleTheme?: { cursor?: string }
-): React.ReactNode[] {
+export function renderTextPills(text: string): React.ReactNode[] {
 	if (!text) return [];
 
 	const matches = findDecoratedTokenRanges(text);
@@ -115,13 +104,14 @@ export function renderTextPills(
 		}
 
 		const tokenText = text.slice(token.start, token.end);
-		const pillColor = bubbleTheme?.cursor ?? "#3b82f6";
+		const pillColor = "var(--color-inferay-accent)";
 		parts.push(
 			<span
 				key={`${token.start}-${tokenText}`}
 				className="inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium align-middle"
 				style={{
-					backgroundColor: `${pillColor}20`,
+					backgroundColor:
+						"var(--color-inferay-accent-15, rgba(0, 122, 255, 0.15))",
 					color: pillColor,
 				}}
 			>

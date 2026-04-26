@@ -15,11 +15,6 @@ interface AgentOption {
 interface AgentChatHeaderProps {
 	paneId: string;
 	cwd?: string;
-	theme?: { bg: string; fg: string; cursor: string };
-	bgColor: string;
-	borderColor?: string;
-	fgColor: string;
-	fgDim: string;
 	agentKind: AgentKind;
 	agentKindOptions: AgentOption[];
 	gitBranch: string | null;
@@ -36,11 +31,6 @@ interface AgentChatHeaderProps {
 export function AgentChatHeader({
 	paneId,
 	cwd,
-	theme,
-	bgColor,
-	borderColor,
-	fgColor,
-	fgDim,
 	agentKind,
 	agentKindOptions,
 	gitBranch,
@@ -53,8 +43,6 @@ export function AgentChatHeader({
 	onSelectSession,
 	onAgentKindChange,
 }: AgentChatHeaderProps) {
-	const dimStyle = theme ? { color: fgDim } : undefined;
-	const textStyle = theme ? { color: fgColor } : undefined;
 	const dirName = cwd ? cwd.split("/").pop() || cwd : null;
 	const hasMultipleSessions =
 		sessions && sessions.length > 1 && onSelectSession;
@@ -70,8 +58,7 @@ export function AgentChatHeader({
 
 	return (
 		<div
-			className={`electrobun-webkit-app-region-drag shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b ${theme ? "" : "border-inferay-gray-border"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""} select-none`}
-			style={theme ? { borderColor, backgroundColor: bgColor } : undefined}
+			className={`electrobun-webkit-app-region-drag shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b border-inferay-gray-border ${draggable ? "cursor-grab active:cursor-grabbing" : ""} select-none`}
 			draggable={draggable}
 			onDragStart={onDragStart}
 			onDragEnd={onDragEnd}
@@ -110,9 +97,7 @@ export function AgentChatHeader({
 			</div>
 			{dirName && (
 				<>
-					<span className="text-[9px]" style={dimStyle}>
-						›
-					</span>
+					<span className="text-[9px] text-inferay-muted-gray">›</span>
 					{hasMultipleSessions ? (
 						<span className="electrobun-webkit-app-region-no-drag">
 							<DropdownButton
@@ -126,8 +111,7 @@ export function AgentChatHeader({
 						</span>
 					) : (
 						<span
-							className="text-[9px] font-medium truncate"
-							style={textStyle}
+							className="text-[9px] font-medium text-inferay-white truncate"
 							title={cwd}
 						>
 							{dirName}
@@ -137,9 +121,7 @@ export function AgentChatHeader({
 			)}
 			{gitBranch && (
 				<>
-					<span className="text-[9px]" style={dimStyle}>
-						›
-					</span>
+					<span className="text-[9px] text-inferay-muted-gray">›</span>
 					<IconGitBranch
 						size={9}
 						className="text-inferay-muted-gray shrink-0"

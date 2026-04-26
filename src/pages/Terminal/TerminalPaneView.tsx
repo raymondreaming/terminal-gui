@@ -375,7 +375,6 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						paneId={pane.id}
 						cwd={pane.cwd}
 						referencePaths={pane.referencePaths}
-						theme={theme}
 						agentKind={pane.agentKind}
 						onStatusChange={onAgentStatusChange}
 						onClose={onClose}

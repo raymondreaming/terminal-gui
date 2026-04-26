@@ -184,21 +184,6 @@ export function Sidebar() {
 		}),
 		[isDefault]
 	);
-	const logoOverlayStyle = useMemo(
-		() => ({
-			backgroundColor: "var(--color-inferay-accent)",
-			opacity: 0.06,
-			maskImage: `url(${logoUrl})`,
-			maskPosition: "center",
-			maskRepeat: "no-repeat",
-			maskSize: "cover",
-			WebkitMaskImage: `url(${logoUrl})`,
-			WebkitMaskPosition: "center",
-			WebkitMaskRepeat: "no-repeat",
-			WebkitMaskSize: "cover",
-		}),
-		[]
-	);
 
 	// Workspace state
 	const loadWorkspaces = useCallback(() => {
@@ -302,10 +287,6 @@ export function Sidebar() {
 							alt=""
 							className="h-7 w-7 rounded-md"
 							style={logoImageStyle}
-						/>
-						<span
-							className="absolute inset-0 pointer-events-none rounded-md"
-							style={logoOverlayStyle}
 						/>
 					</span>
 				</button>

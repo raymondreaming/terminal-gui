@@ -2,16 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useShikiSnippet } from "../../hooks/useShikiHighlighter.ts";
 import { IconChevronRight, IconFilePlus } from "../ui/Icons.tsx";
 
-type DiffTheme = {
-	bg: string;
-	fg: string;
-	cursor: string;
-	surface: string;
-	border: string;
-	fgMuted: string;
-	fgDim: string;
-};
-
 type EditMessage = {
 	content: string;
 };
@@ -171,7 +161,6 @@ function EditDiffCard({
 	hunks,
 	stats,
 	allLines,
-	theme,
 	isStreaming,
 	resetKey,
 }: {
@@ -179,7 +168,6 @@ function EditDiffCard({
 	hunks: DiffLine[][];
 	stats: { added: number; removed: number };
 	allLines: string[];
-	theme?: DiffTheme;
 	isStreaming?: boolean;
 	resetKey: string;
 }) {
@@ -200,8 +188,8 @@ function EditDiffCard({
 		<div
 			className="overflow-hidden rounded-lg border text-[11px]"
 			style={{
-				backgroundColor: theme?.surface ?? "var(--color-inferay-dark-gray)",
-				borderColor: theme?.border ?? "var(--color-inferay-gray-border)",
+				backgroundColor: "var(--color-inferay-dark-gray)",
+				borderColor: "var(--color-inferay-gray-border)",
 			}}
 		>
 			<button
@@ -209,10 +197,10 @@ function EditDiffCard({
 				onClick={() => setIsExpanded(!isExpanded)}
 				className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-[11px] font-medium transition-opacity hover:opacity-80"
 				style={{
-					color: theme?.fg ?? "var(--color-inferay-soft-white)",
-					backgroundColor: theme?.surface ?? "var(--color-inferay-dark-gray)",
+					color: "var(--color-inferay-soft-white)",
+					backgroundColor: "var(--color-inferay-dark-gray)",
 					borderBottom: isExpanded
-						? `1px solid ${theme?.border ?? "var(--color-inferay-gray-border)"}`
+						? "1px solid var(--color-inferay-gray-border)"
 						: "none",
 				}}
 			>
@@ -251,8 +239,7 @@ function EditDiffCard({
 									<div
 										className="h-px my-0.5"
 										style={{
-											backgroundColor:
-												theme?.border ?? "var(--color-inferay-gray-border)",
+											backgroundColor: "var(--color-inferay-gray-border)",
 											opacity: 0.3,
 										}}
 									/>
@@ -296,7 +283,7 @@ function EditDiffCard({
 											<span
 												className="flex-1 whitespace-pre pr-2 text-[10px] shiki-line"
 												style={{
-													color: theme?.fg ?? "var(--color-inferay-white)",
+													color: "var(--color-inferay-white)",
 												}}
 												dangerouslySetInnerHTML={
 													isReady && highlightedHtml
@@ -324,13 +311,11 @@ export function MiniEditDiff({
 	oldStr,
 	newStr,
 	filePath,
-	theme,
 	isStreaming,
 }: {
 	oldStr: string;
 	newStr: string;
 	filePath: string;
-	theme?: DiffTheme;
 	isStreaming?: boolean;
 }) {
 	const fileName = filePath.split("/").pop() || filePath;
@@ -363,7 +348,6 @@ export function MiniEditDiff({
 			hunks={hunks}
 			stats={stats}
 			allLines={allLines}
-			theme={theme}
 			isStreaming={isStreaming}
 			resetKey={`${filePath}:${oldStr}:${newStr}:${isStreaming ? "streaming" : "done"}`}
 		/>
@@ -373,11 +357,9 @@ export function MiniEditDiff({
 export function GroupedEditDiff({
 	filePath,
 	edits,
-	theme,
 }: {
 	filePath: string;
 	edits: EditMessage[];
-	theme?: DiffTheme;
 }) {
 	const fileName = filePath.split("/").pop() || filePath;
 	const { hunks, stats, allLines } = useMemo(() => {
@@ -438,7 +420,6 @@ export function GroupedEditDiff({
 			hunks={hunks}
 			stats={stats}
 			allLines={allLines}
-			theme={theme}
 			resetKey={`${filePath}:${edits.length}:${edits.map((edit) => edit.content).join("\u0000")}`}
 		/>
 	);

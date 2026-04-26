@@ -38,16 +38,6 @@ export interface CheckpointInfo {
 	afterMessageId: string | null;
 }
 
-export interface BubbleTheme {
-	bg: string;
-	fg: string;
-	cursor: string;
-	surface: string;
-	border: string;
-	fgMuted: string;
-	fgDim: string;
-}
-
 export interface SlashCommand {
 	id?: string;
 	name: string;
@@ -90,12 +80,4 @@ export function addMessage(
 	msg: ChatMessage
 ): ChatMessage[] {
 	return [...msgs, msg];
-}
-
-export function adjustBrightness(hex: string, percent: number): string {
-	const num = parseInt(hex.replace("#", ""), 16);
-	const r = Math.min(255, Math.max(0, (num >> 16) + percent));
-	const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + percent));
-	const b = Math.min(255, Math.max(0, (num & 0x0000ff) + percent));
-	return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }

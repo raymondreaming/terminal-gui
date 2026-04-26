@@ -83,20 +83,31 @@ function ThemeOrb({
 				<div
 					className="absolute inset-0 rounded-full transition-transform group-hover:scale-105"
 					style={{
-						background: `radial-gradient(circle at 35% 35%, ${accent}ee, ${accent}88 40%, ${darkGray}44 70%, transparent 100%)`,
+						background: `radial-gradient(circle at 35% 35%, ${darkGray} 0%, ${black} 60%, ${black} 100%)`,
 						boxShadow: selected
-							? `0 0 16px 2px ${accent}60, inset 0 0 8px ${accent}30`
-							: `0 0 10px 1px ${accent}25`,
+							? `0 0 16px 2px ${accent}50, inset 0 0 8px ${accent}20`
+							: `0 0 10px 1px ${accent}15`,
+					}}
+				/>
+				<div
+					className="absolute rounded-full"
+					style={{
+						top: "15%",
+						left: "20%",
+						width: "30%",
+						height: "24%",
+						background: `radial-gradient(ellipse at center, ${accent}55, transparent 70%)`,
+						filter: "blur(2px)",
 					}}
 				/>
 				<div
 					className="absolute rounded-full"
 					style={{
 						top: "18%",
-						left: "22%",
-						width: "28%",
-						height: "22%",
-						background: `radial-gradient(ellipse at center, rgba(255,255,255,0.55), transparent 70%)`,
+						left: "24%",
+						width: "22%",
+						height: "18%",
+						background: `radial-gradient(ellipse at center, rgba(255,255,255,0.45), transparent 70%)`,
 						filter: "blur(1.5px)",
 					}}
 				/>

@@ -597,7 +597,6 @@ export function EditorPage() {
 							cwd={session.cwd}
 							referencePaths={session.referencePaths}
 							agentKind={session.agentKind}
-							theme={theme}
 							onStatusChange={(id, status) => {
 								setAgentStatuses((cur) => {
 									if (cur.get(id) === status) return cur;
@@ -710,7 +709,6 @@ export function EditorPage() {
 							cwd={session.cwd}
 							referencePaths={session.referencePaths}
 							agentKind={session.agentKind}
-							theme={theme}
 							onStatusChange={(id, status) => {
 								setAgentStatuses((cur) => {
 									if (cur.get(id) === status) return cur;

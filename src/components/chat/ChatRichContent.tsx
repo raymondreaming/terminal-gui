@@ -2,25 +2,22 @@ import React, { useCallback, useMemo, useState } from "react";
 import { IconCheck, IconCopy, IconHelpCircle, IconSend } from "../ui/Icons.tsx";
 import { parseInlineTokens, parseMarkdownBlocks } from "./chat-text.ts";
 
-type ChatTheme = {
-	bg: string;
-	fg: string;
-	cursor: string;
-	surface: string;
-	border: string;
-	fgMuted: string;
-	fgDim: string;
-};
+function findParentScrollContainer(
+	node: HTMLElement | null
+): HTMLElement | null {
+	let current = node?.parentElement ?? null;
+	while (current) {
+		const style = window.getComputedStyle(current);
+		const canScrollY =
+			(style.overflowY === "auto" || style.overflowY === "scroll") &&
+			current.scrollHeight > current.clientHeight;
+		if (canScrollY) return current;
+		current = current.parentElement;
+	}
+	return null;
+}
 
-function CopyButton({
-	text,
-	theme,
-	className,
-}: {
-	text: string;
-	theme?: ChatTheme;
-	className?: string;
-}) {
+function CopyButton({ text, className }: { text: string; className?: string }) {
 	const [copied, setCopied] = useState(false);
 
 	const handleCopy = useCallback(() => {
@@ -39,14 +36,8 @@ function CopyButton({
 			onClick={handleCopy}
 			className={`flex items-center justify-center h-5 w-5 rounded transition-colors ${className ?? ""}`}
 			style={{
-				backgroundColor: theme
-					? theme.surface
-					: "var(--color-inferay-dark-gray)",
-				color: copied
-					? "#22c55e"
-					: theme
-						? theme.fgDim
-						: "var(--color-inferay-muted-gray)",
+				backgroundColor: "var(--color-inferay-dark-gray)",
+				color: copied ? "#22c55e" : "var(--color-inferay-muted-gray)",
 			}}
 			title={copied ? "Copied!" : "Copy"}
 		>
@@ -57,28 +48,26 @@ function CopyButton({
 
 export function Inline({
 	text,
-	theme,
 	onMdFileClick,
 }: {
 	text: string;
-	theme?: ChatTheme;
 	onMdFileClick?: (path: string) => void;
 }) {
 	const tokens = useMemo(() => parseInlineTokens(text), [text]);
-	const linkStyle = theme ? { color: `${theme.cursor}cc` } : undefined;
+	const linkStyle = { color: "var(--color-inferay-accent)" };
 	return (
 		<>
 			{tokens.map((token, i) => {
 				const partKey = `${i}-${token.type}`;
 				if (token.type === "code") {
-					const cs = theme
-						? { backgroundColor: theme.surface, color: `${theme.cursor}cc` }
-						: undefined;
 					return (
 						<code
 							key={partKey}
 							className="rounded px-0.5 font-mono text-[10px]"
-							style={cs}
+							style={{
+								backgroundColor: "var(--color-inferay-dark-gray)",
+								color: "var(--color-inferay-accent)",
+							}}
 						>
 							{token.value}
 						</code>
@@ -89,7 +78,7 @@ export function Inline({
 						<strong
 							key={partKey}
 							className="font-medium"
-							style={theme ? { color: theme.fg } : undefined}
+							style={{ color: "var(--color-inferay-white)" }}
 						>
 							{token.value}
 						</strong>
@@ -99,7 +88,7 @@ export function Inline({
 					return (
 						<em
 							key={partKey}
-							style={theme ? { color: theme.fgMuted } : undefined}
+							style={{ color: "var(--color-inferay-soft-white)" }}
 						>
 							{token.value}
 						</em>
@@ -154,14 +143,27 @@ export function Inline({
 
 export function Markdown({
 	text,
-	theme,
 	onMdFileClick,
 }: {
 	text: string;
-	theme?: ChatTheme;
 	onMdFileClick?: (path: string) => void;
 }) {
 	const blocks = useMemo(() => parseMarkdownBlocks(text), [text]);
+	const handleTableWheel = useCallback(
+		(event: React.WheelEvent<HTMLDivElement>) => {
+			if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey) {
+				return;
+			}
+
+			const parentScroller = findParentScrollContainer(event.currentTarget);
+			if (!parentScroller) return;
+
+			parentScroller.scrollTop += event.deltaY;
+			event.preventDefault();
+		},
+		[]
+	);
+
 	return (
 		<div className="min-w-0 space-y-1 break-words">
 			{blocks.map((b, i) => {
@@ -171,20 +173,16 @@ export function Markdown({
 						<div key={blockKey} className="group/code relative">
 							<pre
 								className="overflow-x-auto rounded border px-2 py-1.5 font-mono text-[10px] leading-relaxed"
-								style={
-									theme
-										? {
-												backgroundColor: theme.surface,
-												borderColor: theme.border,
-												color: theme.fgMuted,
-											}
-										: undefined
-								}
+								style={{
+									backgroundColor: "var(--color-inferay-dark-gray)",
+									borderColor: "var(--color-inferay-gray-border)",
+									color: "var(--color-inferay-soft-white)",
+								}}
 							>
 								{b.content}
 							</pre>
 							<div className="absolute top-1 right-1 opacity-0 group-hover/code:opacity-100 transition-opacity">
-								<CopyButton text={b.content} theme={theme} />
+								<CopyButton text={b.content} />
 							</div>
 						</div>
 					);
@@ -194,7 +192,7 @@ export function Markdown({
 						<p
 							key={blockKey}
 							className="font-medium text-[11px]"
-							style={theme ? { color: theme.fg } : undefined}
+							style={{ color: "var(--color-inferay-white)" }}
 						>
 							{b.content}
 						</p>
@@ -205,16 +203,12 @@ export function Markdown({
 						<div key={blockKey} className="flex gap-1 pl-0.5 text-[12px]">
 							<span
 								className="shrink-0 select-none"
-								style={theme ? { color: theme.fgDim } : undefined}
+								style={{ color: "var(--color-inferay-muted-gray)" }}
 							>
 								{b.bullet}
 							</span>
 							<span className="min-w-0">
-								<Inline
-									text={b.content}
-									theme={theme}
-									onMdFileClick={onMdFileClick}
-								/>
+								<Inline text={b.content} onMdFileClick={onMdFileClick} />
 							</span>
 						</div>
 					);
@@ -224,6 +218,7 @@ export function Markdown({
 						<div
 							key={blockKey}
 							className="max-w-full overflow-auto rounded border text-[10px]"
+							onWheel={handleTableWheel}
 							style={{
 								borderColor: "var(--color-inferay-gray-border)",
 								backgroundColor: "var(--color-inferay-dark-gray)",
@@ -239,7 +234,7 @@ export function Markdown({
 												style={{
 													borderBottom:
 														"1px solid var(--color-inferay-gray-border)",
-													color: theme?.fg ?? "#e5e5e5",
+													color: "var(--color-inferay-white)",
 													backgroundColor: "var(--color-inferay-dark-gray)",
 												}}
 											>
@@ -260,14 +255,10 @@ export function Markdown({
 															ri < b.rows.length - 1
 																? "1px solid var(--color-inferay-gray-border)"
 																: "none",
-														color: theme?.fg ?? "#e5e5e5",
+														color: "var(--color-inferay-white)",
 													}}
 												>
-													<Inline
-														text={cell}
-														theme={theme}
-														onMdFileClick={onMdFileClick}
-													/>
+													<Inline text={cell} onMdFileClick={onMdFileClick} />
 												</td>
 											))}
 										</tr>
@@ -279,11 +270,7 @@ export function Markdown({
 				}
 				return (
 					<p key={blockKey}>
-						<Inline
-							text={b.content}
-							theme={theme}
-							onMdFileClick={onMdFileClick}
-						/>
+						<Inline text={b.content} onMdFileClick={onMdFileClick} />
 					</p>
 				);
 			})}
@@ -293,12 +280,10 @@ export function Markdown({
 
 export function AskUserQuestionCard({
 	content,
-	theme,
 	isStreaming,
 	onSendMessage,
 }: {
 	content: string;
-	theme?: ChatTheme;
 	isStreaming?: boolean;
 	onSendMessage?: (text: string) => void;
 }) {
@@ -319,12 +304,12 @@ export function AskUserQuestionCard({
 		new Map()
 	);
 	const [submitted, setSubmitted] = useState(false);
-	const accentColor = theme?.cursor ?? "#007AFF";
-	const surfaceBg = theme?.surface ?? "var(--color-inferay-dark-gray)";
-	const borderClr = theme?.border ?? "var(--color-inferay-gray-border)";
-	const fgColor = theme?.fg ?? "var(--color-inferay-white)";
-	const fgMuted = theme?.fgMuted ?? "var(--color-inferay-soft-white)";
-	const fgDim = theme?.fgDim ?? "var(--color-inferay-muted-gray)";
+	const accentColor = "var(--color-inferay-accent)";
+	const surfaceBg = "var(--color-inferay-dark-gray)";
+	const borderClr = "var(--color-inferay-gray-border)";
+	const fgColor = "var(--color-inferay-white)";
+	const fgMuted = "var(--color-inferay-soft-white)";
+	const fgDim = "var(--color-inferay-muted-gray)";
 
 	const toggleOption = useCallback(
 		(qi: number, oi: number, multiSelect: boolean) => {
@@ -452,9 +437,7 @@ export function AskUserQuestionCard({
 											style={{
 												backgroundColor: isSelected
 													? `${accentColor}18`
-													: theme
-														? `${theme.bg}80`
-														: "rgba(0,0,0,0.15)",
+													: "rgba(0,0,0,0.15)",
 												border: `1px solid ${isSelected ? `${accentColor}50` : borderClr}`,
 												cursor: submitted ? "default" : "pointer",
 												opacity: submitted && !isSelected ? 0.4 : 1,

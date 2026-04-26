@@ -27,8 +27,6 @@ import {
 	type AgentChatSession,
 	type AttachedImageInfo,
 	addMessage,
-	adjustBrightness,
-	type BubbleTheme,
 	type ChatMessage,
 	type CheckpointInfo,
 	nextId,
@@ -68,18 +66,11 @@ import {
 import { useAgentChatComposerState } from "./useAgentChatComposerState.ts";
 import { useAgentChatMenus } from "./useAgentChatMenus.ts";
 
-interface TerminalTheme {
-	bg: string;
-	fg: string;
-	cursor: string;
-}
-
 interface AgentChatViewProps {
 	paneId: string;
 	cwd?: string;
 	referencePaths?: string[];
 	showInput?: boolean;
-	theme?: TerminalTheme;
 	agentKind?: AgentKind;
 	onStatusChange?: (paneId: string, status: string) => void;
 	hideHeader?: boolean;
@@ -139,7 +130,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			cwd,
 			referencePaths,
 			showInput = true,
-			theme,
 			agentKind = "claude",
 			onStatusChange,
 			hideHeader,
@@ -1320,37 +1310,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			[appendLocalMessages, isLoading, queueMessage, sendToServer]
 		);
 
-		const bgColor = theme?.bg ?? "#000000";
-		const fgColor = theme?.fg ?? "#e5e5e5";
-		const cursorColor = theme?.cursor ?? "#d6ff00";
-		const fgMuted = `${fgColor}88`;
-		const fgDim = `${fgColor}55`;
-		const surfaceColor = theme ? adjustBrightness(bgColor, 15) : undefined;
-		const borderColor = theme ? `${fgColor}15` : undefined;
-		const bubbleTheme = useMemo<BubbleTheme | undefined>(
-			() =>
-				theme
-					? {
-							bg: bgColor,
-							fg: fgColor,
-							cursor: cursorColor,
-							surface: surfaceColor!,
-							border: borderColor!,
-							fgMuted,
-							fgDim,
-						}
-					: undefined,
-			[
-				theme,
-				bgColor,
-				fgColor,
-				cursorColor,
-				surfaceColor,
-				borderColor,
-				fgMuted,
-				fgDim,
-			]
-		);
 		const handleAgentKindChange = useCallback(
 			(nextAgentKind: AgentKind) => {
 				changePaneAgentKind(paneId, nextAgentKind);
@@ -1363,7 +1322,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			<div
 				ref={containerRef}
 				className={`flex h-full flex-col transition-all ${isDragOver ? "ring-2 ring-inset ring-blue-500/60" : ""}`}
-				style={theme ? { color: fgColor } : undefined}
 				onDragOver={(e) => {
 					e.preventDefault();
 					setIsDragOver(true);
@@ -1375,11 +1333,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					<AgentChatHeader
 						paneId={paneId}
 						cwd={cwd}
-						theme={theme}
-						bgColor={bgColor}
-						borderColor={borderColor}
-						fgColor={fgColor}
-						fgDim={fgDim}
 						agentKind={agentKind}
 						agentKindOptions={agentKindOptions}
 						gitBranch={gitBranch}
@@ -1397,7 +1350,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					<div
 						ref={scrollRef}
 						className="h-full overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none"
-						style={theme ? { backgroundColor: bgColor } : undefined}
 						onScroll={handleScroll}
 					>
 						{messages.length === 0 &&
@@ -1407,10 +1359,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 								<div className="absolute inset-0 z-10 flex flex-col">
 									<div className="flex-1 flex items-center justify-center">
 										<div className="flex flex-col items-center gap-4">
-											<p
-												className="text-xs"
-												style={theme ? { color: fgDim } : undefined}
-											>
+											<p className="text-xs text-inferay-muted-gray">
 												Start a new session
 											</p>
 											{onAddPane && <NewSessionButtons onAddPane={onAddPane} />}
@@ -1442,13 +1391,10 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 							messages={messages}
 							expandedTools={expandedTools}
 							toggleTool={toggleTool}
-							bubbleTheme={bubbleTheme}
 							checkpoints={checkpoints}
 							revertCheckpoint={revertCheckpoint}
 							isLoading={isLoading}
 							handleSendMessage={handleSendMessage}
-							fgDim={fgDim}
-							theme={theme}
 							onMdFileClick={handleMdFileClick}
 						/>
 					</div>
@@ -1466,15 +1412,16 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				<div className="relative shrink-0">
 					{/* Solid bg behind content + gradient fade extending above */}
 					<div
-						className="pointer-events-none absolute left-0 right-0 bottom-0"
-						style={{ top: 0, backgroundColor: bgColor }}
+						className="pointer-events-none absolute left-0 right-0 bottom-0 bg-inferay-black"
+						style={{ top: 0 }}
 					/>
 					<div
 						className="pointer-events-none absolute left-0 right-0"
 						style={{
 							bottom: "100%",
 							height: "64px",
-							background: `linear-gradient(to bottom, ${bgColor}00 0%, ${bgColor}10 20%, ${bgColor}30 40%, ${bgColor}60 58%, ${bgColor}90 74%, ${bgColor} 100%)`,
+							background:
+								"linear-gradient(to bottom, transparent 0%, var(--color-inferay-black) 100%)",
 						}}
 					/>
 					<div className="relative z-10">
@@ -1489,14 +1436,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 								/>
 							}
 							showInput={showInput}
-							theme={theme}
-							bgColor={bgColor}
-							fgColor={fgColor}
-							cursorColor={cursorColor}
-							fgDim={fgDim}
-							borderColor={borderColor}
-							surfaceColor={surfaceColor}
-							bubbleTheme={bubbleTheme}
 							input={input}
 							setInput={setInput}
 							isLoading={isLoading}

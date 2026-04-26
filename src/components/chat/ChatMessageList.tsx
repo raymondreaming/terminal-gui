@@ -4,16 +4,6 @@ import { GroupedEditDiff, MiniEditDiff } from "./ChatEditDiff.tsx";
 import { AskUserQuestionCard, Markdown } from "./ChatRichContent.tsx";
 import { renderTextPills } from "./chat-token-decorators.tsx";
 
-type ChatTheme = {
-	bg: string;
-	fg: string;
-	cursor: string;
-	surface: string;
-	border: string;
-	fgMuted: string;
-	fgDim: string;
-};
-
 type ChatMessage = {
 	id: string;
 	role: "user" | "assistant" | "tool" | "system" | "btw";
@@ -114,14 +104,8 @@ function buildRenderItems(messages: ChatMessage[]): RenderItem[] {
 	return items;
 }
 
-function ToolOutputHighlight({
-	content,
-	theme,
-}: {
-	content: string;
-	theme?: ChatTheme;
-}) {
-	const accentStyle = { color: theme?.cursor ?? "#007AFF" };
+function ToolOutputHighlight({ content }: { content: string }) {
+	const accentStyle = { color: "#007AFF" };
 	try {
 		if (content.trim().startsWith("{")) {
 			const parsed = JSON.parse(content);
@@ -133,7 +117,7 @@ function ToolOutputHighlight({
 					<>
 						<span
 							style={{
-								color: theme?.fgDim ?? "var(--color-inferay-muted-gray)",
+								color: "var(--color-inferay-muted-gray)",
 							}}
 						>
 							{fileName}
@@ -156,7 +140,7 @@ function ToolOutputHighlight({
 					<>
 						<span
 							style={{
-								color: theme?.fgDim ?? "var(--color-inferay-muted-gray)",
+								color: "var(--color-inferay-muted-gray)",
 							}}
 						>
 							{fileName}
@@ -191,12 +175,10 @@ function ToolOutputHighlight({
 
 function CheckpointMarker({
 	checkpoint,
-	theme,
 	onRevert,
 	disabled,
 }: {
 	checkpoint: CheckpointInfo;
-	theme?: ChatTheme;
 	onRevert: (id: string) => void;
 	disabled?: boolean;
 }) {
@@ -223,7 +205,7 @@ function CheckpointMarker({
 					onClick={() => setExpanded(!expanded)}
 					className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-[11px] font-medium transition-opacity hover:opacity-80"
 					style={{
-						color: theme?.fg ?? "var(--color-inferay-soft-white)",
+						color: "var(--color-inferay-soft-white)",
 					}}
 				>
 					<IconChevronDown
@@ -236,7 +218,7 @@ function CheckpointMarker({
 						style={{
 							color: checkpoint.reverted
 								? revertedColor
-								: (theme?.fgDim ?? "var(--color-inferay-muted-gray)"),
+								: "var(--color-inferay-muted-gray)",
 						}}
 					/>
 					<span className="truncate opacity-80">
@@ -252,7 +234,7 @@ function CheckpointMarker({
 						disabled={disabled}
 						className="rounded-md px-1.5 py-0 text-[11px] font-medium transition-colors disabled:opacity-40"
 						style={{
-							color: theme?.fgDim ?? "var(--color-inferay-soft-white)",
+							color: "var(--color-inferay-soft-white)",
 						}}
 					>
 						Undo
@@ -260,7 +242,7 @@ function CheckpointMarker({
 				) : (
 					<span
 						className="rounded-md px-1.5 py-px text-[10px] italic"
-						style={{ color: theme?.fgDim ?? "var(--color-inferay-muted-gray)" }}
+						style={{ color: "var(--color-inferay-muted-gray)" }}
 					>
 						reverted
 					</span>
@@ -291,7 +273,7 @@ function CheckpointMarker({
 							</span>
 							<span
 								style={{
-									color: theme?.fgDim ?? "var(--color-inferay-muted-gray)",
+									color: "var(--color-inferay-muted-gray)",
 								}}
 							>
 								{f.path.split("/").pop()}
@@ -308,14 +290,12 @@ const Bubble = React.memo(function Bubble({
 	msg,
 	collapsed,
 	onToggle,
-	theme,
 	onSendMessage,
 	onMdFileClick,
 }: {
 	msg: ChatMessage;
 	collapsed: boolean;
 	onToggle: (id: string) => void;
-	theme?: ChatTheme;
 	onSendMessage?: (text: string) => void;
 	onMdFileClick?: (path: string) => void;
 }) {
@@ -344,21 +324,15 @@ const Bubble = React.memo(function Bubble({
 									alt=""
 									className="rounded max-h-24 max-w-32 object-cover"
 									style={{
-										border: `1px solid ${theme?.fgDim ?? "rgba(255,255,255,0.2)"}`,
+										border: "1px solid rgba(255,255,255,0.2)",
 									}}
 								/>
 							))}
 						</div>
 					)}
 					{displayContent && (
-						<p
-							className="whitespace-pre-wrap break-words text-[12px]"
-							style={theme ? { color: theme.fg } : undefined}
-						>
-							{renderTextPills(
-								displayContent,
-								theme ? { cursor: theme.cursor } : undefined
-							)}
+						<p className="whitespace-pre-wrap break-words text-[12px]">
+							{renderTextPills(displayContent)}
 						</p>
 					)}
 				</div>
@@ -404,7 +378,7 @@ const Bubble = React.memo(function Bubble({
 			<p
 				className="text-center text-[10px]"
 				style={{
-					color: theme ? theme.fgDim : "var(--color-inferay-muted-gray)",
+					color: "var(--color-inferay-muted-gray)",
 				}}
 			>
 				{msg.content}
@@ -433,7 +407,7 @@ const Bubble = React.memo(function Bubble({
 						<span
 							className="text-[10px] font-mono"
 							style={{
-								color: theme ? theme.fgDim : "var(--color-inferay-muted-gray)",
+								color: "var(--color-inferay-muted-gray)",
 							}}
 						>
 							- {msg.btwQuestion}
@@ -442,14 +416,10 @@ const Bubble = React.memo(function Bubble({
 				</div>
 				<div
 					className="text-[12px] leading-[1.6]"
-					style={theme ? { color: theme.fgMuted } : undefined}
+					style={{ color: "var(--color-inferay-soft-white)" }}
 				>
 					{msg.content ? (
-						<Markdown
-							text={msg.content}
-							theme={theme}
-							onMdFileClick={onMdFileClick}
-						/>
+						<Markdown text={msg.content} onMdFileClick={onMdFileClick} />
 					) : msg.isStreaming ? (
 						<div className="flex items-center gap-[3px] py-1">
 							<span
@@ -487,7 +457,6 @@ const Bubble = React.memo(function Bubble({
 			return (
 				<AskUserQuestionCard
 					content={msg.content}
-					theme={theme}
 					isStreaming={msg.isStreaming}
 					onSendMessage={onSendMessage}
 				/>
@@ -506,7 +475,6 @@ const Bubble = React.memo(function Bubble({
 							oldStr={parsed.old_string}
 							newStr={parsed.new_string}
 							filePath={parsed.file_path}
-							theme={theme}
 							isStreaming={msg.isStreaming}
 						/>
 					);
@@ -519,7 +487,7 @@ const Bubble = React.memo(function Bubble({
 					type="button"
 					onClick={() => onToggle(msg.id)}
 					className="flex items-center gap-1 text-[10px]"
-					style={theme ? { color: theme.fgDim } : undefined}
+					style={{ color: "var(--color-inferay-muted-gray)" }}
 				>
 					<IconChevronDown
 						size={7}
@@ -530,13 +498,12 @@ const Bubble = React.memo(function Bubble({
 				{!collapsed && msg.content && (
 					<pre
 						className="mt-0.5 max-h-28 overflow-auto rounded px-2 py-1 font-mono text-[9px] leading-relaxed whitespace-pre-wrap break-all"
-						style={
-							theme
-								? { backgroundColor: theme.surface, color: theme.fgDim }
-								: undefined
-						}
+						style={{
+							backgroundColor: "var(--color-inferay-dark-gray)",
+							color: "var(--color-inferay-muted-gray)",
+						}}
 					>
-						<ToolOutputHighlight content={msg.content} theme={theme} />
+						<ToolOutputHighlight content={msg.content} />
 					</pre>
 				)}
 			</div>
@@ -546,13 +513,9 @@ const Bubble = React.memo(function Bubble({
 	return (
 		<div
 			className="group/msg relative w-full min-w-0 break-words text-[12px] leading-[1.6]"
-			style={theme ? { color: theme.fgMuted } : undefined}
+			style={{ color: "var(--color-inferay-soft-white)" }}
 		>
-			<Markdown
-				text={msg.content}
-				theme={theme}
-				onMdFileClick={onMdFileClick}
-			/>
+			<Markdown text={msg.content} onMdFileClick={onMdFileClick} />
 		</div>
 	);
 });
@@ -561,25 +524,19 @@ export function ChatMessageList({
 	messages,
 	expandedTools,
 	toggleTool,
-	bubbleTheme,
 	checkpoints,
 	revertCheckpoint,
 	isLoading,
 	handleSendMessage,
-	fgDim,
-	theme,
 	onMdFileClick,
 }: {
 	messages: ChatMessage[];
 	expandedTools: Set<string>;
 	toggleTool: (id: string) => void;
-	bubbleTheme?: ChatTheme;
 	checkpoints: CheckpointInfo[];
 	revertCheckpoint: (id: string) => void;
 	isLoading: boolean;
 	handleSendMessage?: (text: string) => void;
-	fgDim: string;
-	theme?: { bg: string; fg: string; cursor: string };
 	onMdFileClick?: (path: string) => void;
 }) {
 	const renderItems = useMemo(() => buildRenderItems(messages), [messages]);
@@ -588,7 +545,7 @@ export function ChatMessageList({
 			{messages.length === 0 && (
 				<p
 					className="pt-8 text-center text-[10px]"
-					style={theme ? { color: fgDim } : undefined}
+					style={{ color: "var(--color-inferay-muted-gray)" }}
 				>
 					Ready
 				</p>
@@ -600,7 +557,6 @@ export function ChatMessageList({
 							key={`edit-group-${item.filePath}-${idx}`}
 							filePath={item.filePath}
 							edits={item.edits}
-							theme={bubbleTheme}
 						/>
 					);
 				}
@@ -611,7 +567,6 @@ export function ChatMessageList({
 							msg={msg}
 							collapsed={!expandedTools.has(msg.id)}
 							onToggle={toggleTool}
-							theme={bubbleTheme}
 							onSendMessage={handleSendMessage}
 							onMdFileClick={onMdFileClick}
 						/>
@@ -623,7 +578,6 @@ export function ChatMessageList({
 								return (
 									<CheckpointMarker
 										checkpoint={cp}
-										theme={bubbleTheme}
 										onRevert={revertCheckpoint}
 										disabled={isLoading}
 									/>
