@@ -293,7 +293,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 		>
 			{!isAgentChatPane && (
 				<div
-					className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b cursor-grab active:cursor-grabbing select-none"
+					className="electrobun-webkit-app-region-drag shrink-0 flex items-center gap-2 px-3 py-1.5 border-b cursor-grab active:cursor-grabbing select-none"
 					style={{
 						borderColor: theme.separator,
 						backgroundColor: theme.bg,
@@ -343,7 +343,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 							e.stopPropagation();
 							onClose(pane.id);
 						}}
-						className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
+						className="electrobun-webkit-app-region-no-drag flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
 						title="Close pane"
 					>
 						<IconX size={8} />

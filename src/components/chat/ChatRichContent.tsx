@@ -223,7 +223,7 @@ export function Markdown({
 					return (
 						<div
 							key={blockKey}
-							className="overflow-x-auto rounded border text-[10px]"
+							className="max-w-full overflow-auto rounded border text-[10px]"
 							style={{
 								borderColor: "var(--color-inferay-gray-border)",
 								backgroundColor: "var(--color-inferay-dark-gray)",

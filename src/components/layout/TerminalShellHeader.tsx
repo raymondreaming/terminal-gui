@@ -188,8 +188,8 @@ export function TerminalShellHeader() {
 	}, []);
 
 	return (
-		<div className="flex h-12 shrink-0 items-center gap-3 border-b border-inferay-gray-border bg-inferay-black px-3">
-			<div className="flex items-center gap-1 shrink-0">
+		<div className="electrobun-webkit-app-region-drag flex h-12 shrink-0 items-center gap-3 border-b border-inferay-gray-border bg-inferay-black px-3">
+			<div className="electrobun-webkit-app-region-no-drag flex items-center gap-1 shrink-0">
 				<ViewTab
 					active={shellState.mainView === "editor"}
 					icon={<IconCode size={12} />}
@@ -212,94 +212,96 @@ export function TerminalShellHeader() {
 			{location.pathname === "/terminal" && (
 				<>
 					<div className="flex-1 min-w-0" />
-					{shellState.mainView === "chat" && (
-						<>
-							{layoutMode === "grid" && selectedGroup && (
-								<>
-									<div className="flex items-center gap-1.5 shrink-0">
-										<span className="text-[9px] text-inferay-muted-gray sm:text-[10px]">
-											Col
-										</span>
-										<DropdownButton
-											value={String(selectedGroup.columns)}
-											options={[1, 2, 3, 4].map((n) => ({
-												id: String(n),
-												label: String(n),
-											}))}
-											onChange={(id) =>
-												updateSelectedGroupGrid({ columns: Number(id) })
-											}
-											minWidth={60}
-										/>
-									</div>
-									<div className="flex items-center gap-1.5 shrink-0">
-										<span className="text-[9px] text-inferay-muted-gray sm:text-[10px]">
-											Row
-										</span>
-										<DropdownButton
-											value={String(selectedGroup.rows)}
-											options={[1, 2, 3, 4].map((n) => ({
-												id: String(n),
-												label: String(n),
-											}))}
-											onChange={(id) =>
-												updateSelectedGroupGrid({ rows: Number(id) })
-											}
-											minWidth={60}
-										/>
-									</div>
-								</>
-							)}
-							<div className="flex items-center shrink-0 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray overflow-hidden h-7">
-								<button
-									type="button"
-									onClick={() => updateLayoutMode("grid")}
-									className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-inferay-white/10 text-inferay-white" : "text-inferay-muted-gray hover:text-inferay-soft-white"}`}
-									title="Grid layout"
-								>
-									<IconLayoutGrid size={13} />
-								</button>
-								<button
-									type="button"
-									onClick={() => updateLayoutMode("rows")}
-									className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-inferay-white/10 text-inferay-white" : "text-inferay-muted-gray hover:text-inferay-soft-white"}`}
-									title="Row layout"
-								>
-									<IconLayoutRows size={13} />
-								</button>
-							</div>
-						</>
-					)}
-					<div className="shrink-0">
-						<button
-							type="button"
-							onClick={() => addPaneToSelectedGroup("terminal")}
-							className="flex h-7 items-center gap-1.5 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-xs font-medium text-inferay-soft-white transition-colors hover:bg-inferay-gray"
-						>
-							<span>New</span>
-							<IconPlus size={10} />
-						</button>
+					<div className="electrobun-webkit-app-region-no-drag flex items-center gap-3 shrink-0">
+						{shellState.mainView === "chat" && (
+							<>
+								{layoutMode === "grid" && selectedGroup && (
+									<>
+										<div className="flex items-center gap-1.5 shrink-0">
+											<span className="text-[9px] text-inferay-muted-gray sm:text-[10px]">
+												Col
+											</span>
+											<DropdownButton
+												value={String(selectedGroup.columns)}
+												options={[1, 2, 3, 4].map((n) => ({
+													id: String(n),
+													label: String(n),
+												}))}
+												onChange={(id) =>
+													updateSelectedGroupGrid({ columns: Number(id) })
+												}
+												minWidth={60}
+											/>
+										</div>
+										<div className="flex items-center gap-1.5 shrink-0">
+											<span className="text-[9px] text-inferay-muted-gray sm:text-[10px]">
+												Row
+											</span>
+											<DropdownButton
+												value={String(selectedGroup.rows)}
+												options={[1, 2, 3, 4].map((n) => ({
+													id: String(n),
+													label: String(n),
+												}))}
+												onChange={(id) =>
+													updateSelectedGroupGrid({ rows: Number(id) })
+												}
+												minWidth={60}
+											/>
+										</div>
+									</>
+								)}
+								<div className="flex items-center shrink-0 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray overflow-hidden h-7">
+									<button
+										type="button"
+										onClick={() => updateLayoutMode("grid")}
+										className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-inferay-white/10 text-inferay-white" : "text-inferay-muted-gray hover:text-inferay-soft-white"}`}
+										title="Grid layout"
+									>
+										<IconLayoutGrid size={13} />
+									</button>
+									<button
+										type="button"
+										onClick={() => updateLayoutMode("rows")}
+										className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-inferay-white/10 text-inferay-white" : "text-inferay-muted-gray hover:text-inferay-soft-white"}`}
+										title="Row layout"
+									>
+										<IconLayoutRows size={13} />
+									</button>
+								</div>
+							</>
+						)}
+						<div className="shrink-0">
+							<button
+								type="button"
+								onClick={() => addPaneToSelectedGroup("terminal")}
+								className="flex h-7 items-center gap-1.5 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-xs font-medium text-inferay-soft-white transition-colors hover:bg-inferay-gray"
+							>
+								<span>New</span>
+								<IconPlus size={10} />
+							</button>
+						</div>
+						{shellState.mainView === "editor" && (
+							<button
+								type="button"
+								onClick={() => updateEditorZenMode(!shellState.editorZenMode)}
+								title={
+									shellState.editorZenMode ? "Exit zen mode" : "Enter zen mode"
+								}
+								className={`flex h-7 w-7 items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-dark-gray transition-colors ${
+									shellState.editorZenMode
+										? "bg-inferay-gray text-inferay-white"
+										: "text-inferay-muted-gray hover:bg-inferay-gray hover:text-inferay-soft-white"
+								}`}
+							>
+								{shellState.editorZenMode ? (
+									<IconCollapse size={12} />
+								) : (
+									<IconExpand size={12} />
+								)}
+							</button>
+						)}
 					</div>
-					{shellState.mainView === "editor" && (
-						<button
-							type="button"
-							onClick={() => updateEditorZenMode(!shellState.editorZenMode)}
-							title={
-								shellState.editorZenMode ? "Exit zen mode" : "Enter zen mode"
-							}
-							className={`flex h-7 w-7 items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-dark-gray transition-colors ${
-								shellState.editorZenMode
-									? "bg-inferay-gray text-inferay-white"
-									: "text-inferay-muted-gray hover:bg-inferay-gray hover:text-inferay-soft-white"
-							}`}
-						>
-							{shellState.editorZenMode ? (
-								<IconCollapse size={12} />
-							) : (
-								<IconExpand size={12} />
-							)}
-						</button>
-					)}
 				</>
 			)}
 		</div>

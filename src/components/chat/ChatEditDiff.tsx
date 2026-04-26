@@ -173,7 +173,6 @@ function EditDiffCard({
 	allLines,
 	theme,
 	isStreaming,
-	editCount,
 	resetKey,
 }: {
 	fileName: string;
@@ -182,7 +181,6 @@ function EditDiffCard({
 	allLines: string[];
 	theme?: DiffTheme;
 	isStreaming?: boolean;
-	editCount?: number;
 	resetKey: string;
 }) {
 	const { highlighted, isReady } = useShikiSnippet(allLines, fileName, true);
@@ -200,7 +198,7 @@ function EditDiffCard({
 
 	return (
 		<div
-			className="rounded-lg border overflow-hidden text-[11px] font-diff"
+			className="overflow-hidden rounded-lg border text-[11px]"
 			style={{
 				backgroundColor: theme?.surface ?? "var(--color-inferay-dark-gray)",
 				borderColor: theme?.border ?? "var(--color-inferay-gray-border)",
@@ -209,7 +207,7 @@ function EditDiffCard({
 			<button
 				type="button"
 				onClick={() => setIsExpanded(!isExpanded)}
-				className="w-full flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-medium text-left hover:opacity-80 transition-all"
+				className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-[11px] font-medium transition-opacity hover:opacity-80"
 				style={{
 					color: theme?.fg ?? "var(--color-inferay-soft-white)",
 					backgroundColor: theme?.surface ?? "var(--color-inferay-dark-gray)",
@@ -227,7 +225,7 @@ function EditDiffCard({
 				) : (
 					<IconFilePlus size={10} className="opacity-40" />
 				)}
-				<span className="flex-1 truncate opacity-80">{fileName}</span>
+				<span className="min-w-0 flex-1 truncate opacity-80">{fileName}</span>
 				<span className="flex items-center gap-1 text-[10px]">
 					{stats.added > 0 && (
 						<span style={{ color: "rgba(46,160,67,0.8)" }}>+{stats.added}</span>
@@ -238,21 +236,9 @@ function EditDiffCard({
 						</span>
 					)}
 				</span>
-				{editCount !== undefined && (
-					<span
-						className="text-[10px] px-1.5 py-px rounded opacity-60"
-						style={{
-							backgroundColor:
-								theme?.surface ?? "var(--color-inferay-dark-gray)",
-							color: theme?.fgDim ?? "var(--color-inferay-muted-gray)",
-						}}
-					>
-						{editCount}×
-					</span>
-				)}
 			</button>
 			{isExpanded && (
-				<div className="max-h-60 overflow-auto overflow-x-auto">
+				<div className="max-h-60 overflow-auto overflow-x-auto font-diff">
 					{hunks.map((hunk, hunkIdx) => {
 						let hunkLineIdx = globalLineIdx;
 						const changedLines = hunk.filter(
@@ -394,7 +380,6 @@ export function GroupedEditDiff({
 	theme?: DiffTheme;
 }) {
 	const fileName = filePath.split("/").pop() || filePath;
-	const editCount = edits.length;
 	const { hunks, stats, allLines } = useMemo(() => {
 		const parsedEdits: { old_string: string; new_string: string }[] = [];
 
@@ -454,8 +439,7 @@ export function GroupedEditDiff({
 			stats={stats}
 			allLines={allLines}
 			theme={theme}
-			editCount={editCount}
-			resetKey={`${filePath}:${editCount}:${edits.map((edit) => edit.content).join("\u0000")}`}
+			resetKey={`${filePath}:${edits.length}:${edits.map((edit) => edit.content).join("\u0000")}`}
 		/>
 	);
 }

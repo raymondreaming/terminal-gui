@@ -1,4 +1,4 @@
-import { unlink } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import {
@@ -9,6 +9,7 @@ import type { AgentAdapter, AgentHandle, AgentRunContext } from "../types.ts";
 
 interface CodexRunState {
 	outputPath: string;
+	debugLogPath: string;
 	assistantOpen: boolean;
 	toolOpen: boolean;
 	sawAssistantStream: boolean;
@@ -292,6 +293,12 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 				tmpdir(),
 				`inferay-codex-${ctx.paneId}-${Date.now()}.txt`
 			),
+			debugLogPath: resolve(
+				process.cwd(),
+				"data",
+				"codex-debug",
+				`codex-events-${ctx.paneId}-${Date.now()}.json`
+			),
 			assistantOpen: false,
 			toolOpen: false,
 			sawAssistantStream: false,
@@ -336,18 +343,21 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 				const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
 				const decoder = new TextDecoder();
 				let leftover = "";
+				const rawEvents: any[] = [];
 
 				while (true) {
 					const { done, value } = await reader.read();
 					if (done) break;
 					leftover += decoder.decode(value, { stream: true });
-					leftover = parseNdjsonLines(leftover, (event) =>
-						handleCodexEvent(event, ctx, state)
-					);
+					leftover = parseNdjsonLines(leftover, (event) => {
+						rawEvents.push(event);
+						handleCodexEvent(event, ctx, state);
+					});
 				}
-				flushNdjsonLeftover(leftover, (event) =>
-					handleCodexEvent(event, ctx, state)
-				);
+				flushNdjsonLeftover(leftover, (event) => {
+					rawEvents.push(event);
+					handleCodexEvent(event, ctx, state);
+				});
 
 				const exitCode = await proc.exited;
 				proc = null;
@@ -369,6 +379,27 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 				} finally {
 					await unlink(state.outputPath).catch(() => {});
 				}
+				await mkdir(resolve(process.cwd(), "data", "codex-debug"), {
+					recursive: true,
+				});
+				await writeFile(
+					state.debugLogPath,
+					JSON.stringify(
+						{
+							createdAt: new Date().toISOString(),
+							paneId: ctx.paneId,
+							cwd: ctx.cwd,
+							model: ctx.model ?? null,
+							reasoningLevel: ctx.reasoningLevel ?? null,
+							exitCode,
+							stderr: stderrText,
+							lastAssistantMessage: assistantText,
+							events: rawEvents,
+						},
+						null,
+						2
+					)
+				);
 
 				if (
 					assistantText &&

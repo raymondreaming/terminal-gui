@@ -70,13 +70,14 @@ export function AgentChatHeader({
 
 	return (
 		<div
-			className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b ${theme ? "" : "border-inferay-gray-border"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""} select-none`}
+			className={`electrobun-webkit-app-region-drag shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b ${theme ? "" : "border-inferay-gray-border"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""} select-none`}
 			style={theme ? { borderColor, backgroundColor: bgColor } : undefined}
 			draggable={draggable}
 			onDragStart={onDragStart}
 			onDragEnd={onDragEnd}
 		>
 			<div
+				className="electrobun-webkit-app-region-no-drag"
 				draggable={false}
 				onMouseDown={(e) => e.stopPropagation()}
 				onDragStart={(e) => e.preventDefault()}
@@ -113,14 +114,16 @@ export function AgentChatHeader({
 						›
 					</span>
 					{hasMultipleSessions ? (
-						<DropdownButton
-							value={paneId}
-							options={sessionOptions}
-							onChange={onSelectSession}
-							minWidth={220}
-							buttonClassName="h-4 rounded-md border-transparent px-1.5 text-[9px] font-medium hover:bg-inferay-white/[0.06]"
-							labelClassName="max-w-[120px] truncate text-[9px]"
-						/>
+						<span className="electrobun-webkit-app-region-no-drag">
+							<DropdownButton
+								value={paneId}
+								options={sessionOptions}
+								onChange={onSelectSession}
+								minWidth={220}
+								buttonClassName="h-4 rounded-md border-transparent px-1.5 text-[9px] font-medium hover:bg-inferay-white/[0.06]"
+								labelClassName="max-w-[120px] truncate text-[9px]"
+							/>
+						</span>
 					) : (
 						<span
 							className="text-[9px] font-medium truncate"
@@ -160,7 +163,7 @@ export function AgentChatHeader({
 						e.stopPropagation();
 						onClose(paneId);
 					}}
-					className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
+					className="electrobun-webkit-app-region-no-drag flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
 					title="Close"
 				>
 					<IconX size={8} />

@@ -18,8 +18,10 @@ import {
 	IconPlus,
 	IconSettings,
 	IconSlash,
+	IconTerminal,
 	IconTrash,
 	IconUser,
+	IconX,
 } from "../ui/Icons.tsx";
 
 interface NavItem {
@@ -74,30 +76,53 @@ function WorkspaceItem({
 
 	if (collapsed) {
 		return (
-			<button
-				type="button"
-				onClick={onSelect}
-				className={`mx-1 mb-px flex h-8 w-full items-center justify-center rounded-md text-[10px] font-medium transition-colors ${
+			<div
+				className={`group mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-lg border transition-colors relative ${
 					isActive
-						? "bg-inferay-white/[0.06] text-inferay-white"
-						: "text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white"
+						? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
+						: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
 				}`}
-				title={group.name}
 			>
-				{group.name.charAt(0).toUpperCase()}
-			</button>
+				<button
+					type="button"
+					onClick={onSelect}
+					className="flex items-center justify-center w-full h-full rounded-lg"
+					title={group.name}
+				>
+					<IconTerminal size={14} className="shrink-0" />
+				</button>
+				{group.panes.length > 0 && (
+					<span className="absolute -bottom-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-inferay-gray border border-inferay-gray-border text-[8px] font-medium text-inferay-muted-gray leading-none px-0.5">
+						{group.panes.length}
+					</span>
+				)}
+				{canDelete && (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onDelete();
+						}}
+						className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-inferay-black border border-inferay-gray-border text-inferay-muted-gray opacity-0 transition-opacity hover:text-red-400 hover:border-red-400/40 group-hover:opacity-100"
+						title="Delete workspace"
+					>
+						<IconX size={7} />
+					</button>
+				)}
+			</div>
 		);
 	}
 
 	return (
 		<div
-			className={`group mx-1 mb-px flex h-8 items-center rounded-md px-2 text-[11px] cursor-pointer transition-colors ${
+			className={`group mx-1.5 mb-1 flex h-8 items-center gap-2 rounded-lg border px-2 text-[11px] font-medium cursor-pointer transition-colors ${
 				isActive
-					? "bg-inferay-white/[0.06] text-inferay-white"
-					: "text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white"
+					? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
+					: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
 			}`}
 			onClick={onSelect}
 		>
+			<IconTerminal size={13} className="shrink-0" />
 			<div className="flex-1 min-w-0">
 				{editing ? (
 					<input
@@ -261,7 +286,7 @@ export function Sidebar() {
 
 	return (
 		<aside
-			className={`relative flex flex-col border-r border-inferay-gray-border bg-inferay-black transition-all duration-200 ${
+			className={`electrobun-webkit-app-region-drag relative flex flex-col border-r border-inferay-gray-border bg-inferay-black transition-all duration-200 ${
 				collapsed ? "w-12" : "w-48"
 			}`}
 		>
@@ -293,35 +318,33 @@ export function Sidebar() {
 							key={item.path}
 							to={item.path}
 							className={({ isActive }) =>
-								`mx-1 mb-px flex h-10 items-center gap-2 rounded-md px-2 text-[12px] transition-colors ${
+								`electrobun-webkit-app-region-no-drag mx-1.5 mb-1 flex items-center gap-2 rounded-lg border px-2 text-[11px] font-medium transition-colors ${
 									isActive
-										? "bg-inferay-white/[0.06] text-inferay-white"
-										: "text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white"
-								} ${collapsed ? "justify-center !px-0" : ""}`
+										? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
+										: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
+								} ${collapsed ? "justify-center h-7 w-7 mx-auto !px-0" : "h-7"}`
 							}
 							title={collapsed ? item.label : undefined}
 						>
-							<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
-								<Icon size={15} className="shrink-0" />
-							</span>
+							<Icon size={14} className="shrink-0" />
 							{!collapsed && <span>{item.label}</span>}
 						</NavLink>
 					);
 				})}
 
 				{/* Workspaces section */}
-				<div className="mt-2 border-t border-inferay-gray-border pt-2">
+				<div className="electrobun-webkit-app-region-no-drag mt-2 border-t border-inferay-gray-border pt-2">
 					<div
-						className={`mx-1 mb-1 flex items-center ${collapsed ? "justify-center" : "justify-between px-2"}`}
+						className={`mx-1.5 mb-1 flex items-center ${collapsed ? "justify-center" : "justify-between px-2"}`}
 					>
 						{collapsed ? (
 							<button
 								type="button"
 								onClick={addWorkspace}
-								className="flex h-8 w-8 items-center justify-center rounded-md text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white"
-								title="Workspaces"
+								className="flex h-7 w-7 mx-auto items-center justify-center rounded-lg border border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
+								title="Add workspace"
 							>
-								<IconLayers size={15} />
+								<IconPlus size={14} className="shrink-0" />
 							</button>
 						) : (
 							<>
@@ -353,34 +376,30 @@ export function Sidebar() {
 					))}
 				</div>
 			</nav>
-			<div className="border-t border-inferay-gray-border p-1.5">
+			<div className="electrobun-webkit-app-region-no-drag border-t border-inferay-gray-border p-1.5">
 				<button
 					type="button"
 					onClick={() =>
 						window.dispatchEvent(new Event("terminal-open-theme-panel"))
 					}
-					className={`flex h-10 w-full items-center gap-2 rounded-md px-2 text-[12px] transition-colors text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white ${collapsed ? "justify-center !px-0" : ""}`}
+					className={`flex items-center gap-2 rounded-lg border border-transparent text-[11px] font-medium transition-colors text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white ${collapsed ? "justify-center h-7 w-7 mx-auto p-0" : "h-7 w-full px-2"}`}
 					title={collapsed ? "Settings" : undefined}
 				>
-					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
-						<IconSettings size={15} className="shrink-0" />
-					</span>
+					<IconSettings size={14} className="shrink-0" />
 					{!collapsed ? <span>Settings</span> : null}
 				</button>
 				<NavLink
 					to="/profile"
 					className={({ isActive }) =>
-						`flex h-10 items-center gap-2 rounded-md px-2 text-[12px] transition-colors ${
+						`flex items-center gap-2 rounded-lg border text-[11px] font-medium transition-colors ${
 							isActive
-								? "bg-inferay-white/[0.06] text-inferay-white"
-								: "text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white"
-						} ${collapsed ? "justify-center !px-0" : ""}`
+								? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
+								: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
+						} ${collapsed ? "justify-center h-7 w-7 mx-auto p-0" : "h-7 px-2"}`
 					}
 					title={collapsed ? "Profile" : undefined}
 				>
-					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
-						<IconUser size={15} className="shrink-0" />
-					</span>
+					<IconUser size={14} className="shrink-0" />
 					{!collapsed ? <span>Profile</span> : null}
 				</NavLink>
 			</div>

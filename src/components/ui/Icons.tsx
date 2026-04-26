@@ -116,31 +116,95 @@ export const IconFolderOpen = iconMulti([
 	"M5 21l3-9h16l-3 9",
 ]);
 
-export const IconGitBranch = iconMulti([
-	"M6 3v12",
-	"M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-	"M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-	"M15 6a9 9 0 0 0-9 9",
-]);
+export function IconGitBranch({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<line x1="6" y1="3" x2="6" y2="15" />
+			<circle cx="18" cy="6" r="3" />
+			<circle cx="6" cy="18" r="3" />
+			<path d="M18 9a9 9 0 0 1-9 9" />
+		</svg>
+	);
+}
 
-export const IconCamera = iconMulti([
-	"M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z",
-	"M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-]);
+export function IconCamera({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+			<circle cx="12" cy="13" r="4" />
+		</svg>
+	);
+}
 
-export const IconEye = iconMulti([
-	"M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z",
-	"M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-]);
+export function IconEye({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+			<circle cx="12" cy="12" r="3" />
+		</svg>
+	);
+}
 
 export const IconPencil = iconMulti([
 	"M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z",
 ]);
 
-export const IconSearch = iconMulti([
-	"M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z",
-	"M21 21l-4.35-4.35",
-]);
+export function IconSearch({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<circle cx="11" cy="11" r="8" />
+			<line x1="21" y1="21" x2="16.65" y2="16.65" />
+		</svg>
+	);
+}
 
 export const IconGlobe = iconMulti([
 	"M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z",
@@ -178,11 +242,27 @@ export const IconLayers = iconMulti([
 	"M2 17l10 5 10-5",
 ]);
 
-export const IconGitCommit = iconMulti([
-	"M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-	"M2 12h6",
-	"M16 12h6",
-]);
+export function IconGitCommit({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<circle cx="12" cy="12" r="4" />
+			<line x1="1.05" y1="12" x2="7" y2="12" />
+			<line x1="17.01" y1="12" x2="22.96" y2="12" />
+		</svg>
+	);
+}
 
 export const IconFilePlus = iconMulti([
 	"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
@@ -461,22 +541,47 @@ export const IconMessageCircle = iconMulti([
 	"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z",
 ]);
 
-export const IconUser = iconMulti([
-	"M20 21a8 8 0 0 0-16 0",
-	"M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-]);
+export function IconUser({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+			<circle cx="12" cy="7" r="4" />
+		</svg>
+	);
+}
 
-export const IconSettings = iconMulti([
-	"M12 3v2",
-	"M12 19v2",
-	"M3 12h2",
-	"M19 12h2",
-	"M5.64 5.64l1.41 1.41",
-	"M16.95 16.95l1.41 1.41",
-	"M5.64 18.36l1.41-1.41",
-	"M16.95 7.05l1.41-1.41",
-	"M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-]);
+export function IconSettings({ size = 16, ...props }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.75}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			{...props}
+		>
+			<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+			<circle cx="12" cy="12" r="3" />
+		</svg>
+	);
+}
 
 export const IconZap = icon("M13 2L3 14h7l-1 8 10-12h-7l1-8z");
 
