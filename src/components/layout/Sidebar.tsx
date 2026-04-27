@@ -5,7 +5,7 @@ import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { readStoredBoolean, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	createGroupId,
-	createTerminalPane,
+	createPendingAgentChatPane,
 	DEFAULT_COLUMNS,
 	DEFAULT_ROWS,
 	loadTerminalState,
@@ -220,14 +220,17 @@ export function Sidebar() {
 	const addWorkspace = useCallback(() => {
 		const state = loadTerminalState();
 		if (!state) return;
-		const pane = createTerminalPane("terminal");
+		const selectedGroup =
+			state.groups.find((group) => group.id === state.selectedGroupId) ??
+			state.groups[0];
+		const pane = createPendingAgentChatPane();
 		const group = {
 			id: createGroupId(),
 			name: `Workspace ${state.groups.length + 1}`,
 			panes: [pane],
 			selectedPaneId: pane.id,
-			columns: DEFAULT_COLUMNS,
-			rows: DEFAULT_ROWS,
+			columns: selectedGroup?.columns ?? DEFAULT_COLUMNS,
+			rows: selectedGroup?.rows ?? DEFAULT_ROWS,
 		};
 		saveTerminalState({
 			...state,

@@ -1,4 +1,8 @@
-import { type AgentKind, getAgentDefinition } from "./agents.ts";
+import {
+	type AgentKind,
+	type ChatAgentKind,
+	getAgentDefinition,
+} from "./agents.ts";
 
 import { sendJson } from "./fetch-json.ts";
 
@@ -154,6 +158,8 @@ export const DEFAULT_COLUMNS = 2 as const;
 
 export const DEFAULT_ROWS = 1 as const;
 
+export const DEFAULT_CHAT_AGENT_KIND: ChatAgentKind = "claude";
+
 function isValidTerminalState(value: unknown): value is TerminalSavedState {
 	if (typeof value !== "object" || value === null) return false;
 	const obj = value as Record<string, unknown>;
@@ -241,6 +247,20 @@ export function createTerminalPane(
 		cwd,
 		pendingCwd,
 	};
+}
+
+export function createAgentChatPane(
+	agentKind: ChatAgentKind = DEFAULT_CHAT_AGENT_KIND,
+	cwd?: string,
+	pendingCwd = false
+): TerminalPaneModel {
+	return createTerminalPane(agentKind, cwd, pendingCwd);
+}
+
+export function createPendingAgentChatPane(
+	agentKind: ChatAgentKind = DEFAULT_CHAT_AGENT_KIND
+): TerminalPaneModel {
+	return createAgentChatPane(agentKind, undefined, true);
 }
 
 export function createDefaultGroup(): TerminalGroupModel {

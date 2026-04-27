@@ -4,6 +4,7 @@ import {
 	useCallback,
 	useEffect,
 	useImperativeHandle,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -331,6 +332,8 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		const containerRef = useRef<HTMLDivElement>(null);
 		const [isAtBottom, setIsAtBottom] = useState(true);
 		const currentBtwRef = useRef<string | null>(null);
+		const autoFollowRef = useRef(true);
+		const programmaticScrollRef = useRef(false);
 		const {
 			isDragOver,
 			setIsDragOver,
@@ -359,15 +362,44 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		const handleScroll = useCallback(() => {
 			const el = scrollRef.current;
 			if (!el) return;
-			const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+			const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
 			setIsAtBottom(atBottom);
+			if (programmaticScrollRef.current) return;
+			autoFollowRef.current = atBottom;
 		}, []);
 
-		const scrollToBottom = useCallback(() => {
+		const scrollToBottom = useCallback(
+			(behavior: ScrollBehavior = "smooth") => {
+				const el = scrollRef.current;
+				if (!el) return;
+				autoFollowRef.current = true;
+				programmaticScrollRef.current = true;
+				el.scrollTo({ top: el.scrollHeight, behavior });
+				setIsAtBottom(true);
+				window.setTimeout(
+					() => {
+						programmaticScrollRef.current = false;
+					},
+					behavior === "smooth" ? 260 : 0
+				);
+			},
+			[]
+		);
+
+		useLayoutEffect(() => {
+			if (!autoFollowRef.current) return;
 			const el = scrollRef.current;
 			if (!el) return;
-			el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-		}, []);
+			programmaticScrollRef.current = true;
+			el.scrollTop = el.scrollHeight;
+			setIsAtBottom(true);
+			const raf = requestAnimationFrame(() => {
+				const current = scrollRef.current;
+				if (current) current.scrollTop = current.scrollHeight;
+				programmaticScrollRef.current = false;
+			});
+			return () => cancelAnimationFrame(raf);
+		}, [messages, liveActivities, isLoading]);
 
 		useEffect(() => {
 			if (!isSelected) return;
@@ -463,6 +495,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		});
 		const sendToServer = useCallback(
 			(text: string) => {
+				autoFollowRef.current = true;
 				setLoadingState({
 					isLoading: true,
 					status: "thinking",
@@ -1479,7 +1512,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						className="pointer-events-none absolute left-0 right-0"
 						style={{
 							bottom: "100%",
-							height: "64px",
+							height: "48px",
 							background:
 								"linear-gradient(to bottom, transparent 0%, var(--color-inferay-black) 100%)",
 						}}

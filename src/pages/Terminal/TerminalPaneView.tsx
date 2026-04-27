@@ -13,6 +13,7 @@ import {
 	getAgentDefinition,
 	isChatAgentKind,
 } from "../../lib/agents.ts";
+import { DEFAULT_CHAT_AGENT_KIND } from "../../lib/terminal-utils.ts";
 import type {
 	AgentKind,
 	TerminalPaneModel,
@@ -78,7 +79,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 	const paneLabel = getAgentDefinition(pane.agentKind).label;
 	const pendingAgentKind = isChatAgentKind(pane.agentKind)
 		? pane.agentKind
-		: "claude";
+		: DEFAULT_CHAT_AGENT_KIND;
 	const pendingAgentDefinition = getAgentDefinition(pendingAgentKind);
 	const [pendingModel, setPendingModel] = useState(() => {
 		const stored = loadStoredModel(pane.id);
@@ -95,7 +96,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 
 	useEffect(() => {
 		if (pane.pendingCwd && !isChatAgentKind(pane.agentKind)) {
-			onSetPaneAgentKind?.(pane.id, "claude");
+			onSetPaneAgentKind?.(pane.id, DEFAULT_CHAT_AGENT_KIND);
 		}
 	}, [onSetPaneAgentKind, pane.agentKind, pane.id, pane.pendingCwd]);
 
@@ -361,7 +362,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 		>
 			{!isAgentChatPane && (
 				<div
-					className="electrobun-webkit-app-region-drag shrink-0 flex items-center gap-2 px-3 py-1.5 border-b cursor-grab active:cursor-grabbing select-none"
+					className="electrobun-webkit-app-region-no-drag shrink-0 flex items-center gap-2 px-3 py-1.5 border-b cursor-grab active:cursor-grabbing select-none"
 					style={{
 						borderColor: theme.separator,
 						backgroundColor: theme.bg,
@@ -369,6 +370,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					draggable={paneIndex != null && !!onHeaderDragStart}
 					onDragStart={(e) => {
 						if (paneIndex != null && onHeaderDragStart) {
+							e.dataTransfer.setData("text/plain", pane.id);
 							const img = new Image();
 							img.src =
 								"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -454,6 +456,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						draggable={paneIndex != null && !!onHeaderDragStart}
 						onDragStart={(e) => {
 							if (paneIndex != null && onHeaderDragStart) {
+								e.dataTransfer.setData("text/plain", pane.id);
 								const img = new Image();
 								img.src =
 									"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";

@@ -10,7 +10,6 @@ import type { AgentChatHandle } from "../../components/chat/AgentChatView.tsx";
 import { clearAgentChatMessages } from "../../components/chat/chat-session-store.ts";
 import { ProjectFileGraphView } from "../../components/graph/ProjectFileGraphView.tsx";
 import { Button } from "../../components/ui/Button.tsx";
-import { EmptyState } from "../../components/ui/EmptyState.tsx";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconArrowLeft,
@@ -18,7 +17,6 @@ import {
 	IconExternalLink,
 	IconGitBranch,
 	IconGlobe,
-	IconMessageCircle,
 	IconX,
 } from "../../components/ui/Icons.tsx";
 import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
@@ -26,12 +24,12 @@ import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
 import { useGitStatus } from "../../hooks/useGitStatus.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { isChatAgentKind } from "../../lib/agents.ts";
-import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { EditorPage } from "../EditorPage/index.tsx";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
+import { InlineDirectoryPicker } from "./InlineDirectoryPicker.tsx";
 import { NewSessionButtons } from "./NewSessionButtons.tsx";
 import { PopoutHeader } from "./PopoutHeader.tsx";
 import { TerminalGrid } from "./TerminalGrid.tsx";
@@ -47,7 +45,9 @@ import {
 import {
 	type AgentKind,
 	createGroupId,
+	createPendingAgentChatPane,
 	createTerminalPane,
+	DEFAULT_CHAT_AGENT_KIND,
 	DEFAULT_COLUMNS,
 	DEFAULT_FONT_FAMILY,
 	DEFAULT_FONT_SIZE,
@@ -86,16 +86,6 @@ function markPopoutRestored() {
 	} catch {}
 }
 
-const logoUrl = resolveServerUrl("/logo.png");
-
-function TerminalEmptyStateBrand() {
-	return (
-		<div className="rounded-2xl border border-inferay-gray-border bg-inferay-dark-gray p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
-			<img src={logoUrl} alt="inferay logo" className="h-14 w-14 rounded-xl" />
-		</div>
-	);
-}
-
 function GraphEmptyState({ message }: { message: string }) {
 	return (
 		<div className="flex h-full items-center justify-center p-6">
@@ -109,6 +99,63 @@ function GraphEmptyState({ message }: { message: string }) {
 	);
 }
 
+function AgentStartPane({
+	onStart,
+	onClose,
+}: {
+	onStart: (
+		agentKind: AgentKind,
+		path: string | null,
+		referencePaths?: string[]
+	) => void;
+	onClose?: () => void;
+}) {
+	const [agentKind, setAgentKind] = useState<AgentKind>(
+		DEFAULT_CHAT_AGENT_KIND
+	);
+	return (
+		<div className="flex h-full flex-col bg-inferay-black">
+			<div className="electrobun-webkit-app-region-no-drag flex shrink-0 items-center gap-2 border-b border-inferay-gray-border px-3 py-1.5">
+				<span className="text-[9px] font-medium text-inferay-soft-white">
+					New Session
+				</span>
+				<span className="flex-1" />
+				{onClose && (
+					<button
+						type="button"
+						onClick={onClose}
+						className="electrobun-webkit-app-region-no-drag flex h-4 w-4 items-center justify-center rounded text-inferay-muted-gray transition-colors hover:bg-red-500/15 hover:text-red-400"
+						title="Close"
+					>
+						<IconX size={8} />
+					</button>
+				)}
+			</div>
+			<div className="flex-1" />
+			<div className="shrink-0 px-3 pb-2">
+				<div className="mb-1 flex items-center gap-1.5 overflow-x-auto px-1">
+					<NewSessionButtons
+						selectedKind={agentKind}
+						onAddPane={(kind) => setAgentKind(kind)}
+					/>
+				</div>
+				<InlineDirectoryPicker
+					onSelect={(path) => {
+						if (path) onStart(agentKind, path);
+					}}
+					onCancel={() => {}}
+					multiSelect
+					onMultiSelect={(paths) => {
+						if (paths.length > 0) {
+							onStart(agentKind, paths[0]!, paths.slice(1));
+						}
+					}}
+				/>
+			</div>
+		</div>
+	);
+}
+
 type GroupAction =
 	| {
 			type: "addPane";
@@ -116,6 +163,7 @@ type GroupAction =
 			agentKind: AgentKind;
 			cwd?: string;
 			pendingCwd?: boolean;
+			referencePaths?: string[];
 	  }
 	| { type: "removePane"; groupId: string; paneId: string; force?: boolean }
 	| { type: "selectPane"; groupId: string; paneId: string }
@@ -156,6 +204,9 @@ function groupsReducer(
 				action.cwd,
 				action.pendingCwd
 			);
+			if (action.referencePaths) {
+				pane.referencePaths = action.referencePaths;
+			}
 			return state.map((g) => {
 				if (g.id !== action.groupId) return g;
 				return { ...g, panes: [...g.panes, pane], selectedPaneId: pane.id };
@@ -586,13 +637,42 @@ export function TerminalPage({
 			),
 		[withSelectedGroup]
 	);
+	const handleStartAgentPane = useCallback(
+		(agentKind: AgentKind, path: string | null, referencePaths?: string[]) =>
+			withSelectedGroup((groupId) =>
+				groupsDispatch({
+					type: "addPane",
+					groupId,
+					agentKind,
+					cwd: path ?? undefined,
+					pendingCwd: false,
+					referencePaths,
+				})
+			),
+		[withSelectedGroup]
+	);
 	const removePane = useCallback(
-		(paneId: string, force?: boolean) =>
-			withSelectedGroup((groupId) => {
-				cleanupPane(paneId);
-				groupsDispatch({ type: "removePane", groupId, paneId, force });
-			}),
-		[cleanupPane, withSelectedGroup]
+		(paneId: string, force?: boolean) => {
+			if (!selectedGroupId) return;
+			const group = groups.find((g) => g.id === selectedGroupId);
+			if (!group) return;
+			if (group.panes.length <= 1 && groups.length > 1) {
+				for (const pane of group.panes) cleanupPane(pane.id);
+				groupsDispatch({ type: "removeGroup", groupId: selectedGroupId });
+				setSelectedGroupId(
+					groups.find((g) => g.id !== selectedGroupId)?.id ?? null
+				);
+				return;
+			}
+			cleanupPane(paneId);
+			groupsDispatch({
+				type: "removePane",
+				groupId: selectedGroupId,
+				paneId,
+				force,
+			});
+		},
+		[cleanupPane, groups, selectedGroupId]
 	);
 	const reorderPanes = useCallback(
 		(fromIndex: number, toIndex: number) =>
@@ -630,19 +710,19 @@ export function TerminalPage({
 	);
 	const addGroup = useCallback(
 		(name: string) => {
-			const pane = createTerminalPane("terminal");
+			const pane = createPendingAgentChatPane();
 			const group: TerminalGroupModel = {
 				id: createGroupId(),
 				name: name || `Group ${groups.length + 1}`,
 				panes: [pane],
 				selectedPaneId: pane.id,
-				columns: DEFAULT_COLUMNS,
-				rows: DEFAULT_ROWS,
+				columns: currentGroup?.columns ?? DEFAULT_COLUMNS,
+				rows: currentGroup?.rows ?? DEFAULT_ROWS,
 			};
 			groupsDispatch({ type: "addGroup", group });
 			setSelectedGroupId(group.id);
 		},
-		[groups.length]
+		[groups.length, currentGroup?.columns, currentGroup?.rows]
 	);
 	const setGroupColumns = useCallback(
 		(columns: number) =>
@@ -668,6 +748,10 @@ export function TerminalPage({
 		if (!name.trim()) return;
 		groupsDispatch({ type: "renameGroup", groupId, name });
 	}, []);
+	const closeCurrentStartPane = useCallback(() => {
+		if (!selectedGroupId || groups.length <= 1) return;
+		removeGroup(selectedGroupId);
+	}, [groups.length, removeGroup, selectedGroupId]);
 	const handleChatRef = useCallback(
 		(paneId: string, handle: AgentChatHandle | null) => {
 			if (handle) chatRefs.current.set(paneId, handle);
@@ -705,17 +789,14 @@ export function TerminalPage({
 				/>
 				<div className="flex-1 overflow-y-auto">
 					{!currentGroup || currentGroup.panes.length === 0 ? (
-						<div className="flex h-full items-center justify-center">
-							<div className="flex w-full max-w-sm flex-col items-center gap-4 px-6 text-center">
-								<TerminalEmptyStateBrand />
-								<div>
-									<p className="text-sm text-inferay-soft-white">
-										Start a new terminal or agent session
-									</p>
-								</div>
-								<NewSessionButtons onAddPane={handleAddPane} />
-							</div>
-						</div>
+						<AgentStartPane
+							onStart={handleStartAgentPane}
+							onClose={
+								currentGroup && groups.length > 1
+									? closeCurrentStartPane
+									: undefined
+							}
+						/>
 					) : (
 						<TerminalGrid
 							panes={currentGroup.panes}
@@ -791,26 +872,25 @@ export function TerminalPage({
 							className={`relative flex-1 flex flex-col ${mainView === "editor" && layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
-								<EmptyState
-									icon={<TerminalEmptyStateBrand />}
-									title="No Sessions"
-									description="Start a new terminal or agent session"
-									action={<NewSessionButtons onAddPane={handleAddPane} />}
+								<AgentStartPane
+									onStart={handleStartAgentPane}
+									onClose={
+										currentGroup && groups.length > 1
+											? closeCurrentStartPane
+											: undefined
+									}
 								/>
 							) : mainView === "editor" ? (
 								<EditorPage key={editorViewKey} />
 							) : mainView === "chat" ? (
 								!currentGroup || currentGroup.panes.length === 0 ? (
-									<EmptyState
-										icon={
-											<IconMessageCircle
-												size={18}
-												className="text-inferay-muted-gray"
-											/>
+									<AgentStartPane
+										onStart={handleStartAgentPane}
+										onClose={
+											currentGroup && groups.length > 1
+												? closeCurrentStartPane
+												: undefined
 										}
-										title="No Panes"
-										description="Add a terminal or agent session to get started"
-										action={<NewSessionButtons onAddPane={handleAddPane} />}
 									/>
 								) : (
 									<TerminalGrid
