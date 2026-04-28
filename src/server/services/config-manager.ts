@@ -21,7 +21,7 @@ const DEFAULT_SEARCH_FOLDERS = [
 ];
 
 const DEFAULT_CONFIG: Record<string, unknown> = {
-	openai: { api_key: "", model: "gpt-5.2" },
+	openai: { api_key: "", model: "gpt-5.5" },
 	anthropic: { api_key: "", model: "claude-opus-4-6" },
 	build_agent: "claude",
 	fal: { api_key: "" },

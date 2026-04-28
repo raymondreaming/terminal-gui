@@ -68,6 +68,7 @@ const CLAUDE_MODELS: readonly ModelOption[] = [
 ] as const;
 
 const CODEX_MODELS: readonly ModelOption[] = [
+	{ id: "gpt-5.5", label: "GPT-5.5", detail: "Frontier model" },
 	{ id: "gpt-5.4", label: "GPT-5.4", detail: "Everyday coding" },
 	{ id: "gpt-5.2-codex", label: "GPT-5.2 Codex", detail: "★ Frontier agentic" },
 	{
@@ -120,7 +121,7 @@ export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 		supportsResume: true,
 		nativeSlashCommands: [],
 		models: CODEX_MODELS,
-		defaultModel: "gpt-5.4",
+		defaultModel: "gpt-5.5",
 	},
 } as const;
 
