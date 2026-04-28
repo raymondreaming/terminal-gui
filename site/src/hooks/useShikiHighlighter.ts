@@ -168,7 +168,7 @@ export function useShikiSnippet(
  * Highlight a single line synchronously if highlighter is ready,
  * otherwise return escaped plain text.
  */
-export function highlightLine(line: string, filePath: string): string {
+function highlightLine(line: string, filePath: string): string {
 	if (!highlighterInstance || !line.trim()) {
 		return escapeHtml(line) || " ";
 	}

@@ -435,7 +435,7 @@ function CommitDetailsPanel({
 	);
 }
 
-export function FileStatusIcon({ status }: { status: string }) {
+function FileStatusIcon({ status }: { status: string }) {
 	const base =
 		"shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-sm text-[9px] font-bold leading-none";
 	switch (status) {

@@ -10,7 +10,7 @@ const emptyHatchStyle = {
 };
 
 // Diff Line
-export function DiffLine({
+function DiffLine({
 	lineNum,
 	content,
 	type,

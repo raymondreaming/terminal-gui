@@ -51,12 +51,12 @@ async function runSafe(
 	]);
 }
 
-export async function isGitRepo(cwd: string): Promise<boolean> {
+async function isGitRepo(cwd: string): Promise<boolean> {
 	const result = await run(["rev-parse", "--git-dir"], cwd);
 	return result !== null;
 }
 
-export async function getGitRoot(cwd: string): Promise<string | null> {
+async function getGitRoot(cwd: string): Promise<string | null> {
 	const result = await run(["rev-parse", "--show-toplevel"], cwd);
 	return result?.trim() || null;
 }

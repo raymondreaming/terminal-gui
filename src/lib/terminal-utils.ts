@@ -74,7 +74,7 @@ const TERM_THEME_DATA: [
 	],
 ];
 
-export const TERMINAL_THEMES: readonly TerminalTheme[] = TERM_THEME_DATA.map(
+const TERMINAL_THEMES: readonly TerminalTheme[] = TERM_THEME_DATA.map(
 	([id, name, bg, fg, cursor, separator]) => ({
 		id,
 		name,
@@ -85,7 +85,7 @@ export const TERMINAL_THEMES: readonly TerminalTheme[] = TERM_THEME_DATA.map(
 	})
 );
 
-export const TERMINAL_FONTS = [
+const TERMINAL_FONTS = [
 	"SF Mono",
 	"Menlo",
 	"Monaco",
@@ -101,7 +101,7 @@ export type PaneId = string & { readonly __brand: "PaneId" };
 
 export type GroupId = string & { readonly __brand: "GroupId" };
 
-export function createPaneId(): PaneId {
+function createPaneId(): PaneId {
 	return crypto.randomUUID() as PaneId;
 }
 
@@ -146,7 +146,7 @@ const CUSTOM_THEME_KEY = "inferay-custom-theme" as const;
 
 export const POPOUT_CHANNEL = "inferay-terminal-popout" as const;
 
-export const DEFAULT_THEME_ID: ThemeId = "default";
+const DEFAULT_THEME_ID: ThemeId = "default";
 
 export const DEFAULT_FONT_SIZE = 13 as const;
 
@@ -249,7 +249,7 @@ export function createTerminalPane(
 	};
 }
 
-export function createAgentChatPane(
+function createAgentChatPane(
 	agentKind: ChatAgentKind = DEFAULT_CHAT_AGENT_KIND,
 	cwd?: string,
 	pendingCwd = false
@@ -263,7 +263,7 @@ export function createPendingAgentChatPane(
 	return createAgentChatPane(agentKind, undefined, true);
 }
 
-export function createDefaultGroup(): TerminalGroupModel {
+function createDefaultGroup(): TerminalGroupModel {
 	return {
 		id: createGroupId(),
 		name: "Default",
@@ -395,7 +395,7 @@ export function getStatusInfo(status: string): StatusInfo {
 	};
 }
 
-export function formatElapsedTime(seconds: number): string {
+function formatElapsedTime(seconds: number): string {
 	if (seconds < 0) return "0s";
 	if (seconds < 60) return `${seconds}s`;
 	const mins = Math.floor(seconds / 60);

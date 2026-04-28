@@ -46,7 +46,7 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
 	);
 }
 
-export function Inline({
+function Inline({
 	text,
 	onMdFileClick,
 }: {

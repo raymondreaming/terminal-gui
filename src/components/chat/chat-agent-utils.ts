@@ -57,7 +57,7 @@ export function findTriggerAtCursor(
 	};
 }
 
-export function extractToolSummary(content: string): string {
+function extractToolSummary(content: string): string {
 	if (!content) return "";
 	try {
 		const parsed = JSON.parse(content);

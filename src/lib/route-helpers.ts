@@ -1,6 +1,6 @@
 import { atomicWriteJson } from "./atomic-write.ts";
 
-export function errorResponse(e: unknown, status = 500): Response {
+function errorResponse(e: unknown, status = 500): Response {
 	const message = e instanceof Error ? e.message : "Unknown error";
 	return Response.json({ error: message }, { status });
 }

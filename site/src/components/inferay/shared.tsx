@@ -3,7 +3,7 @@ import { Icons } from "./Icons";
 import { models } from "./data";
 
 // Claude Avatar component for consistency
-export function ClaudeAvatar({ size = "sm" }: { size?: "sm" | "md" | "lg" }) {
+function ClaudeAvatar({ size = "sm" }: { size?: "sm" | "md" | "lg" }) {
 	const sizeClasses = {
 		sm: "w-5 h-5 text-[8px]",
 		md: "w-6 h-6 text-[9px]",
@@ -74,7 +74,7 @@ export function ModelSelector({
 }
 
 // Command Bar
-export function CommandBar({ onClose }: { onClose: () => void }) {
+function CommandBar({ onClose }: { onClose: () => void }) {
 	const [query, setQuery] = useState("");
 	const commands = [
 		{ icon: <Icons.File />, label: "Open file...", shortcut: "⌘P" },

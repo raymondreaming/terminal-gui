@@ -139,7 +139,7 @@ export function ChatPanel({
 }
 
 // Reusable Vertical Chat Panel component (for grid view)
-export function VerticalChatPanel({
+function VerticalChatPanel({
 	title,
 	messages,
 	status,

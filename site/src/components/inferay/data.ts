@@ -805,7 +805,7 @@ export const graphNodes = [
 ];
 
 // Context items (files loaded into conversation)
-export const contextItems = [
+const contextItems = [
 	{ type: "file", name: "SettingsPanel.tsx", tokens: 847 },
 	{ type: "file", name: "ThemeContext.tsx", tokens: 523 },
 	{ type: "git", name: "Unstaged changes", tokens: 156 },
@@ -1152,7 +1152,7 @@ export type GitFile = {
 	staged: boolean;
 };
 
-export const stagedFiles: GitFile[] = [
+const stagedFiles: GitFile[] = [
 	{
 		name: "UserProfile.tsx",
 		path: "src/components/UserProfile.tsx",
@@ -1173,7 +1173,7 @@ export const stagedFiles: GitFile[] = [
 	},
 ];
 
-export const unstagedFiles: GitFile[] = [
+const unstagedFiles: GitFile[] = [
 	{ name: "api.ts", path: "src/lib/api.ts", status: "M", staged: false },
 	{ name: "types.ts", path: "src/types/types.ts", status: "M", staged: false },
 	{
@@ -1191,7 +1191,7 @@ export const unstagedFiles: GitFile[] = [
 ];
 
 // Legacy fileTree for backward compat
-export const fileTree = [
+const fileTree = [
 	{ name: "SettingsPanel.tsx", status: "modified", selected: true },
 	{ name: "DarkModeToggle.tsx", status: "added" },
 	{ name: "ThemeContext.tsx", status: "modified" },

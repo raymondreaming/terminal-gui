@@ -44,16 +44,13 @@ export function measureTextHeight(
 	const result = layout(p, maxWidth, lineHeight);
 	return result.height;
 }
-export function measureCodeHeight(text: string, maxWidth: number): number {
+function measureCodeHeight(text: string, maxWidth: number): number {
 	if (!text) return MONO_LINE_HEIGHT + 12; // padding
 	const p = getPrepared(text, MONO_FONT);
 	const result = layout(p, maxWidth, MONO_LINE_HEIGHT);
 	return result.height + 12; // py-1.5 padding
 }
-export function measureMessageHeight(
-	content: string,
-	containerWidth: number
-): number {
+function measureMessageHeight(content: string, containerWidth: number): number {
 	if (!content) return UI_LINE_HEIGHT;
 
 	const lines = content.split("\n");
@@ -133,7 +130,7 @@ export function measureTextareaHeight(
 	const result = layout(p, maxWidth, lineHeight);
 	return result.height;
 }
-export function getLineCount(
+function getLineCount(
 	text: string,
 	maxWidth: number,
 	font: string = UI_FONT,
@@ -143,6 +140,6 @@ export function getLineCount(
 	const p = getPrepared(text, font);
 	return layout(p, maxWidth, lineHeight).lineCount;
 }
-export function clearMeasurementCache(): void {
+function clearMeasurementCache(): void {
 	cache.clear();
 }

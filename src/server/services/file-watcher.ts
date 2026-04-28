@@ -52,7 +52,7 @@ export function unwatchDirectory(cwd: string): void {
 	}
 }
 
-export function unwatchAll(): void {
+function unwatchAll(): void {
 	for (const [cwd] of watchedDirs) {
 		unwatchDirectory(cwd);
 	}

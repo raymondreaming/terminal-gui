@@ -83,7 +83,7 @@ const CODEX_MODELS: readonly ModelOption[] = [
 	{ id: "gpt-5.1-codex-mini", label: "GPT-5.1 Codex Mini", detail: "Cheapest" },
 ] as const;
 
-export const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
+const AGENT_DEFINITIONS: Record<AgentKind, AgentDefinition> = {
 	terminal: {
 		kind: "terminal",
 		label: "Terminal",

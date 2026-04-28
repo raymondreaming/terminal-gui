@@ -503,4 +503,4 @@ export function Profile() {
 }
 
 // Keep Settings as alias for backward compatibility
-export const Settings = Profile;
+const Settings = Profile;
