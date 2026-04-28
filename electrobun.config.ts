@@ -14,10 +14,7 @@ const config: ElectrobunConfig = {
 			sourcemap: "external",
 		},
 		copy: {
-			"dist/index.html": "views/index.html",
-			"dist/main.js": "views/main.js",
-			"dist/main.css": "views/main.css",
-			"dist/main.js.map": "views/main.js.map",
+			dist: "views",
 			data: "data",
 			native: "native",
 			public: "public",

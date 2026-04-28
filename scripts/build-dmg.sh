@@ -14,6 +14,10 @@ BACKGROUND="public/dmg-background.png"
 
 echo "Building inferay..."
 
+# Remove stale distribution bundle before building. Otherwise the DMG can
+# package an older inferay.app if inferay-dev.app is not renamed over it.
+rm -rf "${BUILD_DIR}/${APP_NAME}.app"
+
 # Build the app first
 npm run build
 bash scripts/electrobun.sh build --env=dev
@@ -21,10 +25,13 @@ bash scripts/electrobun.sh build --env=dev
 echo "Creating polished DMG installer..."
 
 # Rename dev app bundle for distribution
-if [ -d "${BUILD_DIR}/inferay-dev.app" ] && [ ! -d "${BUILD_DIR}/${APP_NAME}.app" ]; then
+if [ -d "${BUILD_DIR}/inferay-dev.app" ]; then
   mv "${BUILD_DIR}/inferay-dev.app" "${BUILD_DIR}/${APP_NAME}.app"
   # Fix bundle name in Info.plist
   /usr/libexec/PlistBuddy -c "Set :CFBundleName ${APP_NAME}" "${BUILD_DIR}/${APP_NAME}.app/Contents/Info.plist"
+else
+  echo "Expected app bundle not found: ${BUILD_DIR}/inferay-dev.app"
+  exit 1
 fi
 
 # Remove old DMGs

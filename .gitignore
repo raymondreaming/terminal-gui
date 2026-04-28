@@ -5,6 +5,10 @@ node_modules
 out
 dist
 build
+artifacts/*.dmg
+artifacts/*.tar.zst
+artifacts/checksums.txt
+artifacts/*-update.json
 *.tgz
 
 # code coverage
@@ -22,6 +26,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # caches
 .eslintcache
 .cache
+.fallow/
 *.tsbuildinfo
 .idea
 .DS_Store

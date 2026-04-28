@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
 
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 
 const distDir = "dist";
 
+await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
 
 const cssProc = Bun.spawn(

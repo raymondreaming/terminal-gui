@@ -1,14 +1,22 @@
 {
 	"name": "inferay",
-	"version": "0.0.1",
-	"description": "Placeholder package for the Inferay name.",
+	"version": "0.1.0",
+	"description": "Command-line installer and launcher for Inferay.",
 	"type": "module",
 	"main": "./index.js",
 	"exports": "./index.js",
+	"bin": {
+		"inferay": "cli.js"
+	},
 	"files": [
 		"index.js",
+		"cli.js",
+		"src",
 		"README.md"
 	],
+	"engines": {
+		"node": ">=18"
+	},
 	"license": "MIT",
 	"publishConfig": {
 		"access": "public"
