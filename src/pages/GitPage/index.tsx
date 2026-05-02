@@ -17,7 +17,6 @@ import {
 	ChangeFileSidebar,
 	type SelectedFile,
 } from "../../components/git/ChangeFileSidebar.tsx";
-import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconGitBranch,
 	IconOpenAI,
@@ -632,11 +631,9 @@ export function GitPage() {
 
 	return (
 		<div className="flex h-full flex-col bg-inferay-black">
-			<div className="shrink-0 flex items-center gap-2 px-2 sm:gap-3 sm:px-3 h-12 border-b border-inferay-gray-border bg-inferay-black">
+			{/* ── Top bar ── */}
+			<div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-inferay-gray-border">
 				<div className="flex min-w-0 items-center gap-2">
-					<span className="hidden text-[10px] font-medium uppercase tracking-[0.12em] text-inferay-muted-gray sm:inline">
-						Repository
-					</span>
 					<label className="sr-only" htmlFor="git-repo-select">
 						Repository
 					</label>
@@ -644,7 +641,7 @@ export function GitPage() {
 						id="git-repo-select"
 						value={project?.cwd ?? ""}
 						onChange={(event) => switchRepo(event.target.value)}
-						className="h-8 min-w-[180px] max-w-[280px] rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2 text-[12px] font-medium text-inferay-soft-white outline-none transition-colors hover:bg-inferay-white/[0.06] focus:border-inferay-muted-gray"
+						className="h-6 min-w-[160px] max-w-[240px] rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-2 text-[10px] font-medium text-inferay-soft-white outline-none transition-colors hover:bg-inferay-white/[0.06] focus:border-inferay-muted-gray"
 					>
 						{projects.map((repo) => {
 							const count =
@@ -658,53 +655,54 @@ export function GitPage() {
 						})}
 					</select>
 					{project && dirs.length > 1 && (
-						<IconButton
+						<button
 							type="button"
 							title="Remove repository"
 							onClick={() => removeRepo(project.cwd)}
+							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
 						>
-							<IconX size={11} />
-						</IconButton>
+							<IconX size={10} />
+						</button>
 					)}
 				</div>
 				<button
 					type="button"
 					onClick={() => setPickerOpen(true)}
-					className="flex items-center justify-center h-7 w-7 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white transition-colors"
+					className="flex items-center justify-center h-5 w-5 rounded-md border border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white transition-colors"
 					title="Add repository"
 				>
-					<IconPlus size={10} />
+					<IconPlus size={9} />
 				</button>
 				{project && (
 					<>
-						<div className="w-px h-4 bg-inferay-gray-border/40" />
+						<div className="w-px h-3 bg-inferay-gray-border/40" />
 						<IconGitBranch
-							size={11}
+							size={10}
 							className="text-inferay-muted-gray shrink-0"
 						/>
-						<span className="text-[10px] text-inferay-muted-gray">
+						<span className="text-[9px] text-inferay-muted-gray">
 							{project.branch}
 						</span>
 						{project.ahead > 0 && (
-							<span className="text-[9px] text-git-added">
+							<span className="text-[8px] text-git-added">
 								+{project.ahead}
 							</span>
 						)}
 						{project.behind > 0 && (
-							<span className="text-[9px] text-git-deleted">
+							<span className="text-[8px] text-git-deleted">
 								-{project.behind}
 							</span>
 						)}
 						{dirtySinceCheckpoint && (
-							<span className="rounded border border-git-modified/30 bg-git-modified/10 px-1.5 py-0.5 text-[9px] text-git-modified">
-								dirty since checkpoint
+							<span className="rounded border border-git-modified/30 bg-git-modified/10 px-1 py-0.5 text-[8px] text-git-modified">
+								dirty
 							</span>
 						)}
 					</>
 				)}
 				<span className="flex-1" />
 				{project && (
-					<div className="hidden items-center gap-1 lg:flex">
+					<div className="flex items-center gap-1">
 						<ActionButton
 							label="Review"
 							variant="primary"
@@ -718,28 +716,31 @@ export function GitPage() {
 							disabled={project.files.length === 0 || actionBusy === "summary"}
 							onClick={() => void summarizeChanges()}
 						/>
-						<div className="mx-1 h-4 w-px bg-inferay-gray-border/40" />
-						<IconButton
+						<div className="mx-0.5 h-3 w-px bg-inferay-gray-border/40" />
+						<button
 							type="button"
 							title="Open terminal here"
 							onClick={() => openPane("terminal")}
+							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
 						>
-							<IconTerminal size={12} />
-						</IconButton>
-						<IconButton
+							<IconTerminal size={10} />
+						</button>
+						<button
 							type="button"
 							title="Open Claude here"
 							onClick={() => openPane("claude")}
+							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
 						>
-							<IconRobot size={12} />
-						</IconButton>
-						<IconButton
+							<IconRobot size={10} />
+						</button>
+						<button
 							type="button"
 							title="Open Codex here"
 							onClick={() => openPane("codex")}
+							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
 						>
-							<IconOpenAI size={12} />
-						</IconButton>
+							<IconOpenAI size={10} />
+						</button>
 						<ActionMenu
 							label="More"
 							open={openActionMenu === "repo"}
@@ -788,26 +789,19 @@ export function GitPage() {
 						/>
 					</div>
 				)}
-				{selFile && (
-					<span
-						className="text-[11px] font-mono text-inferay-muted-gray truncate max-w-[400px]"
-						title={selFile.path}
-					>
-						{selFile.path}
-					</span>
-				)}
 			</div>
+			{/* ── Changes bar ── */}
 			{project && (
-				<div className="flex h-9 shrink-0 items-center gap-2 border-b border-inferay-gray-border bg-inferay-black px-3">
-					<span className="text-[10px] font-medium uppercase tracking-[0.12em] text-inferay-muted-gray">
+				<div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-inferay-gray-border">
+					<span className="text-[9px] font-medium text-inferay-muted-gray">
 						Changes
 					</span>
-					<span className="rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[9px] tabular-nums text-inferay-soft-white">
-						{totalChanges} files
+					<span className="rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[8px] tabular-nums text-inferay-soft-white">
+						{totalChanges}
 					</span>
 					{selFile && (
 						<>
-							<div className="h-4 w-px bg-inferay-gray-border/40" />
+							<div className="h-3 w-px bg-inferay-gray-border/40" />
 							<ActionButton
 								label="Explain"
 								variant="primary"
@@ -847,13 +841,21 @@ export function GitPage() {
 						</>
 					)}
 					{diffDocument && (
-						<span className="rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[9px] tabular-nums text-inferay-muted-gray">
+						<span className="rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[8px] tabular-nums text-inferay-muted-gray">
 							+{diffDocument.stats.added} -{diffDocument.stats.removed}
+						</span>
+					)}
+					{selFile && (
+						<span
+							className="text-[8px] font-mono text-inferay-muted-gray truncate min-w-0 max-w-[300px]"
+							title={selFile.path}
+						>
+							{selFile.path}
 						</span>
 					)}
 					{latestCheckpoint && (
 						<span
-							className="hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[9px] text-inferay-muted-gray sm:inline"
+							className="rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[8px] text-inferay-muted-gray"
 							title={new Date(latestCheckpoint.timestamp).toLocaleString()}
 						>
 							cp {latestCheckpoint.id}{" "}
@@ -862,16 +864,15 @@ export function GitPage() {
 					)}
 					{repoAgentActivity && (
 						<span
-							className="hidden max-w-[260px] truncate rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[9px] text-inferay-muted-gray xl:inline"
+							className="max-w-[200px] truncate rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-1.5 py-0.5 text-[8px] text-inferay-muted-gray"
 							title={repoAgentActivity.latestPrompt || "No prompt yet"}
 						>
-							{repoAgentActivity.agentKind} {repoAgentActivity.status}:{" "}
-							{repoAgentActivity.latestPrompt || "no prompt"}
+							{repoAgentActivity.agentKind} {repoAgentActivity.status}
 						</span>
 					)}
 					<span className="flex-1" />
 					{actionMessage && (
-						<span className="truncate text-[10px] text-inferay-muted-gray">
+						<span className="truncate text-[9px] text-inferay-muted-gray">
 							{actionMessage}
 						</span>
 					)}
@@ -1011,7 +1012,7 @@ function ActionButton({
 			type="button"
 			disabled={disabled}
 			onClick={onClick}
-			className={`inline-flex h-6 items-center rounded-md border px-2 text-[9px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-35 ${
+			className={`inline-flex h-5 items-center rounded-md border px-1.5 text-[8px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-30 ${
 				variant === "primary"
 					? "border-inferay-accent/35 bg-inferay-accent/12 text-inferay-soft-white hover:bg-inferay-accent/18"
 					: "border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white"
@@ -1041,7 +1042,7 @@ function ActionMenu({
 		<div className="relative">
 			<ActionButton label={label} onClick={onToggle} />
 			{open && (
-				<div className="absolute right-0 top-7 z-30 min-w-40 overflow-hidden rounded-lg border border-inferay-gray-border bg-inferay-dark-gray shadow-2xl">
+				<div className="absolute right-0 top-6 z-30 min-w-36 overflow-hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray shadow-2xl">
 					{items.map((item) => (
 						<button
 							key={item.label}
@@ -1051,7 +1052,7 @@ function ActionMenu({
 								onToggle();
 								item.onSelect();
 							}}
-							className="flex h-8 w-full items-center px-2.5 text-left text-[10px] text-inferay-muted-gray transition-colors hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white disabled:pointer-events-none disabled:opacity-35"
+							className="flex h-7 w-full items-center px-2.5 text-left text-[9px] text-inferay-muted-gray transition-colors hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white disabled:pointer-events-none disabled:opacity-30"
 						>
 							{item.label}
 						</button>

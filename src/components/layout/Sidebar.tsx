@@ -321,17 +321,17 @@ function WorkspaceItem({
 			</div>
 			{/* Expanded pane list */}
 			{expanded && group.panes.length > 0 && (
-				<div className="mt-1 pb-1">
+				<div className="mt-0.5 pb-1">
 					{paneGroups.map(({ folder, panes }) => (
-						<div key={folder} className="mb-1 last:mb-0">
-							<div className="mx-3 mb-0.5 flex items-center gap-1.5 pl-3 text-[8px] font-medium uppercase tracking-[0.12em] text-inferay-muted-gray/60">
-								<span className="h-px w-2 bg-inferay-gray-border/70" />
+						<div key={folder} className="mb-0.5 last:mb-0">
+							<div className="mx-2 mb-0.5 flex items-center gap-1 pl-1 text-[8px] font-medium uppercase tracking-[0.12em] text-inferay-muted-gray/60">
+								<span className="h-px w-1.5 bg-inferay-gray-border/70" />
 								<span className="min-w-0 truncate">{folder}</span>
 								<span className="rounded-sm bg-inferay-white/[0.04] px-1 text-[7px] tabular-nums text-inferay-muted-gray/50">
 									{panes.length}
 								</span>
 							</div>
-							<div className="ml-4 border-l border-inferay-gray-border/35 pl-1">
+							<div className="ml-2 border-l border-inferay-gray-border/35 pl-0.5">
 								{panes.map((pane) => (
 									<PaneSummaryItem
 										key={pane.id}

@@ -19,6 +19,7 @@ interface InlineDirectoryPickerProps {
 	onCancel: () => void;
 	multiSelect?: boolean;
 	onMultiSelect?: (paths: string[]) => void;
+	hideInput?: boolean;
 }
 
 interface SearchState {
@@ -69,6 +70,7 @@ export function InlineDirectoryPicker({
 	onCancel,
 	multiSelect,
 	onMultiSelect,
+	hideInput,
 }: InlineDirectoryPickerProps) {
 	const [query, setQuery] = useState("");
 	const [pickerData, setPickerData] = useState<{
@@ -80,7 +82,6 @@ export function InlineDirectoryPicker({
 		INITIAL_SEARCH_STATE
 	);
 	const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
-	const [isFocused, setIsFocused] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const isSearching = query.trim().length > 0;
@@ -214,6 +215,82 @@ export function InlineDirectoryPicker({
 
 	const showResults = true;
 
+	if (hideInput) {
+		return (
+			<div className="w-full overflow-hidden rounded-xl border border-inferay-gray-border bg-inferay-dark-gray/95 shadow-lg">
+				<div className="max-h-[210px] overflow-y-auto py-1">
+					{displayList.map((pick, i) => (
+						<button
+							type="button"
+							key={pick.path}
+							onClick={() => handleItemClick(pick.path)}
+							className={`flex w-full items-center gap-2 px-3 py-2 text-left transition-colors ${
+								i === selectedIndex
+									? "bg-inferay-white/[0.06] text-inferay-white"
+									: "text-inferay-soft-white hover:bg-inferay-white/[0.04]"
+							}`}
+						>
+							<span
+								className={`shrink-0 ${i === selectedIndex ? "text-inferay-accent" : "text-inferay-muted-gray"}`}
+							>
+								{pick.isGitRepo ? (
+									<IconGitBranch size={13} />
+								) : (
+									<IconFolder size={13} />
+								)}
+							</span>
+							<div className="min-w-0 flex-1">
+								<span className="block truncate text-[12px] font-medium">
+									{pick.name}
+								</span>
+								<span className="block truncate text-[10px] text-inferay-muted-gray">
+									{shortenPath(pick.path)}
+								</span>
+							</div>
+							<IconChevronRight
+								size={11}
+								className="shrink-0 text-inferay-muted-gray/70"
+							/>
+						</button>
+					))}
+				</div>
+				{multiSelect && selectedPaths.length > 0 && (
+					<div className="flex items-center gap-2 border-t border-inferay-gray-border/60 px-3 py-2">
+						<div className="flex min-w-0 flex-1 flex-wrap gap-1 overflow-hidden">
+							{selectedPaths.slice(0, 3).map((p) => (
+								<span
+									key={p}
+									className="inline-flex max-w-[140px] items-center gap-1 rounded-md bg-inferay-white/[0.05] px-1.5 py-0.5 text-[9px] font-medium text-inferay-soft-white"
+								>
+									<span className="truncate">{nameFromPath(p)}</span>
+									<button
+										type="button"
+										onClick={() => togglePath(p)}
+										className="shrink-0 text-inferay-muted-gray hover:text-inferay-white"
+									>
+										<IconX size={8} />
+									</button>
+								</span>
+							))}
+							{selectedPaths.length > 3 && (
+								<span className="text-[9px] text-inferay-muted-gray">
+									+{selectedPaths.length - 3}
+								</span>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={handleStart}
+							className="shrink-0 rounded-md border border-inferay-gray-border bg-inferay-gray px-2 py-1 text-[10px] font-medium text-inferay-soft-white transition-colors hover:bg-inferay-light-gray"
+						>
+							Start
+						</button>
+					</div>
+				)}
+			</div>
+		);
+	}
+
 	return (
 		<div className="relative w-full" ref={containerRef}>
 			{/* Results popout — above the input */}
@@ -299,8 +376,6 @@ export function InlineDirectoryPicker({
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					onKeyDown={handleKeyDown}
-					onFocus={() => setIsFocused(true)}
-					onBlur={() => setTimeout(() => setIsFocused(false), 150)}
 					placeholder="Search folder..."
 					autoComplete="off"
 					autoCorrect="off"

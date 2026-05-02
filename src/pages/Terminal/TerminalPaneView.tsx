@@ -2,32 +2,17 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal } from "@xterm/xterm";
 import type React from "react";
-import { memo, useEffect, useState, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import type { AgentChatHandle } from "../../components/chat/AgentChatView.tsx";
 import { AgentChatView } from "../../components/chat/AgentChatView.tsx";
-import { DropdownButton } from "../../components/ui/DropdownButton.tsx";
 import { IconTerminal, IconX } from "../../components/ui/Icons.tsx";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import {
-	CODEX_REASONING_LEVELS,
-	getAgentDefinition,
-	isChatAgentKind,
-} from "../../lib/agents.ts";
-import { DEFAULT_CHAT_AGENT_KIND } from "../../lib/terminal-utils.ts";
+import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
 import type {
 	AgentKind,
 	TerminalPaneModel,
 	TerminalTheme,
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
-import {
-	loadStoredModel,
-	loadStoredReasoningLevel,
-	saveStoredModel,
-	saveStoredReasoningLevel,
-} from "../../components/chat/chat-session-store.ts";
-import { InlineDirectoryPicker } from "./InlineDirectoryPicker.tsx";
-import { NewSessionButtons } from "./NewSessionButtons.tsx";
 
 interface TerminalPaneViewProps {
 	pane: TerminalPaneModel;
@@ -61,51 +46,24 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 	onSelect,
 	onClose,
 	onDirectorySelect,
-	onDirectoryCancel,
 	chatRef,
 	onAgentStatusChange,
 	paneIndex,
 	onHeaderDragStart,
 	onHeaderDragEnd,
 	onAddPane,
-	onSetPaneAgentKind,
 }: TerminalPaneViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const termRef = useRef<Terminal | null>(null);
 	const fitAddonRef = useRef<FitAddon | null>(null);
 	const initializedRef = useRef(false);
 	const chatHandleRef = useRef<AgentChatHandle | null>(null);
-	const isAgentChatPane = isChatAgentKind(pane.agentKind);
-	const paneLabel = getAgentDefinition(pane.agentKind).label;
-	const pendingAgentKind = isChatAgentKind(pane.agentKind)
-		? pane.agentKind
-		: DEFAULT_CHAT_AGENT_KIND;
-	const pendingAgentDefinition = getAgentDefinition(pendingAgentKind);
-	const [pendingModel, setPendingModel] = useState(() => {
-		const stored = loadStoredModel(pane.id);
-		return pendingAgentDefinition.models.some((model) => model.id === stored)
-			? stored!
-			: pendingAgentDefinition.defaultModel;
-	});
-	const [pendingReasoningLevel, setPendingReasoningLevel] = useState(() => {
-		const stored = loadStoredReasoningLevel(pane.id);
-		return CODEX_REASONING_LEVELS.some((level) => level.id === stored)
-			? stored!
-			: "low";
-	});
-
-	useEffect(() => {
-		if (pane.pendingCwd && !isChatAgentKind(pane.agentKind)) {
-			onSetPaneAgentKind?.(pane.id, DEFAULT_CHAT_AGENT_KIND);
-		}
-	}, [onSetPaneAgentKind, pane.agentKind, pane.id, pane.pendingCwd]);
-
-	useEffect(() => {
-		const definition = getAgentDefinition(pendingAgentKind);
-		if (definition.models.some((model) => model.id === pendingModel)) return;
-		setPendingModel(definition.defaultModel);
-		saveStoredModel(pane.id, definition.defaultModel);
-	}, [pendingAgentKind, pendingModel, pane.id]);
+	const viewAgentKind: AgentKind =
+		pane.pendingCwd && !isChatAgentKind(pane.agentKind)
+			? "claude"
+			: pane.agentKind;
+	const isAgentChatPane = isChatAgentKind(viewAgentKind);
+	const paneLabel = getAgentDefinition(viewAgentKind).label;
 
 	useEffect(() => {
 		if (isAgentChatPane || pane.pendingCwd || !containerRef.current) return;
@@ -250,101 +208,6 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			termRef.current.focus();
 	}, [isAgentChatPane, isSelected]);
 
-	if (pane.pendingCwd) {
-		return (
-			<div
-				tabIndex={0}
-				onClick={() => onSelect(pane.id)}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") onSelect(pane.id);
-				}}
-				className="relative flex h-full min-h-0 flex-col overflow-hidden"
-				style={{ backgroundColor: theme.bg }}
-			>
-				<div
-					className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b"
-					style={{
-						borderColor: theme.separator,
-						backgroundColor: theme.bg,
-					}}
-				>
-					<span className="text-[9px] font-medium text-inferay-soft-white">
-						New Session
-					</span>
-					<span className="flex-1" />
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onClose(pane.id, true);
-						}}
-						className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
-						title="Close pane"
-					>
-						<IconX size={8} />
-					</button>
-				</div>
-				<div className="flex-1 flex flex-col">
-					<div className="flex-1" />
-					<div className="shrink-0 px-3 pb-2">
-						<div className="mb-1 flex items-center gap-1.5 overflow-x-auto px-1">
-							<NewSessionButtons
-								selectedKind={pendingAgentKind}
-								onAddPane={(kind) => {
-									if (onSetPaneAgentKind) {
-										onSetPaneAgentKind(pane.id, kind);
-									}
-									const nextModel = getAgentDefinition(kind).defaultModel;
-									setPendingModel(nextModel);
-									saveStoredModel(pane.id, nextModel);
-								}}
-							/>
-							<DropdownButton
-								value={pendingModel}
-								options={pendingAgentDefinition.models.map((option) => ({
-									...option,
-									icon: getAgentIcon(pendingAgentKind, 12),
-								}))}
-								onChange={(model) => {
-									setPendingModel(model);
-									saveStoredModel(pane.id, model);
-								}}
-								minWidth={190}
-								menuPlacement="top"
-								buttonClassName="h-5 rounded-md border-transparent px-1 text-[10px] font-medium text-inferay-muted-gray hover:bg-inferay-white/[0.06] gap-1"
-								labelClassName="max-w-[96px] truncate text-[10px]"
-							/>
-							{pendingAgentKind === "codex" && (
-								<DropdownButton
-									value={pendingReasoningLevel}
-									options={[...CODEX_REASONING_LEVELS]}
-									onChange={(reasoningLevel) => {
-										setPendingReasoningLevel(reasoningLevel);
-										saveStoredReasoningLevel(pane.id, reasoningLevel);
-									}}
-									minWidth={150}
-									menuPlacement="top"
-									buttonClassName="h-5 rounded-md border-transparent px-1 text-[10px] font-medium text-inferay-muted-gray hover:bg-inferay-white/[0.06] gap-1"
-									labelClassName="max-w-[76px] truncate text-[10px]"
-								/>
-							)}
-						</div>
-						<InlineDirectoryPicker
-							onSelect={(path) => onDirectorySelect?.(pane.id, path)}
-							onCancel={() => onDirectoryCancel?.(pane.id)}
-							multiSelect
-							onMultiSelect={(paths) => {
-								if (paths.length > 0) {
-									onDirectorySelect?.(pane.id, paths[0]!, paths.slice(1));
-								}
-							}}
-						/>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div
 			onClick={() => onSelect(pane.id)}
@@ -390,7 +253,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					<span
 						className={`font-medium ${isSelected ? "text-inferay-soft-white" : "text-inferay-muted-gray"} text-[9px]`}
 					>
-						{getAgentDefinition(pane.agentKind).label}
+						{paneLabel}
 					</span>
 					{pane.cwd && (
 						<>
@@ -445,13 +308,16 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						paneId={pane.id}
 						cwd={pane.cwd}
 						referencePaths={pane.referencePaths}
-						agentKind={pane.agentKind}
+						agentKind={viewAgentKind}
 						onStatusChange={onAgentStatusChange}
 						onClose={onClose}
 						isSelected={isSelected}
-						onDirectoryChange={(pid, cwd, refs) =>
-							onDirectorySelect?.(pid, cwd, refs)
-						}
+						onDirectoryChange={(pid, cwd, refs) => {
+							if (pane.pendingCwd && !isChatAgentKind(pane.agentKind)) {
+								onSetPaneAgentKind?.(pid, "claude");
+							}
+							onDirectorySelect?.(pid, cwd, refs);
+						}}
 						onAddPane={onAddPane}
 						draggable={paneIndex != null && !!onHeaderDragStart}
 						onDragStart={(e) => {

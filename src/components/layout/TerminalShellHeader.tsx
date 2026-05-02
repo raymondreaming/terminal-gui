@@ -6,8 +6,7 @@ import {
 	useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
+import type { NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
 import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	createTerminalPane,
@@ -16,7 +15,6 @@ import {
 } from "../../lib/terminal-utils.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
 import {
-	IconChevronDown,
 	IconCode,
 	IconCollapse,
 	IconExpand,
@@ -274,7 +272,7 @@ export function TerminalShellHeader() {
 						<div className="shrink-0">
 							<button
 								type="button"
-								onClick={() => addPaneToSelectedGroup("terminal")}
+								onClick={() => addPaneToSelectedGroup("claude")}
 								className="flex h-7 items-center gap-1.5 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-xs font-medium text-inferay-soft-white transition-colors hover:bg-inferay-gray"
 							>
 								<span>New</span>

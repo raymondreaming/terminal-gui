@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition } from "../../lib/agents.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
-import { IconX } from "../ui/Icons.tsx";
+import { IconGitBranch, IconX } from "../ui/Icons.tsx";
 import type { AgentChatSession } from "./agent-chat-shared.ts";
 import { loadStoredSummary } from "./chat-session-store.ts";
 
 interface AgentChatHeaderProps {
 	paneId: string;
+	cwd?: string;
+	gitBranch: string | null;
 	draggable?: boolean;
 	onDragStart?: (e: React.DragEvent) => void;
 	onDragEnd?: () => void;
@@ -18,6 +20,8 @@ interface AgentChatHeaderProps {
 
 export function AgentChatHeader({
 	paneId,
+	cwd,
+	gitBranch,
 	draggable,
 	onDragStart,
 	onDragEnd,
@@ -26,7 +30,9 @@ export function AgentChatHeader({
 	onSelectSession,
 }: AgentChatHeaderProps) {
 	const [summary, setSummary] = useState(() => loadStoredSummary(paneId));
+	const dirName = cwd ? cwd.split("/").pop() || cwd : null;
 	const title = summary;
+	const detail = dirName && dirName !== title ? dirName : null;
 	const hasMultipleSessions =
 		sessions && sessions.length > 1 && onSelectSession;
 	const sessionOptions = hasMultipleSessions
@@ -76,6 +82,32 @@ export function AgentChatHeader({
 						{title}
 					</span>
 				))}
+			{detail && (
+				<>
+					<span className="text-[9px] text-inferay-muted-gray">›</span>
+					<span
+						className="max-w-[120px] truncate text-[9px] font-medium text-inferay-muted-gray"
+						title={cwd}
+					>
+						{detail}
+					</span>
+				</>
+			)}
+			{gitBranch && (
+				<>
+					<span className="text-[9px] text-inferay-muted-gray">›</span>
+					<IconGitBranch
+						size={9}
+						className="shrink-0 text-inferay-muted-gray"
+					/>
+					<span
+						className="max-w-[80px] truncate text-[9px] font-medium text-inferay-muted-gray"
+						title={gitBranch}
+					>
+						{gitBranch}
+					</span>
+				</>
+			)}
 			<span className="flex-1" />
 			{onClose && (
 				<button

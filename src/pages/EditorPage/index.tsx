@@ -552,7 +552,7 @@ export function EditorPage() {
 									onMouseDown={handleSidebarDragStart}
 								/>
 								<ChangeFileSidebar
-									cwd={session?.cwd}
+									cwd={undefined}
 									fileViewMode={fileViewMode}
 									onFileViewModeChange={setFileViewMode}
 									mainViewMode="diff"

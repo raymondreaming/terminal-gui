@@ -23,7 +23,6 @@ import {
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { InlineDirectoryPicker } from "../../pages/Terminal/InlineDirectoryPicker.tsx";
-import { NewSessionButtons } from "../../pages/Terminal/NewSessionButtons.tsx";
 import { IconArrowDown } from "../ui/Icons.tsx";
 import { AgentChatHeader } from "./AgentChatHeader.tsx";
 import { AgentChatStatusBar } from "./AgentChatStatusBar.tsx";
@@ -153,7 +152,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			sessions,
 			onSelectSession,
 			onDirectoryChange,
-			onAddPane,
 		},
 		ref
 	) {
@@ -1472,6 +1470,8 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				{!hideHeader && (
 					<AgentChatHeader
 						paneId={paneId}
+						cwd={cwd}
+						gitBranch={gitBranch}
 						draggable={draggable}
 						onDragStart={onDragStart}
 						onDragEnd={onDragEnd}
@@ -1489,33 +1489,23 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						{messages.length === 0 &&
 							!isLoading &&
 							!cwd &&
-							(onDirectoryChange || onAddPane) && (
-								<div className="absolute inset-0 z-10 flex flex-col">
-									<div className="flex-1 flex items-center justify-center">
-										<div className="flex flex-col items-center gap-2">
-											{onAddPane && <NewSessionButtons onAddPane={onAddPane} />}
-										</div>
+							onDirectoryChange && (
+								<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-3 pb-2">
+									<div className="pointer-events-auto mx-auto max-w-2xl">
+										<InlineDirectoryPicker
+											onSelect={(path) => {
+												if (path) onDirectoryChange(paneId, path);
+											}}
+											onCancel={() => {}}
+											multiSelect
+											hideInput
+											onMultiSelect={(paths) => {
+												if (paths.length > 0) {
+													onDirectoryChange(paneId, paths[0]!, paths.slice(1));
+												}
+											}}
+										/>
 									</div>
-									{onDirectoryChange && (
-										<div className="shrink-0 px-3 pb-2">
-											<InlineDirectoryPicker
-												onSelect={(path) => {
-													if (path) onDirectoryChange(paneId, path);
-												}}
-												onCancel={() => {}}
-												multiSelect
-												onMultiSelect={(paths) => {
-													if (paths.length > 0) {
-														onDirectoryChange(
-															paneId,
-															paths[0]!,
-															paths.slice(1)
-														);
-													}
-												}}
-											/>
-										</div>
-									)}
 								</div>
 							)}
 						<ChatMessageList
@@ -1606,8 +1596,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 							mdPreview={mdPreview}
 							setMdPreview={setMdPreview}
 							onMdFileClick={handleMdFileClick}
-							cwd={cwd}
-							gitBranch={gitBranch}
 						/>
 					</div>
 				</div>
