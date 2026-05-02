@@ -5,7 +5,7 @@ import { getChannel, setChannel } from "./config.js";
 import { fetchRelease, findAsset } from "./releases.js";
 import { platformInfo } from "./platform.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 
 function printHelp() {
 	console.log(`inferay ${VERSION}
