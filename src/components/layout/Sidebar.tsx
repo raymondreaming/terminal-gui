@@ -22,7 +22,6 @@ import {
 import {
 	IconCamera,
 	IconChevronRight,
-	IconGitBranch,
 	IconPlus,
 	IconSettings,
 	IconSlash,
@@ -49,7 +48,6 @@ interface ForgeAccount {
 }
 
 const navItems: NavItem[] = [
-	{ label: "Changes", path: "/git", icon: IconGitBranch },
 	{ label: "Prompts", path: "/prompts", icon: IconSlash },
 	{ label: "Images", path: "/images", icon: IconCamera },
 ];

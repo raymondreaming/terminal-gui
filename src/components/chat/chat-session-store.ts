@@ -6,6 +6,7 @@ const MODEL_KEY_PREFIX = "inferay-chat-model-";
 const REASONING_KEY_PREFIX = "inferay-chat-reasoning-";
 const PENDING_SEND_KEY_PREFIX = "inferay-chat-pending-send-";
 const SUMMARY_KEY_PREFIX = "inferay-chat-summary-";
+const PENDING_WORKSPACE_KEY_PREFIX = "inferay-chat-pending-workspace-";
 
 export function loadStoredMessages<T>(paneId: string): T[] {
 	try {
@@ -148,11 +149,37 @@ export function saveStoredSummary(paneId: string, summary: string) {
 	} catch {}
 }
 
+export function loadPendingWorkspacePaths(paneId: string): string[] {
+	try {
+		const raw = localStorage.getItem(PENDING_WORKSPACE_KEY_PREFIX + paneId);
+		const parsed = raw ? JSON.parse(raw) : [];
+		return Array.isArray(parsed)
+			? parsed.filter((path): path is string => typeof path === "string")
+			: [];
+	} catch {
+		return [];
+	}
+}
+
+export function savePendingWorkspacePaths(paneId: string, paths: string[]) {
+	try {
+		if (paths.length === 0) {
+			localStorage.removeItem(PENDING_WORKSPACE_KEY_PREFIX + paneId);
+		} else {
+			localStorage.setItem(
+				PENDING_WORKSPACE_KEY_PREFIX + paneId,
+				JSON.stringify(paths)
+			);
+		}
+	} catch {}
+}
+
 export function clearAgentChatMessages(paneId: string) {
 	try {
 		localStorage.removeItem(STORAGE_KEY_PREFIX + paneId);
 		localStorage.removeItem(SESSION_KEY_PREFIX + paneId);
 		localStorage.removeItem(INPUT_KEY_PREFIX + paneId);
 		localStorage.removeItem(SUMMARY_KEY_PREFIX + paneId);
+		localStorage.removeItem(PENDING_WORKSPACE_KEY_PREFIX + paneId);
 	} catch {}
 }

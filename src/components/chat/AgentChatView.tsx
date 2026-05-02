@@ -54,6 +54,7 @@ import {
 	clearStoredCheckpoints,
 	clearStoredSessionId,
 	loadPendingSend,
+	loadPendingWorkspacePaths,
 	loadStoredCheckpoints,
 	loadStoredInput,
 	loadStoredMessages,
@@ -61,6 +62,7 @@ import {
 	loadStoredReasoningLevel,
 	loadStoredSessionId,
 	loadStoredSummary,
+	savePendingWorkspacePaths,
 	saveStoredCheckpoints,
 	saveStoredInput,
 	saveStoredMessages,
@@ -183,9 +185,18 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		const summaryRef = useRef<string | null>(loadStoredSummary(paneId));
 		const titleRequestedRef = useRef(false);
-		const [pendingWorkspacePaths, setPendingWorkspacePaths] = useState<
-			string[]
-		>([]);
+		const pendingWorkspacePathsRef = useRef<string[]>([]);
+		const getPendingWorkspacePaths = useCallback(() => {
+			const paths =
+				pendingWorkspacePathsRef.current.length > 0
+					? pendingWorkspacePathsRef.current
+					: loadPendingWorkspacePaths(paneId);
+			return paths.filter(Boolean);
+		}, [paneId]);
+		const clearPendingWorkspacePaths = useCallback(() => {
+			pendingWorkspacePathsRef.current = [];
+			savePendingWorkspacePaths(paneId, []);
+		}, [paneId]);
 		const scheduleMessageSave = useCallback(
 			(nextMessages: ChatMessage[]) => {
 				if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -1305,6 +1316,22 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			if (isLoading) {
 				queueMessage(fullText, displayText, imagePaths);
 			} else {
+				const pendingWorkspacePaths = getPendingWorkspacePaths();
+				const selectedWorkspace =
+					!cwd && pendingWorkspacePaths.length > 0
+						? {
+								cwd: pendingWorkspacePaths[0],
+								referencePaths: pendingWorkspacePaths.slice(1),
+							}
+						: undefined;
+				if (selectedWorkspace?.cwd) {
+					onDirectoryChange?.(
+						paneId,
+						selectedWorkspace.cwd,
+						selectedWorkspace.referencePaths
+					);
+					clearPendingWorkspacePaths();
+				}
 				appendLocalMessages([
 					{
 						role: "user",
@@ -1312,7 +1339,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						images: imagePaths.length > 0 ? imagePaths : undefined,
 					},
 				]);
-				sendToServer(fullText);
+				sendToServer(fullText, selectedWorkspace);
 			}
 		}, [
 			input,
@@ -1320,6 +1347,11 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			executeCommand,
 			attachedImages,
 			appendLocalMessages,
+			clearPendingWorkspacePaths,
+			cwd,
+			getPendingWorkspacePaths,
+			onDirectoryChange,
+			paneId,
 			queueMessage,
 			allCommands,
 			incrementLocalUsage,
@@ -1430,6 +1462,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				if (isLoading) {
 					queueMessage(text.trim(), text.trim());
 				} else {
+					const pendingWorkspacePaths = getPendingWorkspacePaths();
 					const selectedWorkspace =
 						!cwd && pendingWorkspacePaths.length > 0
 							? {
@@ -1443,7 +1476,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 							selectedWorkspace.cwd,
 							selectedWorkspace.referencePaths
 						);
-						setPendingWorkspacePaths([]);
+						clearPendingWorkspacePaths();
 					}
 					appendLocalMessages([{ role: "user", content: text.trim() }]);
 					sendToServer(text.trim(), selectedWorkspace);
@@ -1451,11 +1484,12 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			},
 			[
 				appendLocalMessages,
+				clearPendingWorkspacePaths,
 				cwd,
+				getPendingWorkspacePaths,
 				isLoading,
 				onDirectoryChange,
 				paneId,
-				pendingWorkspacePaths,
 				queueMessage,
 				sendToServer,
 			]
@@ -1535,7 +1569,10 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 											onCancel={() => {}}
 											multiSelect
 											hideInput
-											onSelectionChange={setPendingWorkspacePaths}
+											onSelectionChange={(paths) => {
+												pendingWorkspacePathsRef.current = paths;
+												savePendingWorkspacePaths(paneId, paths);
+											}}
 											onMultiSelect={(paths) => {
 												if (paths.length > 0) {
 													onDirectoryChange(paneId, paths[0]!, paths.slice(1));

@@ -26,6 +26,7 @@ import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
 import { isChatAgentKind } from "../../lib/agents.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { EditorPage } from "../EditorPage/index.tsx";
+import { GitPage } from "../GitPage/index.tsx";
 import { AgentSidebar, CollapsedAgentBar } from "./AgentSidebar.tsx";
 import { ClaudeProcessesSidebar } from "./ClaudeProcessesSidebar.tsx";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
@@ -65,7 +66,7 @@ import {
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
 
-type MainViewMode = "editor" | "chat" | "graph";
+type MainViewMode = "editor" | "chat" | "graph" | "changes";
 
 interface TerminalPageProps {
 	isPopout?: boolean;
@@ -313,7 +314,9 @@ export function TerminalPage({
 	);
 	const [mainView, setMainView] = useState<MainViewMode>(() => {
 		const stored = readStoredValue("terminal-main-view");
-		return stored === "chat" || stored === "graph" ? stored : "editor";
+		return stored === "chat" || stored === "graph" || stored === "changes"
+			? stored
+			: "editor";
 	});
 	useEffect(() => {
 		writeStoredValue("terminal-layout-mode", layoutMode);
@@ -596,7 +599,11 @@ export function TerminalPage({
 			}
 			const storedView = readStoredValue("terminal-main-view");
 			const nextMainView =
-				storedView === "chat" || storedView === "graph" ? storedView : "editor";
+				storedView === "chat" ||
+				storedView === "graph" ||
+				storedView === "changes"
+					? storedView
+					: "editor";
 			if (nextMainView !== mainView) {
 				setMainView(nextMainView);
 			}
@@ -882,6 +889,8 @@ export function TerminalPage({
 								/>
 							) : mainView === "editor" ? (
 								<EditorPage key={editorViewKey} />
+							) : mainView === "changes" ? (
+								<GitPage />
 							) : mainView === "chat" ? (
 								!currentGroup || currentGroup.panes.length === 0 ? (
 									<AgentStartPane

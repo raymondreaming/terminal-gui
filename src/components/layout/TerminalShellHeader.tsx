@@ -19,13 +19,14 @@ import {
 	IconCollapse,
 	IconExpand,
 	IconGitBranch,
+	IconGitCommit,
 	IconLayoutGrid,
 	IconLayoutRows,
 	IconMessageCircle,
 	IconPlus,
 } from "../ui/Icons.tsx";
 
-type MainViewMode = "editor" | "chat" | "graph";
+type MainViewMode = "editor" | "chat" | "graph" | "changes";
 
 function loadShellState() {
 	const terminalState = loadTerminalState();
@@ -35,7 +36,10 @@ function loadShellState() {
 		groups: terminalState?.groups ?? [],
 		selectedGroupId:
 			terminalState?.selectedGroupId ?? terminalState?.groups[0]?.id ?? null,
-		mainView: mainView === "chat" || mainView === "graph" ? mainView : "editor",
+		mainView:
+			mainView === "chat" || mainView === "graph" || mainView === "changes"
+				? mainView
+				: "editor",
 		editorZenMode: readStoredValue("terminal-editor-zen") === "true",
 	};
 }
@@ -189,16 +193,22 @@ export function TerminalShellHeader() {
 		<div className="electrobun-webkit-app-region-drag flex h-12 shrink-0 items-center gap-3 border-b border-inferay-gray-border bg-inferay-black px-3">
 			<div className="electrobun-webkit-app-region-no-drag flex items-center gap-1 shrink-0">
 				<ViewTab
+					active={shellState.mainView === "chat"}
+					icon={<IconMessageCircle size={12} />}
+					label="Chat"
+					onClick={() => updateMainView("chat")}
+				/>
+				<ViewTab
 					active={shellState.mainView === "editor"}
 					icon={<IconCode size={12} />}
 					label="Editor"
 					onClick={() => updateMainView("editor")}
 				/>
 				<ViewTab
-					active={shellState.mainView === "chat"}
-					icon={<IconMessageCircle size={12} />}
-					label="Chat"
-					onClick={() => updateMainView("chat")}
+					active={shellState.mainView === "changes"}
+					icon={<IconGitCommit size={12} />}
+					label="Changes"
+					onClick={() => updateMainView("changes")}
 				/>
 				<ViewTab
 					active={shellState.mainView === "graph"}
