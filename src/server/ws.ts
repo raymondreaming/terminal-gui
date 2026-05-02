@@ -88,6 +88,7 @@ export const websocketHandler = {
 					msg.text,
 					ws,
 					msg.cwd,
+					msg.referencePaths,
 					msg.sessionId,
 					msg.agentKind ?? "claude",
 					msg.model,

@@ -1,6 +1,14 @@
+import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef } from "react";
 import { IconPencil, IconTrash, IconX } from "../../components/ui/Icons.tsx";
 import { measureTextHeight } from "../../lib/pretext-utils.ts";
+import {
+	color,
+	controlSize,
+	font,
+	radius,
+	shadow,
+} from "../../tokens.stylex.ts";
 import { CATEGORIES, type Prompt } from "./support.ts";
 
 interface PromptDetailPanelProps {
@@ -23,10 +31,6 @@ interface PromptDetailPanelProps {
 	onClose: () => void;
 }
 
-const label =
-	"text-[9px] font-medium uppercase tracking-[0.08em] text-inferay-muted-gray";
-const inputCls =
-	"mt-1 w-full rounded-md bg-transparent border border-inferay-gray-border px-2 py-1.5 text-[11px] text-inferay-white placeholder:text-inferay-muted-gray outline-none focus:border-inferay-muted-gray";
 const MONO_FONT = '11px "Geist Mono", "SF Mono", Menlo, Consolas, monospace';
 
 function AutoTextarea({
@@ -58,7 +62,7 @@ function AutoTextarea({
 			value={value}
 			onChange={(e) => onChange(e.target.value)}
 			placeholder={placeholder}
-			className="mt-1 w-full rounded-md bg-inferay-dark-gray border border-inferay-gray-border p-3 font-mono text-[11px] text-inferay-white placeholder:text-inferay-muted-gray outline-none focus:border-inferay-muted-gray resize-none leading-[18px]"
+			{...stylex.props(styles.templateTextarea)}
 			style={{ minHeight: 100, maxHeight: 300 }}
 		/>
 	);
@@ -86,14 +90,12 @@ export function PromptDetailPanel({
 	const isEditMode = isCreatingNew || isEditing;
 
 	return (
-		<div className="flex h-full flex-col bg-inferay-black overflow-hidden">
-			<div className="flex items-center justify-between border-b border-inferay-gray-border px-4 h-10">
-				<div className="flex items-center gap-2">
+		<div {...stylex.props(styles.root)}>
+			<div {...stylex.props(styles.header)}>
+				<div {...stylex.props(styles.headerTitleRow)}>
 					{isEditMode ? (
-						<div className="flex items-center gap-0.5">
-							<span className="text-inferay-muted-gray font-mono text-[11px]">
-								/
-							</span>
+						<div {...stylex.props(styles.commandEditor)}>
+							<span {...stylex.props(styles.commandSlash)}>/</span>
 							<input
 								type="text"
 								value={formCommand}
@@ -104,32 +106,28 @@ export function PromptDetailPanel({
 									)
 								}
 								placeholder="command"
-								className="w-24 rounded-md bg-inferay-dark-gray py-1 px-1.5 text-[11px] font-mono text-inferay-white outline-none focus:border-inferay-muted-gray placeholder:text-inferay-muted-gray"
+								{...stylex.props(styles.commandInput)}
 							/>
 						</div>
 					) : selectedPrompt ? (
-						<span className="text-[11px] font-mono text-inferay-white">
+						<span {...stylex.props(styles.commandText)}>
 							/{selectedPrompt.command}
 						</span>
 					) : null}
 					{selectedPrompt?.isBuiltIn && !isCreatingNew && (
-						<span className="text-[7px] text-inferay-muted-gray/50 bg-inferay-white/[0.04] px-1 py-0.5 rounded">
-							built-in
-						</span>
+						<span {...stylex.props(styles.badge)}>built-in</span>
 					)}
 					{isCreatingNew && (
-						<span className="text-[7px] text-inferay-muted-gray bg-inferay-white/[0.06] px-1 py-0.5 rounded">
-							new
-						</span>
+						<span {...stylex.props(styles.badge, styles.badgeStrong)}>new</span>
 					)}
 				</div>
-				<div className="flex items-center gap-1">
+				<div {...stylex.props(styles.headerActions)}>
 					{isCreatingNew ? (
 						<>
 							<button
 								type="button"
 								onClick={onCancelEditing}
-								className="h-6 px-2 rounded text-[10px] text-inferay-muted-gray hover:bg-inferay-white/[0.05]"
+								{...stylex.props(styles.textButton)}
 							>
 								Cancel
 							</button>
@@ -137,7 +135,7 @@ export function PromptDetailPanel({
 								type="button"
 								onClick={() => onSave(false)}
 								disabled={isSaving}
-								className="h-6 px-2 rounded text-[10px] text-inferay-white bg-inferay-white/[0.08] hover:bg-inferay-white/[0.12]"
+								{...stylex.props(styles.textButton, styles.primaryButton)}
 							>
 								{isSaving ? "..." : "Create"}
 							</button>
@@ -147,7 +145,7 @@ export function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onCancelEditing}
-								className="h-6 px-2 rounded text-[10px] text-inferay-muted-gray hover:bg-inferay-white/[0.05]"
+								{...stylex.props(styles.textButton)}
 							>
 								Cancel
 							</button>
@@ -155,7 +153,7 @@ export function PromptDetailPanel({
 								type="button"
 								onClick={() => onSave(true)}
 								disabled={isSaving}
-								className="h-6 px-2 rounded text-[10px] text-inferay-white bg-inferay-white/[0.08] hover:bg-inferay-white/[0.12]"
+								{...stylex.props(styles.textButton, styles.primaryButton)}
 							>
 								{isSaving ? "..." : "Save"}
 							</button>
@@ -165,7 +163,7 @@ export function PromptDetailPanel({
 							<button
 								type="button"
 								onClick={onStartEditing}
-								className="h-6 w-6 rounded flex items-center justify-center text-inferay-muted-gray hover:bg-inferay-white/[0.05]"
+								{...stylex.props(styles.iconButton)}
 							>
 								<IconPencil size={12} />
 							</button>
@@ -173,7 +171,7 @@ export function PromptDetailPanel({
 								<button
 									type="button"
 									onClick={onDelete}
-									className="h-6 w-6 rounded flex items-center justify-center text-inferay-muted-gray hover:bg-inferay-white/[0.05]"
+									{...stylex.props(styles.iconButton)}
 								>
 									<IconTrash size={12} />
 								</button>
@@ -183,38 +181,36 @@ export function PromptDetailPanel({
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-6 w-6 rounded flex items-center justify-center text-inferay-muted-gray hover:bg-inferay-white/[0.05]"
+						{...stylex.props(styles.iconButton)}
 					>
 						<IconX size={12} />
 					</button>
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto p-4 space-y-3">
-				<div className="flex gap-3">
-					<div className="flex-1">
-						<span className={label}>Name</span>
+			<div {...stylex.props(styles.body)}>
+				<div {...stylex.props(styles.formGrid)}>
+					<div {...stylex.props(styles.flexField)}>
+						<span {...stylex.props(styles.label)}>Name</span>
 						{isEditMode ? (
 							<input
 								type="text"
 								value={formName}
 								onChange={(e) => onFormChange("name", e.target.value)}
 								placeholder="Prompt name"
-								className={inputCls}
+								{...stylex.props(styles.input)}
 							/>
 						) : (
-							<p className="mt-1 text-[11px] text-inferay-white">
-								{selectedPrompt?.name}
-							</p>
+							<p {...stylex.props(styles.readValue)}>{selectedPrompt?.name}</p>
 						)}
 					</div>
-					<div className="w-28">
-						<span className={label}>Category</span>
+					<div {...stylex.props(styles.categoryField)}>
+						<span {...stylex.props(styles.label)}>Category</span>
 						{isEditMode ? (
 							<select
 								value={formCategory}
 								onChange={(e) => onFormChange("category", e.target.value)}
-								className={inputCls}
+								{...stylex.props(styles.input)}
 							>
 								{CATEGORIES.map((c) => (
 									<option key={c.value} value={c.value}>
@@ -223,7 +219,7 @@ export function PromptDetailPanel({
 								))}
 							</select>
 						) : (
-							<p className="mt-1 text-[11px] text-inferay-soft-white">
+							<p {...stylex.props(styles.readValue, styles.readValueSoft)}>
 								{selectedPrompt?.category}
 							</p>
 						)}
@@ -231,27 +227,27 @@ export function PromptDetailPanel({
 				</div>
 
 				<div>
-					<span className={label}>Description</span>
+					<span {...stylex.props(styles.label)}>Description</span>
 					{isEditMode ? (
 						<textarea
 							value={formDescription}
 							onChange={(e) => onFormChange("description", e.target.value)}
 							rows={2}
 							placeholder="What this prompt does"
-							className={`${inputCls} resize-none`}
+							{...stylex.props(styles.input, styles.descriptionInput)}
 						/>
 					) : (
-						<p className="mt-1 text-[11px] text-inferay-soft-white leading-relaxed">
+						<p {...stylex.props(styles.readDescription)}>
 							{selectedPrompt?.description}
 						</p>
 					)}
 				</div>
 
 				<div>
-					<span className={label}>
+					<span {...stylex.props(styles.label)}>
 						Template
 						{isEditMode && (
-							<span className="ml-1 normal-case font-normal text-inferay-muted-gray/50">
+							<span {...stylex.props(styles.labelHint)}>
 								use {"{args}"} for input
 							</span>
 						)}
@@ -263,50 +259,292 @@ export function PromptDetailPanel({
 							placeholder="Enter prompt template..."
 						/>
 					) : (
-						<div className="mt-1 rounded-md bg-inferay-dark-gray border border-inferay-gray-border p-3 font-mono text-[11px] text-inferay-soft-white whitespace-pre-wrap leading-[18px] max-h-[300px] overflow-y-auto">
+						<div {...stylex.props(styles.templatePreview)}>
 							{selectedPrompt?.promptTemplate}
 						</div>
 					)}
 				</div>
 
 				<div>
-					<span className={label}>Tags</span>
+					<span {...stylex.props(styles.label)}>Tags</span>
 					{isEditMode ? (
 						<input
 							type="text"
 							value={formTags}
 							onChange={(e) => onFormChange("tags", e.target.value)}
 							placeholder="code, review, quality"
-							className={inputCls}
+							{...stylex.props(styles.input)}
 						/>
 					) : selectedPrompt && selectedPrompt.tags.length > 0 ? (
-						<div className="mt-1 flex flex-wrap gap-1">
+						<div {...stylex.props(styles.tagList)}>
 							{selectedPrompt.tags.map((tag) => (
-								<span
-									key={tag}
-									className="rounded bg-inferay-white/[0.04] px-1.5 py-0.5 text-[9px] text-inferay-muted-gray"
-								>
+								<span key={tag} {...stylex.props(styles.tag)}>
 									{tag}
 								</span>
 							))}
 						</div>
 					) : (
-						<p className="mt-1 text-[9px] text-inferay-muted-gray/40">
-							No tags
-						</p>
+						<p {...stylex.props(styles.emptyText)}>No tags</p>
 					)}
 				</div>
 
 				{!isEditMode && selectedPrompt && (
-					<p className="text-[9px] text-inferay-muted-gray/40 tabular-nums">
+					<p {...stylex.props(styles.usageText)}>
 						{selectedPrompt.executionCount} uses
 					</p>
 				)}
 
-				{formError && (
-					<p className="text-[10px] text-inferay-error">{formError}</p>
-				)}
+				{formError && <p {...stylex.props(styles.errorText)}>{formError}</p>}
 			</div>
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+		overflow: "hidden",
+		backgroundColor: color.background,
+	},
+	header: {
+		display: "flex",
+		height: controlSize._10,
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingInline: controlSize._4,
+	},
+	headerTitleRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		minWidth: 0,
+	},
+	headerActions: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1,
+	},
+	commandEditor: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._0_5,
+	},
+	commandSlash: {
+		color: color.textMuted,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+	},
+	commandInput: {
+		width: "6rem",
+		borderWidth: 0,
+		borderRadius: radius.md,
+		backgroundColor: color.backgroundRaised,
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+		outline: shadow.none,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._1_5,
+		":focus": {
+			boxShadow: `inset 0 0 0 1px ${color.textMuted}`,
+		},
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	commandText: {
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+	},
+	badge: {
+		borderRadius: radius.sm,
+		backgroundColor: color.surfaceSubtle,
+		color: color.textMuted,
+		fontSize: font.size_0,
+		paddingBlock: controlSize._0_5,
+		paddingInline: controlSize._1,
+		opacity: 0.7,
+	},
+	badgeStrong: {
+		backgroundColor: color.surfaceControl,
+		opacity: 1,
+	},
+	textButton: {
+		height: controlSize._6,
+		borderWidth: 0,
+		borderRadius: radius.sm,
+		backgroundColor: {
+			default: color.transparent,
+			":hover": color.surfaceSubtle,
+		},
+		color: color.textMuted,
+		fontSize: font.size_2,
+		paddingInline: controlSize._2,
+	},
+	primaryButton: {
+		backgroundColor: {
+			default: color.surfaceControl,
+			":hover": color.surfaceControlHover,
+		},
+		color: color.textMain,
+	},
+	iconButton: {
+		display: "flex",
+		width: controlSize._6,
+		height: controlSize._6,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 0,
+		borderRadius: radius.sm,
+		backgroundColor: {
+			default: color.transparent,
+			":hover": color.surfaceSubtle,
+		},
+		color: color.textMuted,
+	},
+	body: {
+		flex: 1,
+		overflowY: "auto",
+		padding: controlSize._4,
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._3,
+	},
+	formGrid: {
+		display: "flex",
+		gap: controlSize._3,
+	},
+	flexField: {
+		flex: 1,
+		minWidth: 0,
+	},
+	categoryField: {
+		width: "7rem",
+	},
+	label: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		letterSpacing: "0.08em",
+		textTransform: "uppercase",
+	},
+	labelHint: {
+		marginLeft: controlSize._1,
+		color: color.textMuted,
+		fontWeight: 400,
+		opacity: 0.55,
+		textTransform: "none",
+	},
+	input: {
+		width: "100%",
+		marginTop: controlSize._1,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: {
+			default: color.border,
+			":focus": color.textMuted,
+		},
+		borderRadius: radius.md,
+		backgroundColor: color.transparent,
+		color: color.textMain,
+		fontSize: font.size_2,
+		outline: "none",
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2,
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	descriptionInput: {
+		resize: "none",
+	},
+	templateTextarea: {
+		width: "100%",
+		marginTop: controlSize._1,
+		resize: "none",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: {
+			default: color.border,
+			":focus": color.textMuted,
+		},
+		borderRadius: radius.md,
+		backgroundColor: color.backgroundRaised,
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+		lineHeight: "18px",
+		outline: "none",
+		padding: controlSize._3,
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	readValue: {
+		marginTop: controlSize._1,
+		color: color.textMain,
+		fontSize: font.size_2,
+	},
+	readValueSoft: {
+		color: color.textSoft,
+	},
+	readDescription: {
+		marginTop: controlSize._1,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		lineHeight: 1.6,
+	},
+	templatePreview: {
+		maxHeight: "300px",
+		marginTop: controlSize._1,
+		overflowY: "auto",
+		whiteSpace: "pre-wrap",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.md,
+		backgroundColor: color.backgroundRaised,
+		color: color.textSoft,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+		lineHeight: "18px",
+		padding: controlSize._3,
+	},
+	tagList: {
+		display: "flex",
+		flexWrap: "wrap",
+		gap: controlSize._1,
+		marginTop: controlSize._1,
+	},
+	tag: {
+		borderRadius: radius.sm,
+		backgroundColor: color.surfaceSubtle,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		paddingBlock: controlSize._0_5,
+		paddingInline: controlSize._1_5,
+	},
+	emptyText: {
+		marginTop: controlSize._1,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		opacity: 0.45,
+	},
+	usageText: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+		opacity: 0.45,
+	},
+	errorText: {
+		color: color.danger,
+		fontSize: font.size_2,
+	},
+});

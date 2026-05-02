@@ -1,4 +1,14 @@
+import * as stylex from "@stylexjs/stylex";
 import React, { useEffect, useMemo, useState } from "react";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+	shadow,
+} from "../../tokens.stylex.ts";
+import { Button } from "../ui/Button.tsx";
 import {
 	IconEye,
 	IconFilePlus,
@@ -26,27 +36,26 @@ interface AgentChatStatusBarProps {
 }
 
 function ToolStatusIcon({ toolName }: { toolName: string }) {
-	const baseClass = "w-3 h-3 shrink-0";
 	switch (normalizeToolName(toolName)) {
 		case "read":
-			return <IconEye className={baseClass} />;
+			return <IconEye size={12} {...stylex.props(styles.toolIcon)} />;
 		case "edit":
 		case "patch":
-			return <IconPencil className={baseClass} />;
+			return <IconPencil size={12} {...stylex.props(styles.toolIcon)} />;
 		case "write":
-			return <IconFilePlus className={baseClass} />;
+			return <IconFilePlus size={12} {...stylex.props(styles.toolIcon)} />;
 		case "bash":
 		case "exec":
-			return <IconTerminal className={baseClass} />;
+			return <IconTerminal size={12} {...stylex.props(styles.toolIcon)} />;
 		case "grep":
 		case "glob":
-			return <IconSearch className={baseClass} />;
+			return <IconSearch size={12} {...stylex.props(styles.toolIcon)} />;
 		case "web_search":
 		case "websearch":
 		case "webfetch":
-			return <IconGlobe className={baseClass} />;
+			return <IconGlobe size={12} {...stylex.props(styles.toolIcon)} />;
 		default:
-			return <IconWrench className={baseClass} />;
+			return <IconWrench size={12} {...stylex.props(styles.toolIcon)} />;
 	}
 }
 
@@ -109,53 +118,56 @@ export const AgentChatStatusBar = React.memo(function AgentChatStatusBar({
 	const activityCount = activityItems.length;
 
 	return (
-		<div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1">
+		<div {...stylex.props(styles.root)}>
 			{hasActivity ? (
 				<div
-					className="relative"
+					{...stylex.props(styles.activityWrap)}
 					onMouseEnter={() => setIsHovered(true)}
 					onMouseLeave={() => setIsHovered(false)}
 				>
-					<div className="flex items-center gap-1.5 h-6 px-2.5 rounded-md text-xs font-medium cursor-default bg-inferay-dark-gray text-inferay-soft-white hover:bg-inferay-gray transition-all border border-inferay-gray-border">
+					<div {...stylex.props(styles.activityPill)}>
 						{displayToolName && (
-							<span className="text-inferay-muted-gray">
+							<span {...stylex.props(styles.activityIcon)}>
 								<ToolStatusIcon toolName={displayToolName} />
 							</span>
 						)}
-						<span className="max-w-[150px] truncate">
+						<span {...stylex.props(styles.activitySummary)}>
 							{displaySummary || "Working..."}
 						</span>
 						{activityCount > 1 && (
-							<span className="text-[9px] tabular-nums text-inferay-muted-gray">
+							<span {...stylex.props(styles.activityCount)}>
 								+{activityCount - 1}
 							</span>
 						)}
 					</div>
 
 					{isHovered && activityCount > 0 && (
-						<div className="absolute bottom-full left-0 mb-1 min-w-[240px] max-w-[320px] rounded-lg overflow-hidden bg-inferay-dark-gray shadow-lg border border-inferay-gray-border">
-							<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-inferay-gray-border text-inferay-muted-gray">
+						<div {...stylex.props(styles.activityPopover)}>
+							<div {...stylex.props(styles.popoverHeader)}>
 								<span>Activity</span>
-								<span className="tabular-nums">{activityCount}</span>
+								<span {...stylex.props(styles.tabularText)}>
+									{activityCount}
+								</span>
 							</div>
-							<div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
+							<div {...stylex.props(styles.popoverList)}>
 								{activityItems.map((activity, idx) => (
 									<div
 										key={activity.id}
-										className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] ${
+										{...stylex.props(
+											styles.popoverRow,
 											idx < activityItems.length - 1
-												? "border-b border-inferay-gray-border/50"
-												: ""
-										}`}
+												? styles.popoverRowBorder
+												: null
+										)}
 									>
-										<span className="shrink-0 text-inferay-muted-gray">
+										<span {...stylex.props(styles.activityIcon)}>
 											<ToolStatusIcon toolName={activity.toolName} />
 										</span>
-										<span className="flex-1 truncate text-inferay-soft-white">
+										<span {...stylex.props(styles.popoverSummary)}>
 											{activity.summary}
 										</span>
 										{activity.isStreaming && (
-											<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-inferay-muted-gray" />
+											<span {...stylex.props(styles.liveDot)} />
 										)}
 									</div>
 								))}
@@ -164,22 +176,152 @@ export const AgentChatStatusBar = React.memo(function AgentChatStatusBar({
 					)}
 				</div>
 			) : (
-				<div className="flex items-center gap-2">
-					<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-inferay-muted-gray" />
-					<span className="text-[10px] text-inferay-muted-gray">
-						Working...
-					</span>
+				<div {...stylex.props(styles.idleStatus)}>
+					<span {...stylex.props(styles.liveDot)} />
+					<span {...stylex.props(styles.idleText)}>Working...</span>
 				</div>
 			)}
 
-			<button
+			<Button
 				type="button"
 				onClick={onStop}
-				className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-inferay-dark-gray text-inferay-soft-white hover:bg-inferay-gray border border-inferay-gray-border"
+				variant="secondary"
+				size="sm"
+				className={stylex.props(styles.noShrink).className}
 			>
-				<IconStop className="w-3 h-3" />
+				<IconStop size={12} {...stylex.props(styles.toolIcon)} />
 				Stop
-			</button>
+			</Button>
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	root: {
+		alignItems: "center",
+		display: "flex",
+		flexShrink: 0,
+		gap: controlSize._2,
+		justifyContent: "space-between",
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._3,
+	},
+	toolIcon: {
+		flexShrink: 0,
+	},
+	noShrink: {
+		flexShrink: 0,
+	},
+	activityWrap: {
+		position: "relative",
+	},
+	activityPill: {
+		alignItems: "center",
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlActive,
+		},
+		borderColor: color.border,
+		borderRadius: radius.md,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		cursor: "default",
+		display: "flex",
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
+		gap: controlSize._1_5,
+		height: controlSize._6,
+		paddingInline: controlSize._2_5,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: motion.ease,
+	},
+	activityIcon: {
+		color: color.textMuted,
+		flexShrink: 0,
+	},
+	activitySummary: {
+		maxWidth: 150,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	activityCount: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+	},
+	tabularText: {
+		fontVariantNumeric: "tabular-nums",
+	},
+	activityPopover: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		borderStyle: "solid",
+		borderWidth: 1,
+		bottom: "100%",
+		boxShadow: shadow.popover,
+		left: 0,
+		marginBottom: controlSize._1,
+		maxWidth: 320,
+		minWidth: 240,
+		overflow: "hidden",
+		position: "absolute",
+	},
+	popoverHeader: {
+		alignItems: "center",
+		borderBottomColor: color.border,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		color: color.textMuted,
+		display: "flex",
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		justifyContent: "space-between",
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2_5,
+		textTransform: "uppercase",
+	},
+	popoverList: {
+		maxHeight: 200,
+		overflowY: "auto",
+	},
+	popoverRow: {
+		alignItems: "center",
+		display: "flex",
+		fontSize: font.size_2,
+		gap: controlSize._2,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2_5,
+	},
+	popoverRowBorder: {
+		borderBottomColor: color.borderSubtle,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+	},
+	popoverSummary: {
+		color: color.textSoft,
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	liveDot: {
+		backgroundColor: color.textMuted,
+		borderRadius: radius.pill,
+		flexShrink: 0,
+		height: controlSize._1_5,
+		width: controlSize._1_5,
+	},
+	idleStatus: {
+		alignItems: "center",
+		display: "flex",
+		gap: controlSize._2,
+	},
+	idleText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
 });

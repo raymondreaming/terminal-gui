@@ -1,7 +1,15 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo } from "react";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition } from "../../lib/agents.ts";
 import type { AgentKind } from "../../lib/terminal-utils.ts";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+} from "../../tokens.stylex.ts";
 
 interface NewSessionButtonsProps {
 	labelPrefix?: string;
@@ -16,7 +24,7 @@ export const NewSessionButtons = memo(function NewSessionButtons({
 }: NewSessionButtonsProps) {
 	const agentKinds = ["claude", "codex"] as const;
 	return (
-		<div className="flex flex-wrap items-center justify-center gap-1.5">
+		<div {...stylex.props(styles.root)}>
 			{agentKinds.map((kind) => {
 				const label = getAgentDefinition(kind).label;
 				const isSelected = kind === selectedKind;
@@ -25,16 +33,7 @@ export const NewSessionButtons = memo(function NewSessionButtons({
 						key={kind}
 						type="button"
 						onClick={() => onAddPane(kind)}
-						className={`flex h-6 items-center gap-1.5 rounded-md border border-transparent px-2 text-[11px] font-medium transition-colors ${
-							isSelected
-								? "text-inferay-white"
-								: "text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white"
-						}`}
-						style={{
-							backgroundColor: isSelected
-								? "rgba(255,255,255,0.08)"
-								: "transparent",
-						}}
+						{...stylex.props(styles.button, isSelected && styles.selected)}
 					>
 						{getAgentIcon(kind, 12)}
 						{labelPrefix ? `${labelPrefix} ${label}` : label}
@@ -43,4 +42,41 @@ export const NewSessionButtons = memo(function NewSessionButtons({
 			})}
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: controlSize._1_5,
+	},
+	button: {
+		display: "flex",
+		height: controlSize._6,
+		alignItems: "center",
+		gap: controlSize._1_5,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.transparent,
+		borderRadius: radius.md,
+		color: color.textMuted,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, color",
+		transitionDuration: motion.durationFast,
+		backgroundColor: {
+			default: color.transparent,
+			":hover": color.controlHover,
+		},
+		":hover": {
+			color: color.textSoft,
+		},
+	},
+	selected: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
 });

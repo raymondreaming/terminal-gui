@@ -1,4 +1,12 @@
+import * as stylex from "@stylexjs/stylex";
 import React, { useCallback, useMemo, useState } from "react";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+} from "../../tokens.stylex.ts";
 import { IconCheck, IconCopy, IconHelpCircle, IconSend } from "../ui/Icons.tsx";
 import { parseInlineTokens, parseMarkdownBlocks } from "./chat-text.ts";
 
@@ -29,16 +37,17 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
 			})
 			.catch(() => {});
 	}, [text]);
+	const copyButtonProps = stylex.props(
+		styles.copyButton,
+		copied ? styles.copyButtonCopied : null
+	);
 
 	return (
 		<button
 			type="button"
 			onClick={handleCopy}
-			className={`flex items-center justify-center h-5 w-5 rounded transition-colors ${className ?? ""}`}
-			style={{
-				backgroundColor: "var(--color-inferay-dark-gray)",
-				color: copied ? "#22c55e" : "var(--color-inferay-muted-gray)",
-			}}
+			{...copyButtonProps}
+			className={`${copyButtonProps.className ?? ""} ${className ?? ""}`}
 			title={copied ? "Copied!" : "Copy"}
 		>
 			{copied ? <IconCheck size={10} /> : <IconCopy size={10} />}
@@ -54,42 +63,27 @@ function Inline({
 	onMdFileClick?: (path: string) => void;
 }) {
 	const tokens = useMemo(() => parseInlineTokens(text), [text]);
-	const linkStyle = { color: "var(--color-inferay-accent)" };
 	return (
 		<>
 			{tokens.map((token, i) => {
 				const partKey = `${i}-${token.type}`;
 				if (token.type === "code") {
 					return (
-						<code
-							key={partKey}
-							className="rounded px-0.5 font-mono text-[10px]"
-							style={{
-								backgroundColor: "var(--color-inferay-dark-gray)",
-								color: "var(--color-inferay-accent)",
-							}}
-						>
+						<code key={partKey} {...stylex.props(styles.inlineCode)}>
 							{token.value}
 						</code>
 					);
 				}
 				if (token.type === "bold") {
 					return (
-						<strong
-							key={partKey}
-							className="font-medium"
-							style={{ color: "var(--color-inferay-white)" }}
-						>
+						<strong key={partKey} {...stylex.props(styles.strong)}>
 							{token.value}
 						</strong>
 					);
 				}
 				if (token.type === "italic") {
 					return (
-						<em
-							key={partKey}
-							style={{ color: "var(--color-inferay-soft-white)" }}
-						>
+						<em key={partKey} {...stylex.props(styles.em)}>
 							{token.value}
 						</em>
 					);
@@ -101,8 +95,7 @@ function Inline({
 							href={token.href}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="hover:underline"
-							style={linkStyle}
+							{...stylex.props(styles.link)}
 						>
 							{token.label}
 						</a>
@@ -114,8 +107,7 @@ function Inline({
 							key={partKey}
 							type="button"
 							onClick={() => onMdFileClick(token.value)}
-							className="underline decoration-current/30 hover:decoration-current/60 cursor-pointer"
-							style={linkStyle}
+							{...stylex.props(styles.inlinePathButton)}
 						>
 							{token.value}
 						</button>
@@ -128,8 +120,7 @@ function Inline({
 							href={token.href}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="underline decoration-current/30 hover:decoration-current/60"
-							style={linkStyle}
+							{...stylex.props(styles.linkUnderlined)}
 						>
 							{token.value}
 						</a>
@@ -165,23 +156,14 @@ export function Markdown({
 	);
 
 	return (
-		<div className="min-w-0 space-y-1 break-words">
+		<div {...stylex.props(styles.markdownRoot)}>
 			{blocks.map((b, i) => {
 				const blockKey = `${b.type}-${i}`;
 				if (b.type === "code") {
 					return (
-						<div key={blockKey} className="group/code relative">
-							<pre
-								className="overflow-x-auto rounded border px-2 py-1.5 font-mono text-[10px] leading-relaxed"
-								style={{
-									backgroundColor: "var(--color-inferay-dark-gray)",
-									borderColor: "var(--color-inferay-gray-border)",
-									color: "var(--color-inferay-soft-white)",
-								}}
-							>
-								{b.content}
-							</pre>
-							<div className="absolute top-1 right-1 opacity-0 group-hover/code:opacity-100 transition-opacity">
+						<div key={blockKey} {...stylex.props(styles.codeWrap)}>
+							<pre {...stylex.props(styles.codeBlock)}>{b.content}</pre>
+							<div {...stylex.props(styles.copyOverlay)}>
 								<CopyButton text={b.content} />
 							</div>
 						</div>
@@ -189,25 +171,16 @@ export function Markdown({
 				}
 				if (b.type === "heading") {
 					return (
-						<p
-							key={blockKey}
-							className="font-medium text-[11px]"
-							style={{ color: "var(--color-inferay-white)" }}
-						>
+						<p key={blockKey} {...stylex.props(styles.heading)}>
 							{b.content}
 						</p>
 					);
 				}
 				if (b.type === "list-item") {
 					return (
-						<div key={blockKey} className="flex gap-1 pl-0.5 text-[12px]">
-							<span
-								className="shrink-0 select-none"
-								style={{ color: "var(--color-inferay-muted-gray)" }}
-							>
-								{b.bullet}
-							</span>
-							<span className="min-w-0">
+						<div key={blockKey} {...stylex.props(styles.listItem)}>
+							<span {...stylex.props(styles.listBullet)}>{b.bullet}</span>
+							<span {...stylex.props(styles.listContent)}>
 								<Inline text={b.content} onMdFileClick={onMdFileClick} />
 							</span>
 						</div>
@@ -217,27 +190,14 @@ export function Markdown({
 					return (
 						<div
 							key={blockKey}
-							className="max-w-full overflow-auto rounded border text-[10px]"
+							{...stylex.props(styles.tableWrap)}
 							onWheel={handleTableWheel}
-							style={{
-								borderColor: "var(--color-inferay-gray-border)",
-								backgroundColor: "var(--color-inferay-dark-gray)",
-							}}
 						>
-							<table className="w-full border-collapse">
+							<table {...stylex.props(styles.table)}>
 								<thead>
 									<tr>
 										{b.headers.map((h, hi) => (
-											<th
-												key={hi}
-												className="px-2 py-1 text-left font-semibold whitespace-nowrap"
-												style={{
-													borderBottom:
-														"1px solid var(--color-inferay-gray-border)",
-													color: "var(--color-inferay-white)",
-													backgroundColor: "var(--color-inferay-dark-gray)",
-												}}
-											>
+											<th key={hi} {...stylex.props(styles.tableHeadCell)}>
 												{h}
 											</th>
 										))}
@@ -249,7 +209,7 @@ export function Markdown({
 											{row.map((cell, ci) => (
 												<td
 													key={ci}
-													className="px-2 py-1 whitespace-pre-wrap"
+													{...stylex.props(styles.tableCell)}
 													style={{
 														borderBottom:
 															ri < b.rows.length - 1
@@ -269,7 +229,7 @@ export function Markdown({
 					);
 				}
 				return (
-					<p key={blockKey}>
+					<p key={blockKey} {...stylex.props(styles.paragraph)}>
 						<Inline text={b.content} onMdFileClick={onMdFileClick} />
 					</p>
 				);
@@ -277,6 +237,301 @@ export function Markdown({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	copyButton: {
+		alignItems: "center",
+		backgroundColor: color.backgroundRaised,
+		borderRadius: radius.sm,
+		color: color.textMuted,
+		display: "flex",
+		height: controlSize._5,
+		justifyContent: "center",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: motion.ease,
+		width: controlSize._5,
+	},
+	copyButtonCopied: {
+		color: color.success,
+	},
+	inlineCode: {
+		backgroundColor: color.accentWash,
+		borderRadius: radius.xs,
+		color: color.accent,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+		paddingInline: controlSize._0_5,
+	},
+	strong: {
+		color: color.textMain,
+		fontWeight: font.weight_5,
+	},
+	em: {
+		color: color.textSoft,
+	},
+	link: {
+		color: color.accent,
+		textDecorationLine: {
+			default: "none",
+			":hover": "underline",
+		},
+	},
+	linkUnderlined: {
+		color: color.accent,
+		cursor: "pointer",
+		textDecorationColor: {
+			default: color.accentBorder,
+			":hover": color.accent,
+		},
+		textDecorationLine: "underline",
+	},
+	inlinePathButton: {
+		backgroundColor: color.transparent,
+		color: color.accent,
+		cursor: "pointer",
+		textDecorationColor: {
+			default: color.accentBorder,
+			":hover": color.accent,
+		},
+		textDecorationLine: "underline",
+	},
+	markdownRoot: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._1,
+		minWidth: 0,
+		overflowWrap: "break-word",
+		wordBreak: "break-word",
+	},
+	codeWrap: {
+		position: "relative",
+	},
+	codeBlock: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.accentBorder,
+		borderRadius: radius.sm,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+		lineHeight: 1.625,
+		overflowX: "auto",
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2,
+	},
+	copyOverlay: {
+		opacity: {
+			default: 0,
+			":hover": 1,
+		},
+		position: "absolute",
+		right: controlSize._1,
+		top: controlSize._1,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "opacity",
+		transitionTimingFunction: motion.ease,
+	},
+	heading: {
+		color: color.textMain,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+	},
+	listItem: {
+		display: "flex",
+		fontSize: font.size_3,
+		gap: controlSize._1,
+		paddingLeft: controlSize._0_5,
+	},
+	listBullet: {
+		color: color.textMuted,
+		flexShrink: 0,
+		userSelect: "none",
+	},
+	listContent: {
+		minWidth: 0,
+	},
+	tableWrap: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.accentBorder,
+		borderRadius: radius.sm,
+		borderStyle: "solid",
+		borderWidth: 1,
+		fontSize: font.size_2,
+		maxWidth: "100%",
+		overflow: "auto",
+	},
+	table: {
+		borderCollapse: "collapse",
+		width: "100%",
+	},
+	tableHeadCell: {
+		backgroundColor: color.accentWash,
+		borderBottomColor: color.accentBorder,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		color: color.textMain,
+		fontWeight: font.weight_6,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		whiteSpace: "nowrap",
+	},
+	tableCell: {
+		color: color.textMain,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		whiteSpace: "pre-wrap",
+	},
+	paragraph: {
+		margin: 0,
+	},
+	rawToolPre: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textMuted,
+		fontFamily: font.familyMono,
+		fontSize: font.size_1,
+		lineHeight: 1.625,
+		marginTop: controlSize._0_5,
+		maxHeight: 160,
+		overflow: "auto",
+		overflowWrap: "break-word",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		whiteSpace: "pre-wrap",
+		wordBreak: "break-all",
+	},
+	questionStack: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._2,
+		paddingBlock: controlSize._1,
+	},
+	questionCard: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		borderStyle: "solid",
+		borderWidth: 1,
+		overflow: "hidden",
+	},
+	questionHeader: {
+		alignItems: "center",
+		borderBottomColor: color.border,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		display: "flex",
+		gap: controlSize._2,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._3,
+	},
+	questionBadge: {
+		borderRadius: radius.pill,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		paddingBlock: controlSize._0_5,
+		paddingInline: controlSize._2,
+		textTransform: "uppercase",
+	},
+	multiSelectLabel: {
+		fontSize: font.size_0_5,
+		letterSpacing: 0,
+		textTransform: "uppercase",
+	},
+	questionStreamingDot: {
+		borderRadius: radius.pill,
+		height: controlSize._1_5,
+		marginLeft: "auto",
+		width: controlSize._1_5,
+	},
+	questionBody: {
+		paddingBottom: controlSize._1_5,
+		paddingInline: controlSize._3,
+		paddingTop: controlSize._2,
+	},
+	questionText: {
+		color: color.textMain,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+		lineHeight: 1.375,
+		margin: 0,
+	},
+	optionStack: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._1,
+		paddingBottom: controlSize._2_5,
+		paddingInline: controlSize._3,
+	},
+	optionButton: {
+		alignItems: "flex-start",
+		backgroundColor: color.surfaceInset,
+		borderRadius: radius.md,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		gap: controlSize._2,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2_5,
+		textAlign: "left",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, border-color, opacity",
+		transitionTimingFunction: motion.ease,
+		width: "100%",
+	},
+	optionSelected: {
+		backgroundColor: color.surfaceControl,
+	},
+	optionDisabled: {
+		opacity: 0.4,
+	},
+	optionMarker: {
+		alignItems: "center",
+		borderRadius: radius.pill,
+		display: "flex",
+		flexShrink: 0,
+		fontSize: font.size_0_5,
+		fontWeight: font.weight_6,
+		height: controlSize._4,
+		justifyContent: "center",
+		marginTop: controlSize._0_5,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: motion.ease,
+		width: controlSize._4,
+	},
+	optionTextWrap: {
+		minWidth: 0,
+	},
+	optionLabel: {
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+	},
+	optionDescription: {
+		fontSize: font.size_1,
+		lineHeight: 1.375,
+		marginBlockEnd: 0,
+		marginBlockStart: controlSize._0_5,
+	},
+	sendSelectionsButton: {
+		alignItems: "center",
+		borderRadius: radius.lg,
+		display: "flex",
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		gap: controlSize._1_5,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._3,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, color, opacity",
+		transitionTimingFunction: motion.ease,
+	},
+});
 
 export function AskUserQuestionCard({
 	content,
@@ -305,9 +560,6 @@ export function AskUserQuestionCard({
 	);
 	const [submitted, setSubmitted] = useState(false);
 	const accentColor = "var(--color-inferay-accent)";
-	const surfaceBg = "var(--color-inferay-dark-gray)";
-	const borderClr = "var(--color-inferay-gray-border)";
-	const fgColor = "var(--color-inferay-white)";
 	const fgMuted = "var(--color-inferay-soft-white)";
 	const fgDim = "var(--color-inferay-muted-gray)";
 
@@ -357,41 +609,20 @@ export function AskUserQuestionCard({
 	}, [onSendMessage, parsed, selections, submitted]);
 
 	if (!parsed) {
-		return (
-			<pre
-				className="mt-0.5 max-h-40 overflow-auto rounded-lg px-3 py-2 font-mono text-[9px] leading-relaxed whitespace-pre-wrap break-all"
-				style={{
-					backgroundColor: surfaceBg,
-					color: fgDim,
-					border: `1px solid ${borderClr}`,
-				}}
-			>
-				{content}
-			</pre>
-		);
+		return <pre {...stylex.props(styles.rawToolPre)}>{content}</pre>;
 	}
 
 	return (
-		<div className="space-y-2 py-1">
+		<div {...stylex.props(styles.questionStack)}>
 			{parsed.map((q, qi) => {
 				const qSelections = selections.get(qi) ?? new Set<number>();
 				return (
-					<div
-						key={qi}
-						className="rounded-lg overflow-hidden"
-						style={{
-							backgroundColor: surfaceBg,
-							border: `1px solid ${borderClr}`,
-						}}
-					>
-						<div
-							className="flex items-center gap-2 px-3 py-1.5"
-							style={{ borderBottom: `1px solid ${borderClr}` }}
-						>
+					<div key={qi} {...stylex.props(styles.questionCard)}>
+						<div {...stylex.props(styles.questionHeader)}>
 							<IconHelpCircle size={12} style={{ color: accentColor }} />
 							{q.header && (
 								<span
-									className="rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider"
+									{...stylex.props(styles.questionBadge)}
 									style={{
 										backgroundColor: `${accentColor}18`,
 										color: accentColor,
@@ -402,7 +633,7 @@ export function AskUserQuestionCard({
 							)}
 							{q.multiSelect && (
 								<span
-									className="text-[8px] uppercase tracking-wider"
+									{...stylex.props(styles.multiSelectLabel)}
 									style={{ color: fgDim }}
 								>
 									multi-select
@@ -410,21 +641,16 @@ export function AskUserQuestionCard({
 							)}
 							{isStreaming && (
 								<span
-									className="ml-auto h-1.5 w-1.5 rounded-full animate-pulse"
+									{...stylex.props(styles.questionStreamingDot)}
 									style={{ backgroundColor: accentColor }}
 								/>
 							)}
 						</div>
-						<div className="px-3 pt-2 pb-1.5">
-							<p
-								className="text-[11px] font-medium leading-snug"
-								style={{ color: fgColor }}
-							>
-								{q.question}
-							</p>
+						<div {...stylex.props(styles.questionBody)}>
+							<p {...stylex.props(styles.questionText)}>{q.question}</p>
 						</div>
 						{q.options && q.options.length > 0 && (
-							<div className="px-3 pb-2.5 space-y-1">
+							<div {...stylex.props(styles.optionStack)}>
 								{q.options.map((opt, oi) => {
 									const isSelected = qSelections.has(oi);
 									return (
@@ -433,18 +659,20 @@ export function AskUserQuestionCard({
 											key={oi}
 											onClick={() => toggleOption(qi, oi, !!q.multiSelect)}
 											disabled={submitted}
-											className="flex w-full items-start gap-2 rounded-md px-2.5 py-1.5 text-left transition-all"
+											{...stylex.props(
+												styles.optionButton,
+												isSelected ? styles.optionSelected : null,
+												submitted && !isSelected ? styles.optionDisabled : null
+											)}
 											style={{
-												backgroundColor: isSelected
-													? `${accentColor}18`
-													: "rgba(0,0,0,0.15)",
-												border: `1px solid ${isSelected ? `${accentColor}50` : borderClr}`,
+												borderColor: isSelected
+													? `${accentColor}50`
+													: "var(--color-inferay-gray-border)",
 												cursor: submitted ? "default" : "pointer",
-												opacity: submitted && !isSelected ? 0.4 : 1,
 											}}
 										>
 											<span
-												className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] font-bold transition-colors"
+												{...stylex.props(styles.optionMarker)}
 												style={{
 													backgroundColor: isSelected
 														? accentColor
@@ -458,13 +686,13 @@ export function AskUserQuestionCard({
 													String.fromCharCode(65 + oi)
 												)}
 											</span>
-											<div className="min-w-0">
-												<span className="text-[11px] font-medium">
+											<div {...stylex.props(styles.optionTextWrap)}>
+												<span {...stylex.props(styles.optionLabel)}>
 													{opt.label}
 												</span>
 												{opt.description && (
 													<p
-														className="text-[9px] leading-snug mt-0.5"
+														{...stylex.props(styles.optionDescription)}
 														style={{ color: fgMuted }}
 													>
 														{opt.description}
@@ -484,7 +712,7 @@ export function AskUserQuestionCard({
 					type="button"
 					onClick={handleSubmit}
 					disabled={!hasSelections}
-					className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-medium transition-all"
+					{...stylex.props(styles.sendSelectionsButton)}
 					style={{
 						backgroundColor: hasSelections ? accentColor : `${accentColor}30`,
 						color: hasSelections ? "#fff" : fgDim,

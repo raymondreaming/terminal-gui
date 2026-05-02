@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo } from "react";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
@@ -10,6 +11,13 @@ import {
 	getStatusInfo,
 	type TerminalPaneModel,
 } from "../../lib/terminal-utils.ts";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+} from "../../tokens.stylex.ts";
 import { StatusIcon } from "./StatusIcon.tsx";
 
 function PaneIcon({
@@ -50,18 +58,17 @@ export const AgentSidebar = memo(function AgentSidebar({
 	onCollapse: () => void;
 }) {
 	return (
-		<div className="w-48 flex-1 overflow-y-auto">
-			<div className="px-2 py-2">
+		<div {...stylex.props(styles.sidebar)}>
+			<div {...stylex.props(styles.sidebarInner)}>
 				<div className="electrobun-webkit-app-region-drag py-1">
 					<button
 						type="button"
 						onClick={onCollapse}
-						className="electrobun-webkit-app-region-no-drag flex items-center gap-1.5 px-1 text-inferay-muted-gray hover:text-inferay-soft-white transition-colors"
+						{...stylex.props(styles.collapseButton)}
+						className={`electrobun-webkit-app-region-no-drag ${stylex.props(styles.collapseButton).className ?? ""}`}
 					>
 						<IconPanelLeft size={12} className="rotate-180" />
-						<span className="text-[9px] font-bold tracking-widest uppercase">
-							Agents
-						</span>
+						<span {...stylex.props(styles.sectionLabel)}>Agents</span>
 					</button>
 				</div>
 				{panes.map((pane) => {
@@ -76,20 +83,20 @@ export const AgentSidebar = memo(function AgentSidebar({
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") onSelectPane(pane.id);
 							}}
-							className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors mb-0.5 cursor-pointer ${
-								isSelected ? "bg-inferay-gray" : "hover:bg-inferay-dark-gray"
-							}`}
+							{...stylex.props(
+								styles.paneRow,
+								isSelected ? styles.paneRowSelected : styles.paneRowIdle
+							)}
 						>
 							<div className="shrink-0">
 								<PaneIcon pane={pane} status={s} size={13} />
 							</div>
-							<div className="min-w-0 flex-1">
+							<div {...stylex.props(styles.paneTextWrap)}>
 								<p
-									className={`truncate text-[11px] font-medium ${
-										isSelected
-											? "text-inferay-white"
-											: "text-inferay-soft-white"
-									}`}
+									{...stylex.props(
+										styles.paneTitle,
+										isSelected ? styles.paneTitleSelected : null
+									)}
 									title={pane.cwd}
 								>
 									{getPaneTitle(pane)}
@@ -128,17 +135,17 @@ export const CollapsedAgentBar = memo(function CollapsedAgentBar({
 	onExpand: () => void;
 }) {
 	return (
-		<div className="shrink-0 flex items-center gap-1 px-2 py-1 border-b border-inferay-gray-border bg-inferay-black">
+		<div {...stylex.props(styles.collapsedBar)}>
 			<button
 				type="button"
 				onClick={onExpand}
-				className="flex items-center justify-center h-6 w-6 rounded-md hover:bg-inferay-dark-gray transition-colors"
+				{...stylex.props(styles.expandButton)}
 				title="Expand Agents"
 			>
 				<IconPanelLeft size={10} className="text-inferay-muted-gray" />
 			</button>
-			<div className="h-3 w-px bg-inferay-gray-border mx-0.5" />
-			<div className="flex items-center gap-0.5 overflow-x-auto">
+			<div {...stylex.props(styles.collapsedDivider)} />
+			<div {...stylex.props(styles.collapsedList)}>
 				{panes.map((pane) => {
 					const isSelected = pane.id === selectedPaneId;
 					const s = agentStatuses.get(pane.id) ?? "idle";
@@ -148,21 +155,161 @@ export const CollapsedAgentBar = memo(function CollapsedAgentBar({
 							type="button"
 							key={pane.id}
 							onClick={() => onSelectPane(pane.id)}
-							className={`flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors ${
+							{...stylex.props(
+								styles.collapsedPane,
 								isSelected
-									? "bg-inferay-gray text-inferay-white"
-									: "text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-							}`}
+									? styles.collapsedPaneSelected
+									: styles.collapsedPaneIdle
+							)}
 							title={`${name}${pane.agentKind !== "terminal" ? ` - ${getStatusInfo(s).label}` : ""}`}
 						>
 							<PaneIcon pane={pane} status={s} size={12} />
-							<span className="text-[10px] font-medium truncate max-w-[80px]">
-								{name}
-							</span>
+							<span {...stylex.props(styles.collapsedTitle)}>{name}</span>
 						</button>
 					);
 				})}
 			</div>
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	sidebar: {
+		flex: 1,
+		overflowY: "auto",
+		width: 192,
+	},
+	sidebarInner: {
+		padding: controlSize._2,
+	},
+	collapseButton: {
+		alignItems: "center",
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		display: "flex",
+		gap: controlSize._1_5,
+		paddingInline: controlSize._1,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "color",
+		transitionTimingFunction: motion.ease,
+	},
+	sectionLabel: {
+		fontSize: font.size_1,
+		fontWeight: font.weight_6,
+		letterSpacing: 0,
+		textTransform: "uppercase",
+	},
+	paneRow: {
+		alignItems: "center",
+		borderRadius: radius.md,
+		cursor: "pointer",
+		display: "flex",
+		gap: controlSize._2,
+		marginBottom: controlSize._0_5,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: motion.ease,
+		width: "100%",
+	},
+	paneRowIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+	},
+	paneRowSelected: {
+		backgroundColor: color.controlActive,
+	},
+	paneTextWrap: {
+		flex: 1,
+		minWidth: 0,
+	},
+	paneTitle: {
+		color: color.textSoft,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+		margin: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	paneTitleSelected: {
+		color: color.textMain,
+	},
+	collapsedBar: {
+		alignItems: "center",
+		backgroundColor: color.background,
+		borderBottomColor: color.border,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		display: "flex",
+		flexShrink: 0,
+		gap: controlSize._1,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+	},
+	expandButton: {
+		alignItems: "center",
+		borderRadius: radius.md,
+		display: "flex",
+		height: controlSize._6,
+		justifyContent: "center",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color",
+		transitionTimingFunction: motion.ease,
+		width: controlSize._6,
+		":hover": {
+			backgroundColor: color.backgroundRaised,
+		},
+	},
+	collapsedDivider: {
+		backgroundColor: color.border,
+		height: controlSize._3,
+		marginInline: controlSize._0_5,
+		width: 1,
+	},
+	collapsedList: {
+		alignItems: "center",
+		display: "flex",
+		gap: controlSize._0_5,
+		overflowX: "auto",
+	},
+	collapsedPane: {
+		alignItems: "center",
+		borderRadius: radius.md,
+		display: "flex",
+		gap: controlSize._1_5,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: motion.ease,
+	},
+	collapsedPaneIdle: {
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+	},
+	collapsedPaneSelected: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	collapsedTitle: {
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		maxWidth: 80,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
 });

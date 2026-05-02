@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal } from "@xterm/xterm";
@@ -5,14 +6,20 @@ import type React from "react";
 import { memo, useEffect, useRef } from "react";
 import type { AgentChatHandle } from "../../components/chat/AgentChatView.tsx";
 import { AgentChatView } from "../../components/chat/AgentChatView.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import { IconTerminal, IconX } from "../../components/ui/Icons.tsx";
-import { getAgentDefinition, isChatAgentKind } from "../../lib/agents.ts";
+import {
+	getAgentDefinition,
+	isChatAgentKind,
+	loadDefaultChatSettings,
+} from "../../lib/agents.ts";
 import type {
 	AgentKind,
 	TerminalPaneModel,
 	TerminalTheme,
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
+import { color, font } from "../../tokens.stylex.ts";
 
 interface TerminalPaneViewProps {
 	pane: TerminalPaneModel;
@@ -220,12 +227,12 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			}
 			tabIndex={isAgentChatPane ? undefined : 0}
 			role={isAgentChatPane ? undefined : "button"}
-			className="relative flex h-full min-h-0 flex-col overflow-hidden"
+			{...stylex.props(styles.root)}
 			style={isAgentChatPane ? undefined : { backgroundColor: theme.bg }}
 		>
 			{!isAgentChatPane && (
 				<div
-					className="electrobun-webkit-app-region-no-drag shrink-0 flex items-center gap-2 px-3 py-1.5 border-b cursor-grab active:cursor-grabbing select-none"
+					className={`electrobun-webkit-app-region-no-drag ${stylex.props(styles.header).className ?? ""}`}
 					style={{
 						borderColor: theme.separator,
 						backgroundColor: theme.bg,
@@ -244,48 +251,55 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 					onDragEnd={onHeaderDragEnd}
 				>
 					<span
-						className={
-							isSelected ? "text-inferay-accent" : "text-inferay-muted-gray"
-						}
+						{...stylex.props(
+							styles.terminalIcon,
+							isSelected && styles.activeAccent
+						)}
 					>
 						<IconTerminal size={10} />
 					</span>
 					<span
-						className={`font-medium ${isSelected ? "text-inferay-soft-white" : "text-inferay-muted-gray"} text-[9px]`}
+						{...stylex.props(
+							styles.paneLabel,
+							isSelected && styles.selectedLabel
+						)}
 					>
 						{paneLabel}
 					</span>
 					{pane.cwd && (
 						<>
-							<span className="text-[9px] text-inferay-muted-gray">›</span>
+							<span {...stylex.props(styles.breadcrumbSep)}>›</span>
 							<span
-								className={`font-medium ${isSelected ? "text-inferay-white" : "text-inferay-muted-gray"} text-[9px] truncate`}
+								{...stylex.props(
+									styles.cwdLabel,
+									isSelected && styles.selectedCwd
+								)}
 								title={pane.cwd}
 							>
 								{pane.cwd.split("/").pop() || pane.cwd}
 							</span>
 						</>
 					)}
-					<span className="flex-1" />
-					{isSelected && (
-						<div className="h-1.5 w-1.5 rounded-full bg-inferay-accent" />
-					)}
-					<button
+					<span {...stylex.props(styles.spacer)} />
+					{isSelected && <div {...stylex.props(styles.selectedDot)} />}
+					<IconButton
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onClose(pane.id);
 						}}
-						className="electrobun-webkit-app-region-no-drag flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
+						className="electrobun-webkit-app-region-no-drag"
+						variant="danger"
+						size="xs"
 						title="Close pane"
 					>
 						<IconX size={8} />
-					</button>
+					</IconButton>
 				</div>
 			)}
 			<div
 				ref={containerRef}
-				className="min-h-0 flex-1"
+				{...stylex.props(styles.termContainer)}
 				style={{
 					display: isAgentChatPane ? "none" : undefined,
 					pointerEvents: isSelected ? "auto" : "none",
@@ -301,7 +315,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			/>
 			{isAgentChatPane && (
 				<div
-					className="min-h-0 flex-1 flex flex-col overflow-hidden"
+					{...stylex.props(styles.agentPane)}
 					style={{ pointerEvents: isSelected ? "auto" : "none" }}
 				>
 					<AgentChatView
@@ -314,7 +328,7 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 						isSelected={isSelected}
 						onDirectoryChange={(pid, cwd, refs) => {
 							if (pane.pendingCwd && !isChatAgentKind(pane.agentKind)) {
-								onSetPaneAgentKind?.(pid, "claude");
+								onSetPaneAgentKind?.(pid, loadDefaultChatSettings().agentKind);
 							}
 							onDirectorySelect?.(pid, cwd, refs);
 						}}
@@ -340,4 +354,80 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			)}
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	root: {
+		position: "relative",
+		display: "flex",
+		height: "100%",
+		minHeight: 0,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	header: {
+		display: "flex",
+		flexShrink: 0,
+		cursor: "grab",
+		userSelect: "none",
+		alignItems: "center",
+		gap: "0.5rem",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		paddingBlock: "0.375rem",
+		paddingInline: "0.75rem",
+		":active": {
+			cursor: "grabbing",
+		},
+	},
+	terminalIcon: {
+		color: color.textMuted,
+	},
+	activeAccent: {
+		color: "var(--color-inferay-accent)",
+	},
+	paneLabel: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+	},
+	selectedLabel: {
+		color: color.textSoft,
+	},
+	breadcrumbSep: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	cwdLabel: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+	},
+	selectedCwd: {
+		color: color.textMain,
+	},
+	spacer: {
+		flex: 1,
+	},
+	selectedDot: {
+		width: "0.375rem",
+		height: "0.375rem",
+		borderRadius: "999px",
+		backgroundColor: "var(--color-inferay-accent)",
+	},
+	termContainer: {
+		minHeight: 0,
+		flex: 1,
+	},
+	agentPane: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
 });

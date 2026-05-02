@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
 	type ReactNode,
 	useCallback,
@@ -6,14 +7,20 @@ import {
 	useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
+import {
+	loadDefaultChatSettings,
+	type NEW_PANE_AGENT_KINDS,
+} from "../../lib/agents.ts";
 import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	createTerminalPane,
 	loadTerminalState,
 	saveTerminalState,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
+import { Button } from "../ui/Button.tsx";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
+import { IconButton } from "../ui/IconButton.tsx";
 import {
 	IconCode,
 	IconCollapse,
@@ -59,11 +66,7 @@ function ViewTab({
 		<button
 			type="button"
 			onClick={onClick}
-			className={`flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
-				active
-					? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
-					: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-			}`}
+			{...stylex.props(styles.viewTab, active ? styles.viewTabActive : null)}
 		>
 			{icon}
 			<span>{label}</span>
@@ -190,8 +193,12 @@ export function TerminalShellHeader() {
 	}, []);
 
 	return (
-		<div className="electrobun-webkit-app-region-drag flex h-12 shrink-0 items-center gap-3 border-b border-inferay-gray-border bg-inferay-black px-3">
-			<div className="electrobun-webkit-app-region-no-drag flex items-center gap-1 shrink-0">
+		<div
+			className={`electrobun-webkit-app-region-drag ${stylex.props(styles.header).className ?? ""}`}
+		>
+			<div
+				className={`electrobun-webkit-app-region-no-drag ${stylex.props(styles.viewTabs).className ?? ""}`}
+			>
 				<ViewTab
 					active={shellState.mainView === "chat"}
 					icon={<IconMessageCircle size={12} />}
@@ -219,16 +226,16 @@ export function TerminalShellHeader() {
 			</div>
 			{location.pathname === "/terminal" && (
 				<>
-					<div className="flex-1 min-w-0" />
-					<div className="electrobun-webkit-app-region-no-drag flex items-center gap-3 shrink-0">
+					<div {...stylex.props(styles.spacer)} />
+					<div
+						className={`electrobun-webkit-app-region-no-drag ${stylex.props(styles.actions).className ?? ""}`}
+					>
 						{shellState.mainView === "chat" && (
 							<>
 								{layoutMode === "grid" && selectedGroup && (
 									<>
-										<div className="flex items-center gap-1.5 shrink-0">
-											<span className="text-[9px] text-inferay-muted-gray sm:text-[10px]">
-												Col
-											</span>
+										<div {...stylex.props(styles.gridControl)}>
+											<span {...stylex.props(styles.gridLabel)}>Col</span>
 											<DropdownButton
 												value={String(selectedGroup.columns)}
 												options={[1, 2, 3, 4].map((n) => ({
@@ -241,10 +248,8 @@ export function TerminalShellHeader() {
 												minWidth={60}
 											/>
 										</div>
-										<div className="flex items-center gap-1.5 shrink-0">
-											<span className="text-[9px] text-inferay-muted-gray sm:text-[10px]">
-												Row
-											</span>
+										<div {...stylex.props(styles.gridControl)}>
+											<span {...stylex.props(styles.gridLabel)}>Row</span>
 											<DropdownButton
 												value={String(selectedGroup.rows)}
 												options={[1, 2, 3, 4].map((n) => ({
@@ -259,11 +264,16 @@ export function TerminalShellHeader() {
 										</div>
 									</>
 								)}
-								<div className="flex items-center shrink-0 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray overflow-hidden h-7">
+								<div {...stylex.props(styles.segmented)}>
 									<button
 										type="button"
 										onClick={() => updateLayoutMode("grid")}
-										className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "grid" ? "bg-inferay-white/10 text-inferay-white" : "text-inferay-muted-gray hover:text-inferay-soft-white"}`}
+										{...stylex.props(
+											styles.segmentButton,
+											layoutMode === "grid"
+												? styles.segmentButtonActive
+												: styles.segmentButtonIdle
+										)}
 										title="Grid layout"
 									>
 										<IconLayoutGrid size={13} />
@@ -271,7 +281,12 @@ export function TerminalShellHeader() {
 									<button
 										type="button"
 										onClick={() => updateLayoutMode("rows")}
-										className={`flex items-center justify-center h-full w-7 transition-all ${layoutMode === "rows" ? "bg-inferay-white/10 text-inferay-white" : "text-inferay-muted-gray hover:text-inferay-soft-white"}`}
+										{...stylex.props(
+											styles.segmentButton,
+											layoutMode === "rows"
+												? styles.segmentButtonActive
+												: styles.segmentButtonIdle
+										)}
 										title="Row layout"
 									>
 										<IconLayoutRows size={13} />
@@ -279,35 +294,36 @@ export function TerminalShellHeader() {
 								</div>
 							</>
 						)}
-						<div className="shrink-0">
-							<button
+						<div {...stylex.props(styles.shrink)}>
+							<Button
 								type="button"
-								onClick={() => addPaneToSelectedGroup("claude")}
-								className="flex h-7 items-center gap-1.5 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-xs font-medium text-inferay-soft-white transition-colors hover:bg-inferay-gray"
+								onClick={() =>
+									addPaneToSelectedGroup(loadDefaultChatSettings().agentKind)
+								}
+								variant="secondary"
+								size="sm"
 							>
 								<span>New</span>
 								<IconPlus size={10} />
-							</button>
+							</Button>
 						</div>
 						{shellState.mainView === "editor" && (
-							<button
+							<IconButton
 								type="button"
 								onClick={() => updateEditorZenMode(!shellState.editorZenMode)}
 								title={
 									shellState.editorZenMode ? "Exit zen mode" : "Enter zen mode"
 								}
-								className={`flex h-7 w-7 items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-dark-gray transition-colors ${
-									shellState.editorZenMode
-										? "bg-inferay-gray text-inferay-white"
-										: "text-inferay-muted-gray hover:bg-inferay-gray hover:text-inferay-soft-white"
-								}`}
+								variant="ghost"
+								size="md"
+								className="h-7 w-7 border border-inferay-gray-border bg-inferay-dark-gray"
 							>
 								{shellState.editorZenMode ? (
 									<IconCollapse size={12} />
 								) : (
 									<IconExpand size={12} />
 								)}
-							</button>
+							</IconButton>
 						)}
 					</div>
 				</>
@@ -315,3 +331,108 @@ export function TerminalShellHeader() {
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	header: {
+		alignItems: "center",
+		backgroundColor: color.background,
+		borderBottomColor: color.border,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		display: "flex",
+		flexShrink: 0,
+		gap: controlSize._3,
+		height: controlSize._12,
+		paddingInline: controlSize._3,
+	},
+	viewTabs: {
+		alignItems: "center",
+		display: "flex",
+		flexShrink: 0,
+		gap: controlSize._1,
+	},
+	spacer: {
+		flex: 1,
+		minWidth: 0,
+	},
+	actions: {
+		alignItems: "center",
+		display: "flex",
+		flexShrink: 0,
+		gap: controlSize._3,
+	},
+	gridControl: {
+		alignItems: "center",
+		display: "flex",
+		flexShrink: 0,
+		gap: "0.375rem",
+	},
+	gridLabel: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	segmented: {
+		alignItems: "center",
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		flexShrink: 0,
+		height: controlSize._7,
+		overflow: "hidden",
+	},
+	segmentButton: {
+		alignItems: "center",
+		display: "flex",
+		height: "100%",
+		justifyContent: "center",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: "ease",
+		width: controlSize._7,
+	},
+	segmentButtonIdle: {
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+	segmentButtonActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	shrink: {
+		flexShrink: 0,
+	},
+	viewTab: {
+		alignItems: "center",
+		borderColor: "transparent",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		display: "flex",
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
+		gap: "0.375rem",
+		height: controlSize._7,
+		paddingInline: "0.625rem",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+	},
+	viewTabActive: {
+		backgroundColor: color.controlActive,
+		borderColor: color.border,
+		color: color.textMain,
+	},
+});

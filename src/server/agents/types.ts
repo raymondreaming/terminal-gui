@@ -10,6 +10,7 @@ export interface AgentActivityEvent {
 export interface AgentRunContext {
 	readonly paneId: string;
 	readonly cwd: string;
+	readonly referencePaths?: readonly string[];
 	readonly model?: string;
 	readonly reasoningLevel?: string;
 	getSessionId(): string | null;

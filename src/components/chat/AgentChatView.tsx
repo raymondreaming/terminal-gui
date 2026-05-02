@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import type React from "react";
 import {
 	forwardRef,
@@ -15,6 +16,7 @@ import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import {
 	CODEX_REASONING_LEVELS,
 	getAgentDefinition,
+	loadDefaultChatSettings,
 } from "../../lib/agents.ts";
 import { measureTextareaHeight } from "../../lib/pretext-utils.ts";
 import {
@@ -23,6 +25,7 @@ import {
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { InlineDirectoryPicker } from "../../pages/Terminal/InlineDirectoryPicker.tsx";
+import { color, controlSize, effectValues } from "../../tokens.stylex.ts";
 import { IconArrowDown } from "../ui/Icons.tsx";
 import { AgentChatHeader } from "./AgentChatHeader.tsx";
 import { AgentChatStatusBar } from "./AgentChatStatusBar.tsx";
@@ -143,7 +146,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			cwd,
 			referencePaths,
 			showInput = true,
-			agentKind = "claude",
+			agentKind = loadDefaultChatSettings().agentKind,
 			onStatusChange,
 			hideHeader,
 			onClose,
@@ -165,22 +168,31 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		);
 		const messagesRef = useRef(messages);
 		messagesRef.current = messages;
-		const getDefaultModel = useCallback(
-			(kind: AgentKind) => getAgentDefinition(kind).defaultModel,
-			[]
-		);
+		const getDefaultModel = useCallback((kind: AgentKind) => {
+			const definition = getAgentDefinition(kind);
+			const defaults = loadDefaultChatSettings();
+			return kind === defaults.agentKind &&
+				definition.models.some((model) => model.id === defaults.model)
+				? defaults.model
+				: definition.defaultModel;
+		}, []);
 		const [selectedModel, setSelectedModel] = useState(() => {
 			const stored = loadStoredModel(paneId);
 			const definition = getAgentDefinition(agentKind);
+			const defaults = loadDefaultChatSettings();
 			return definition.models.some((model) => model.id === stored)
 				? stored!
-				: definition.defaultModel;
+				: agentKind === defaults.agentKind &&
+					  definition.models.some((model) => model.id === defaults.model)
+					? defaults.model
+					: definition.defaultModel;
 		});
 		const [selectedReasoningLevel, setSelectedReasoningLevel] = useState(() => {
 			const stored = loadStoredReasoningLevel(paneId);
+			const defaults = loadDefaultChatSettings();
 			return CODEX_REASONING_LEVELS.some((level) => level.id === stored)
 				? stored!
-				: "low";
+				: defaults.reasoningLevel;
 		});
 		const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		const summaryRef = useRef<string | null>(loadStoredSummary(paneId));
@@ -376,7 +388,6 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		const autoFollowRef = useRef(true);
 		const programmaticScrollRef = useRef(false);
 		const {
-			isDragOver,
 			setIsDragOver,
 			attachedImages,
 			queueRef,
@@ -588,7 +599,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 							}
 						}
 						if (contextLines.length > 0) {
-							prompt = `<prior-conversation-context>\nThe following is a summary of the prior conversation in this chat session (from a different model). Use it as context for the request below.\n\n${contextLines.join("\n\n")}\n</prior-conversation-context>\n\n${text}`;
+							prompt = `<prior-conversation-context>\nThe following is a summary of the prior conversation in this chat session (from a different model). Use it as context for the request below.\n\n${contextLines.join("\n\n")}\n</prior-conversation-context>\n\n${prompt}`;
 						}
 					}
 				}
@@ -598,6 +609,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					paneId,
 					text: prompt,
 					cwd: effectiveCwd,
+					referencePaths: effectiveReferencePaths,
 					sessionId,
 					agentKind,
 					model: selectedModel || getDefaultModel(agentKind),
@@ -1529,7 +1541,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		return (
 			<div
 				ref={containerRef}
-				className={`flex h-full flex-col transition-all ${isDragOver ? "ring-2 ring-inset ring-blue-500/60" : ""}`}
+				{...stylex.props(styles.root)}
 				onDragOver={(e) => {
 					e.preventDefault();
 					setIsDragOver(true);
@@ -1550,25 +1562,25 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						onSelectSession={onSelectSession}
 					/>
 				)}
-				<div className="relative flex-1 overflow-hidden">
+				<div {...stylex.props(styles.messageRegion)}>
 					<div
 						ref={scrollRef}
-						className="h-full overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none"
+						{...stylex.props(styles.scrollArea)}
 						onScroll={handleScroll}
 					>
 						{messages.length === 0 &&
 							!isLoading &&
 							!cwd &&
 							onDirectoryChange && (
-								<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-3 pb-2">
-									<div className="pointer-events-auto mx-auto max-w-2xl">
+								<div {...stylex.props(styles.directoryPickerWrap)}>
+									<div {...stylex.props(styles.directoryPickerInner)}>
 										<InlineDirectoryPicker
 											onSelect={(path) => {
 												if (path) onDirectoryChange(paneId, path);
 											}}
 											onCancel={() => {}}
 											multiSelect
-											hideInput
+											showStartButton={false}
 											onSelectionChange={(paths) => {
 												pendingWorkspacePathsRef.current = paths;
 												savePendingWorkspacePaths(paneId, paths);
@@ -1597,29 +1609,23 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						<button
 							type="button"
 							onClick={scrollToBottom}
-							className="absolute bottom-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-inferay-gray-border bg-inferay-dark-gray shadow-sm transition-opacity hover:bg-inferay-gray"
+							{...stylex.props(styles.scrollButton)}
 						>
-							<IconArrowDown size={12} className="text-inferay-soft-white" />
+							<IconArrowDown size={12} {...stylex.props(styles.scrollIcon)} />
 						</button>
 					)}
 				</div>
 
-				<div className="relative shrink-0">
-					{/* Solid bg behind content + gradient fade extending above */}
+				<div {...stylex.props(styles.composerRegion)}>
 					<div
-						className="pointer-events-none absolute left-0 right-0 bottom-0 bg-inferay-black"
-						style={{ top: 0 }}
+						{...stylex.props(styles.composerBackdrop)}
+						style={{ backgroundImage: effectValues.composerBackdrop }}
 					/>
 					<div
-						className="pointer-events-none absolute left-0 right-0"
-						style={{
-							bottom: "100%",
-							height: "48px",
-							background:
-								"linear-gradient(to bottom, transparent 0%, var(--color-inferay-black) 100%)",
-						}}
+						{...stylex.props(styles.composerFade)}
+						style={{ backgroundImage: effectValues.composerFade }}
 					/>
-					<div className="relative z-10">
+					<div {...stylex.props(styles.composerContent)}>
 						<ChatComposer
 							statusBar={
 								<AgentChatStatusBar
@@ -1677,3 +1683,92 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		);
 	}
 );
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+		transitionProperty: "box-shadow",
+		transitionDuration: "120ms",
+	},
+	messageRegion: {
+		position: "relative",
+		flex: 1,
+		overflow: "hidden",
+	},
+	scrollArea: {
+		height: "100%",
+		overflowX: "hidden",
+		overflowY: "auto",
+		overscrollBehavior: "contain",
+		scrollbarWidth: "none",
+		"::-webkit-scrollbar": {
+			display: "none",
+		},
+	},
+	directoryPickerWrap: {
+		position: "absolute",
+		zIndex: 10,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		pointerEvents: "none",
+		paddingInline: controlSize._3,
+		paddingBottom: controlSize._2,
+	},
+	directoryPickerInner: {
+		maxWidth: "42rem",
+		marginInline: "auto",
+		pointerEvents: "auto",
+	},
+	scrollButton: {
+		position: "absolute",
+		zIndex: 10,
+		right: controlSize._2,
+		bottom: controlSize._2,
+		display: "flex",
+		width: controlSize._6,
+		height: controlSize._6,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "999px",
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		boxShadow: "0 1px 2px rgba(0, 0, 0, 0.24)",
+		transitionProperty: "background-color, opacity",
+		transitionDuration: "120ms",
+	},
+	scrollIcon: {
+		color: color.textSoft,
+	},
+	composerRegion: {
+		position: "relative",
+		flexShrink: 0,
+	},
+	composerBackdrop: {
+		position: "absolute",
+		pointerEvents: "none",
+		left: 0,
+		right: 0,
+		bottom: 0,
+		top: "-48px",
+	},
+	composerFade: {
+		position: "absolute",
+		pointerEvents: "none",
+		left: 0,
+		right: 0,
+		bottom: "100%",
+		height: "48px",
+	},
+	composerContent: {
+		position: "relative",
+		zIndex: 10,
+	},
+});

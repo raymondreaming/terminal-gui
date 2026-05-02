@@ -1,5 +1,7 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo, useEffect, useMemo, useState } from "react";
 import type { GraphNode, GraphRow } from "../../hooks/useGitGraph";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import {
 	CommitGraphLinesLayer,
 	IconCheck,
@@ -118,15 +120,15 @@ function loadColumns(): ColumnVisibility {
 function RefIcon({ kind }: { kind: ParsedRef["kind"] }) {
 	const size = 10;
 	if (kind === "head") {
-		return <IconCheck size={size} className="shrink-0" />;
+		return <IconCheck size={size} {...stylex.props(styles.shrink)} />;
 	}
 	if (kind === "tag") {
-		return <IconTag size={size} className="shrink-0" />;
+		return <IconTag size={size} {...stylex.props(styles.shrink)} />;
 	}
 	if (kind === "remote") {
-		return <IconCloud size={size} className="shrink-0" />;
+		return <IconCloud size={size} {...stylex.props(styles.shrink)} />;
 	}
-	return <IconGitBranch size={size} className="shrink-0" />;
+	return <IconGitBranch size={size} {...stylex.props(styles.shrink)} />;
 }
 
 function RefBadge({
@@ -140,7 +142,7 @@ function RefBadge({
 }) {
 	return (
 		<span
-			className="inline-flex h-4 max-w-full items-center gap-1 overflow-hidden whitespace-nowrap text-ellipsis rounded-full px-1.5 text-[9px] font-medium leading-none"
+			{...stylex.props(styles.refBadge)}
 			style={{
 				border: `1px solid ${hexToRgba(color, 0.28)}`,
 				backgroundColor: hexToRgba(color, 0.1),
@@ -148,7 +150,7 @@ function RefBadge({
 			}}
 		>
 			<RefIcon kind={kind} />
-			<span className="truncate">{label}</span>
+			<span {...stylex.props(styles.truncate)}>{label}</span>
 		</span>
 	);
 }
@@ -159,7 +161,7 @@ function RefBadges({ refs, color }: { refs: string[]; color: string }) {
 	const visible = parsed.slice(0, 1);
 	const extra = parsed.length - 1;
 	return (
-		<div className="flex items-center gap-1 overflow-hidden">
+		<div {...stylex.props(styles.refBadges)}>
 			{visible.map((ref) => (
 				<RefBadge
 					key={ref.label}
@@ -168,11 +170,7 @@ function RefBadges({ refs, color }: { refs: string[]; color: string }) {
 					kind={ref.kind}
 				/>
 			))}
-			{extra > 0 && (
-				<span className="shrink-0 text-[8px] text-inferay-muted-gray">
-					+{extra}
-				</span>
-			)}
+			{extra > 0 && <span {...stylex.props(styles.refExtra)}>+{extra}</span>}
 		</div>
 	);
 }
@@ -193,15 +191,18 @@ function HeaderRow({
 	onToggleColumn: (key: keyof ColumnVisibility) => void;
 }) {
 	return (
-		<div className="sticky top-0 z-10 flex h-7 items-center border-b border-inferay-gray-border bg-inferay-black/95 text-[9px] font-semibold uppercase tracking-[0.16em] text-inferay-muted-gray backdrop-blur">
-			<div className="shrink-0 px-2 text-right" style={{ width: REF_WIDTH }}>
+		<div {...stylex.props(styles.header)}>
+			<div
+				{...stylex.props(styles.headerCell, styles.headerCellRight)}
+				style={{ width: REF_WIDTH }}
+			>
 				Refs
 			</div>
-			<div className="shrink-0" style={{ width: graphWidth }} />
-			<div className="min-w-0 flex-1 px-3">Description</div>
+			<div {...stylex.props(styles.shrink)} style={{ width: graphWidth }} />
+			<div {...stylex.props(styles.descriptionHeader)}>Description</div>
 			{columns.author && (
 				<div
-					className="shrink-0 border-l border-inferay-gray-border px-3"
+					{...stylex.props(styles.headerCell, styles.headerCellBorder)}
 					style={{ width: AUTHOR_WIDTH }}
 				>
 					Author
@@ -209,7 +210,7 @@ function HeaderRow({
 			)}
 			{columns.date && (
 				<div
-					className="shrink-0 border-l border-inferay-gray-border px-3"
+					{...stylex.props(styles.headerCell, styles.headerCellBorder)}
 					style={{ width: DATE_WIDTH }}
 				>
 					Date
@@ -217,22 +218,26 @@ function HeaderRow({
 			)}
 			{columns.sha && (
 				<div
-					className="shrink-0 border-l border-inferay-gray-border px-3 text-right"
+					{...stylex.props(
+						styles.headerCell,
+						styles.headerCellBorder,
+						styles.headerCellRight
+					)}
 					style={{ width: SHA_WIDTH }}
 				>
 					SHA
 				</div>
 			)}
-			<div className="relative shrink-0 border-l border-inferay-gray-border px-2">
+			<div {...stylex.props(styles.columnsMenuRoot)}>
 				<button
 					type="button"
 					onClick={onToggleColumnsMenu}
-					className="rounded border border-inferay-gray-border px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] text-inferay-muted-gray hover:border-inferay-gray-border-bold hover:text-inferay-soft-white"
+					{...stylex.props(styles.columnsButton)}
 				>
 					Cols
 				</button>
 				{isColumnsOpen && (
-					<div className="absolute right-2 top-8 z-20 w-28 rounded-md border border-inferay-gray-border bg-inferay-dark-gray p-1 shadow-lg">
+					<div {...stylex.props(styles.columnsMenu)}>
 						{(
 							[
 								["author", "Author"],
@@ -244,10 +249,10 @@ function HeaderRow({
 								key={key}
 								type="button"
 								onClick={() => onToggleColumn(key)}
-								className="flex w-full items-center justify-between rounded px-2 py-1 text-left text-[10px] text-inferay-soft-white hover:bg-inferay-gray"
+								{...stylex.props(styles.columnsMenuItem)}
 							>
 								{label}
-								<span className="text-inferay-muted-gray">
+								<span {...stylex.props(styles.columnsState)}>
 									{columns[key] ? "On" : "Off"}
 								</span>
 							</button>
@@ -281,7 +286,7 @@ const WipRow = memo(function WipRow({
 
 	return (
 		<div
-			className="group relative flex cursor-pointer items-center transition-colors hover:bg-inferay-dark-gray"
+			{...stylex.props(styles.graphRow)}
 			style={{
 				height: ROW_HEIGHT,
 				backgroundColor: selected
@@ -290,22 +295,17 @@ const WipRow = memo(function WipRow({
 			}}
 			onClick={onClick}
 		>
-			{selected && (
-				<div className="absolute left-0 top-0 h-full w-[3px] bg-orange-500" />
-			)}
+			{selected && <div {...stylex.props(styles.wipAccentBar)} />}
 
 			{/* Ref gutter */}
-			<div
-				className="flex h-full shrink-0 items-center justify-end overflow-hidden px-2"
-				style={{ width: REF_WIDTH }}
-			>
+			<div {...stylex.props(styles.refGutter)} style={{ width: REF_WIDTH }}>
 				<RefBadge label={`WIP ${branch ?? ""}`} color="#f97316" kind="local" />
 			</div>
 
 			{/* Graph cell: dashed circle node */}
-			<div className="relative h-full shrink-0" style={{ width: graphWidth }}>
+			<div {...stylex.props(styles.graphCell)} style={{ width: graphWidth }}>
 				<div
-					className="absolute flex items-center justify-center rounded-full border-2 border-dashed"
+					{...stylex.props(styles.wipNode)}
 					style={{
 						left: nodeLeft,
 						top: nodeTop,
@@ -318,48 +318,40 @@ const WipRow = memo(function WipRow({
 					}}
 				>
 					<div
-						className="h-2 w-2 rounded-full"
+						{...stylex.props(styles.wipNodeInner)}
 						style={{ backgroundColor: "rgba(249,115,22,0.45)" }}
 					/>
 				</div>
 			</div>
 
 			{/* Message */}
-			<div className="flex min-w-0 flex-1 items-center gap-2 px-3">
-				<span className="truncate text-[11px] text-inferay-soft-white">
-					Uncommitted changes
-				</span>
-				<span className="shrink-0 text-[10px] text-inferay-muted-gray">
+			<div {...stylex.props(styles.messageCell)}>
+				<span {...stylex.props(styles.commitMessage)}>Uncommitted changes</span>
+				<span {...stylex.props(styles.fileCount)}>
 					{fileCount} file{fileCount === 1 ? "" : "s"}
 				</span>
 			</div>
 
 			{columns.author && (
 				<div
-					className="flex h-full shrink-0 items-center gap-2 border-l border-inferay-gray-border px-3 text-[10px] text-inferay-muted-gray"
+					{...stylex.props(styles.authorCell)}
 					style={{ width: AUTHOR_WIDTH }}
 				>
-					<div className="h-4 w-4 rounded-full border border-dashed border-orange-500/70" />
-					<span className="truncate">Workspace</span>
+					<div {...stylex.props(styles.wipAvatar)} />
+					<span {...stylex.props(styles.truncate)}>Workspace</span>
 				</div>
 			)}
 			{columns.date && (
-				<div
-					className="flex h-full shrink-0 items-center border-l border-inferay-gray-border px-3 text-[10px] text-inferay-muted-gray"
-					style={{ width: DATE_WIDTH }}
-				>
+				<div {...stylex.props(styles.metaCell)} style={{ width: DATE_WIDTH }}>
 					Now
 				</div>
 			)}
 			{columns.sha && (
-				<div
-					className="flex h-full shrink-0 items-center justify-end border-l border-inferay-gray-border px-3 text-[10px] font-mono text-inferay-muted-gray"
-					style={{ width: SHA_WIDTH }}
-				>
+				<div {...stylex.props(styles.shaCell)} style={{ width: SHA_WIDTH }}>
 					---
 				</div>
 			)}
-			<div className="shrink-0" style={{ width: 38 }} />
+			<div {...stylex.props(styles.rowEndPad)} />
 		</div>
 	);
 });
@@ -391,7 +383,7 @@ const CommitRow = memo(function CommitRow({
 
 	return (
 		<div
-			className="group relative flex cursor-pointer items-center transition-colors hover:bg-inferay-dark-gray"
+			{...stylex.props(styles.graphRow)}
 			style={{
 				height: ROW_HEIGHT,
 				backgroundColor: selected
@@ -405,25 +397,22 @@ const CommitRow = memo(function CommitRow({
 			{/* Selected accent bar */}
 			{selected && (
 				<div
-					className="absolute left-0 top-0 h-full w-[3px]"
+					{...stylex.props(styles.selectedAccentBar)}
 					style={{ backgroundColor: commit.color }}
 				/>
 			)}
 
 			{/* Ref gutter */}
-			<div
-				className="flex h-full shrink-0 items-center justify-end overflow-hidden px-2"
-				style={{ width: REF_WIDTH }}
-			>
+			<div {...stylex.props(styles.refGutter)} style={{ width: REF_WIDTH }}>
 				{hasRefs ? <RefBadges refs={commit.refs} color={commit.color} /> : null}
 			</div>
 
 			{/* Graph cell: avatar node on the line */}
-			<div className="relative h-full shrink-0" style={{ width: graphWidth }}>
+			<div {...stylex.props(styles.graphCell)} style={{ width: graphWidth }}>
 				<img
 					src={commit.authorAvatarUrl}
 					alt=""
-					className="absolute rounded-full"
+					{...stylex.props(styles.graphAvatar)}
 					style={{
 						left: nodeLeft,
 						top: nodeTop,
@@ -438,44 +427,34 @@ const CommitRow = memo(function CommitRow({
 			</div>
 
 			{/* Commit message + author */}
-			<div className="flex min-w-0 flex-1 items-center gap-2 px-3">
-				<div className="min-w-0 truncate text-[11px] leading-none text-inferay-soft-white group-hover:text-inferay-white">
-					{commit.message}
-				</div>
+			<div {...stylex.props(styles.messageCell)}>
+				<div {...stylex.props(styles.commitMessage)}>{commit.message}</div>
 			</div>
 
 			{columns.author && (
 				<div
-					className="flex h-full shrink-0 items-center gap-2 border-l border-inferay-gray-border px-3"
+					{...stylex.props(styles.authorCell)}
 					style={{ width: AUTHOR_WIDTH }}
 				>
 					<img
 						src={commit.authorAvatarUrl}
 						alt=""
-						className="h-4 w-4 shrink-0 rounded-full"
+						{...stylex.props(styles.authorAvatar)}
 					/>
-					<span className="truncate text-[10px] text-inferay-muted-gray">
-						{commit.author}
-					</span>
+					<span {...stylex.props(styles.authorName)}>{commit.author}</span>
 				</div>
 			)}
 			{columns.date && (
-				<div
-					className="flex h-full shrink-0 items-center border-l border-inferay-gray-border px-3 text-[10px] text-inferay-muted-gray"
-					style={{ width: DATE_WIDTH }}
-				>
+				<div {...stylex.props(styles.metaCell)} style={{ width: DATE_WIDTH }}>
 					{commit.date}
 				</div>
 			)}
 			{columns.sha && (
-				<div
-					className="flex h-full shrink-0 items-center justify-end border-l border-inferay-gray-border px-3 text-[10px] font-mono text-inferay-muted-gray"
-					style={{ width: SHA_WIDTH }}
-				>
+				<div {...stylex.props(styles.shaCell)} style={{ width: SHA_WIDTH }}>
 					{commit.hash}
 				</div>
 			)}
-			<div className="shrink-0" style={{ width: 38 }} />
+			<div {...stylex.props(styles.rowEndPad)} />
 		</div>
 	);
 });
@@ -611,19 +590,20 @@ export const CommitGraph = memo(function CommitGraph({
 	}, [rows, wipOffset, hasWip, commits]);
 
 	if (!commits.length && !hasWip) {
+		const emptyProps = stylex.props(styles.emptyRoot);
 		return (
 			<div
-				className={`flex items-center justify-center rounded-md border border-inferay-gray-border bg-inferay-black py-8 ${className}`}
+				{...emptyProps}
+				className={`${emptyProps.className ?? ""} ${className}`}
 			>
-				<p className="text-[11px] text-inferay-muted-gray">No commits</p>
+				<p {...stylex.props(styles.emptyText)}>No commits</p>
 			</div>
 		);
 	}
 
+	const rootProps = stylex.props(styles.root);
 	return (
-		<div
-			className={`relative overflow-auto rounded-md border border-inferay-gray-border bg-inferay-black ${className}`}
-		>
+		<div {...rootProps} className={`${rootProps.className ?? ""} ${className}`}>
 			<HeaderRow
 				graphWidth={graphWidth}
 				columns={columns}
@@ -634,7 +614,7 @@ export const CommitGraph = memo(function CommitGraph({
 
 			{/* SVG lines layer — clipped to ref+graph area */}
 			<CommitGraphLinesLayer
-				className="pointer-events-none absolute top-7 left-0"
+				className={stylex.props(styles.linesLayer).className}
 				width={REF_WIDTH + graphWidth}
 				height={totalHeight}
 				style={{ zIndex: 1 }}
@@ -648,7 +628,7 @@ export const CommitGraph = memo(function CommitGraph({
 			/>
 
 			{/* Rows layer — avatar nodes sit on top of lines */}
-			<div className="relative" style={{ zIndex: 2 }}>
+			<div {...stylex.props(styles.rowsLayer)}>
 				{hasWip && (
 					<WipRow
 						graphWidth={graphWidth}
@@ -673,4 +653,314 @@ export const CommitGraph = memo(function CommitGraph({
 			</div>
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	root: {
+		position: "relative",
+		overflow: "auto",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.background,
+	},
+	emptyRoot: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.background,
+		paddingBlock: controlSize._8,
+	},
+	emptyText: {
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	shrink: {
+		flexShrink: 0,
+	},
+	truncate: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	refBadge: {
+		display: "inline-flex",
+		height: controlSize._4,
+		maxWidth: "100%",
+		alignItems: "center",
+		gap: controlSize._1,
+		overflow: "hidden",
+		borderRadius: "999px",
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		lineHeight: 1,
+		paddingInline: "0.375rem",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	refBadges: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1,
+		overflow: "hidden",
+	},
+	refExtra: {
+		flexShrink: 0,
+		color: color.textMuted,
+		fontSize: "0.5rem",
+	},
+	header: {
+		position: "sticky",
+		top: 0,
+		zIndex: 10,
+		display: "flex",
+		height: controlSize._7,
+		alignItems: "center",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: "rgba(0, 0, 0, 0.95)",
+		backdropFilter: "blur(8px)",
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: 600,
+		letterSpacing: "0.16em",
+		textTransform: "uppercase",
+	},
+	headerCell: {
+		flexShrink: 0,
+		paddingInline: controlSize._3,
+	},
+	headerCellRight: {
+		textAlign: "right",
+	},
+	headerCellBorder: {
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+	},
+	descriptionHeader: {
+		minWidth: 0,
+		flex: 1,
+		paddingInline: controlSize._3,
+	},
+	columnsMenuRoot: {
+		position: "relative",
+		flexShrink: 0,
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		paddingInline: controlSize._2,
+	},
+	columnsButton: {
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: {
+			default: color.border,
+			":hover": color.borderStrong,
+		},
+		borderRadius: "0.25rem",
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		fontSize: "0.5rem",
+		letterSpacing: "0.12em",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+		textTransform: "uppercase",
+	},
+	columnsMenu: {
+		position: "absolute",
+		right: controlSize._2,
+		top: controlSize._8,
+		zIndex: 20,
+		width: "7rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.6)",
+		padding: controlSize._1,
+	},
+	columnsMenuItem: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderRadius: "0.25rem",
+		color: color.textSoft,
+		fontSize: font.size_2,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	columnsState: {
+		color: color.textMuted,
+	},
+	linesLayer: {
+		position: "absolute",
+		left: 0,
+		top: controlSize._7,
+		pointerEvents: "none",
+	},
+	rowsLayer: {
+		position: "relative",
+		zIndex: 2,
+	},
+	graphRow: {
+		position: "relative",
+		display: "flex",
+		cursor: "pointer",
+		alignItems: "center",
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		":hover": {
+			backgroundColor: color.backgroundRaised,
+		},
+	},
+	wipAccentBar: {
+		position: "absolute",
+		left: 0,
+		top: 0,
+		width: 3,
+		height: "100%",
+		backgroundColor: "#f97316",
+	},
+	selectedAccentBar: {
+		position: "absolute",
+		left: 0,
+		top: 0,
+		width: 3,
+		height: "100%",
+	},
+	refGutter: {
+		display: "flex",
+		height: "100%",
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "flex-end",
+		overflow: "hidden",
+		paddingInline: controlSize._2,
+	},
+	graphCell: {
+		position: "relative",
+		height: "100%",
+		flexShrink: 0,
+	},
+	wipNode: {
+		position: "absolute",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 2,
+		borderStyle: "dashed",
+		borderRadius: "999px",
+	},
+	wipNodeInner: {
+		width: controlSize._2,
+		height: controlSize._2,
+		borderRadius: "999px",
+	},
+	messageCell: {
+		display: "flex",
+		minWidth: 0,
+		flex: 1,
+		alignItems: "center",
+		gap: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	commitMessage: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: "0.6875rem",
+		lineHeight: 1,
+	},
+	fileCount: {
+		flexShrink: 0,
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	authorCell: {
+		display: "flex",
+		height: "100%",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		color: color.textMuted,
+		fontSize: font.size_2,
+		paddingInline: controlSize._3,
+	},
+	wipAvatar: {
+		width: controlSize._4,
+		height: controlSize._4,
+		borderWidth: 1,
+		borderStyle: "dashed",
+		borderColor: "rgba(249, 115, 22, 0.7)",
+		borderRadius: "999px",
+	},
+	metaCell: {
+		display: "flex",
+		height: "100%",
+		flexShrink: 0,
+		alignItems: "center",
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		color: color.textMuted,
+		fontSize: font.size_2,
+		paddingInline: controlSize._3,
+	},
+	shaCell: {
+		display: "flex",
+		height: "100%",
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "flex-end",
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		color: color.textMuted,
+		fontFamily:
+			"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		fontSize: font.size_2,
+		paddingInline: controlSize._3,
+	},
+	rowEndPad: {
+		flexShrink: 0,
+		width: 38,
+	},
+	graphAvatar: {
+		position: "absolute",
+		borderRadius: "999px",
+	},
+	authorAvatar: {
+		width: controlSize._4,
+		height: controlSize._4,
+		flexShrink: 0,
+		borderRadius: "999px",
+	},
+	authorName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
 });

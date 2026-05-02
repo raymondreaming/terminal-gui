@@ -1,4 +1,12 @@
+import * as stylex from "@stylexjs/stylex";
 import React, { useMemo, useState } from "react";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+} from "../../tokens.stylex.ts";
 import { IconChevronDown, IconClock } from "../ui/Icons.tsx";
 import { GroupedEditDiff, MiniEditDiff } from "./ChatEditDiff.tsx";
 import { AskUserQuestionCard, Markdown } from "./ChatRichContent.tsx";
@@ -105,7 +113,6 @@ function buildRenderItems(messages: ChatMessage[]): RenderItem[] {
 }
 
 function ToolOutputHighlight({ content }: { content: string }) {
-	const accentStyle = { color: "#007AFF" };
 	try {
 		if (content.trim().startsWith("{")) {
 			const parsed = JSON.parse(content);
@@ -115,22 +122,22 @@ function ToolOutputHighlight({ content }: { content: string }) {
 			if (parsed.file_path && parsed.new_string !== undefined) {
 				return (
 					<>
-						<span
-							style={{
-								color: "var(--color-inferay-muted-gray)",
-							}}
-						>
-							{fileName}
-						</span>
+						<span {...stylex.props(styles.toolMuted)}>{fileName}</span>
 						{"\n"}
-						<span style={accentStyle}>{parsed.new_string}</span>
+						<span {...stylex.props(styles.toolAccent)}>
+							{parsed.new_string}
+						</span>
 					</>
 				);
 			}
 			if (parsed.command)
-				return <span style={accentStyle}>$ {parsed.command}</span>;
+				return (
+					<span {...stylex.props(styles.toolAccent)}>$ {parsed.command}</span>
+				);
 			if (parsed.pattern)
-				return <span style={accentStyle}>/{parsed.pattern}/</span>;
+				return (
+					<span {...stylex.props(styles.toolAccent)}>/{parsed.pattern}/</span>
+				);
 			if (parsed.file_path && parsed.content) {
 				const preview =
 					parsed.content.length > 300
@@ -138,21 +145,20 @@ function ToolOutputHighlight({ content }: { content: string }) {
 						: parsed.content;
 				return (
 					<>
-						<span
-							style={{
-								color: "var(--color-inferay-muted-gray)",
-							}}
-						>
-							{fileName}
-						</span>
+						<span {...stylex.props(styles.toolMuted)}>{fileName}</span>
 						{"\n"}
-						<span style={accentStyle}>{preview}</span>
+						<span {...stylex.props(styles.toolAccent)}>{preview}</span>
 					</>
 				);
 			}
-			if (parsed.file_path) return <span style={accentStyle}>{fileName}</span>;
+			if (parsed.file_path)
+				return <span {...stylex.props(styles.toolAccent)}>{fileName}</span>;
 			if (parsed.glob || parsed.include) {
-				return <span style={accentStyle}>{parsed.glob || parsed.include}</span>;
+				return (
+					<span {...stylex.props(styles.toolAccent)}>
+						{parsed.glob || parsed.include}
+					</span>
+				);
 			}
 			if (parsed.url) {
 				return (
@@ -160,14 +166,14 @@ function ToolOutputHighlight({ content }: { content: string }) {
 						href={parsed.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="underline decoration-current/30 hover:decoration-current/60"
-						style={accentStyle}
+						{...stylex.props(styles.toolLink)}
 					>
 						{parsed.url}
 					</a>
 				);
 			}
-			if (parsed.query) return <span style={accentStyle}>{parsed.query}</span>;
+			if (parsed.query)
+				return <span {...stylex.props(styles.toolAccent)}>{parsed.query}</span>;
 		}
 	} catch {}
 	return <>{content}</>;
@@ -183,17 +189,10 @@ function CheckpointMarker({
 	disabled?: boolean;
 }) {
 	const [expanded, setExpanded] = useState(false);
-	const revertedColor = "#ef4444";
 	return (
-		<div
-			className="my-1 overflow-hidden rounded-lg border"
-			style={{
-				backgroundColor: "var(--color-inferay-dark-gray)",
-				borderColor: "var(--color-inferay-gray-border)",
-			}}
-		>
+		<div {...stylex.props(styles.checkpointCard)}>
 			<div
-				className="flex items-center gap-2 px-2 py-1"
+				{...stylex.props(styles.checkpointHeader)}
 				style={{
 					borderBottom: expanded
 						? "1px solid var(--color-inferay-gray-border)"
@@ -203,58 +202,45 @@ function CheckpointMarker({
 				<button
 					type="button"
 					onClick={() => setExpanded(!expanded)}
-					className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-[11px] font-medium transition-opacity hover:opacity-80"
-					style={{
-						color: "var(--color-inferay-soft-white)",
-					}}
+					{...stylex.props(styles.checkpointToggle)}
 				>
 					<IconChevronDown
 						size={11}
-						className={`shrink-0 opacity-40 transition-transform duration-150 ${expanded ? "" : "-rotate-90"}`}
+						{...stylex.props(
+							styles.checkpointChevron,
+							!expanded && styles.rotateClosed
+						)}
 					/>
 					<IconClock
 						size={11}
-						className="shrink-0 opacity-40"
-						style={{
-							color: checkpoint.reverted
-								? revertedColor
-								: "var(--color-inferay-muted-gray)",
-						}}
+						{...stylex.props(
+							styles.checkpointIcon,
+							checkpoint.reverted && styles.revertedIcon
+						)}
 					/>
-					<span className="truncate opacity-80">
+					<span {...stylex.props(styles.checkpointTitle)}>
 						{checkpoint.changedFileCount} file
 						{checkpoint.changedFileCount !== 1 ? "s" : ""} changed
 					</span>
 				</button>
-				<span className="flex-1" />
+				<span {...stylex.props(styles.spacer)} />
 				{!checkpoint.reverted ? (
 					<button
 						type="button"
 						onClick={() => onRevert(checkpoint.id)}
 						disabled={disabled}
-						className="rounded-md px-1.5 py-0 text-[11px] font-medium transition-colors disabled:opacity-40"
-						style={{
-							color: "var(--color-inferay-soft-white)",
-						}}
+						{...stylex.props(styles.undoButton)}
 					>
 						Undo
 					</button>
 				) : (
-					<span
-						className="rounded-md px-1.5 py-px text-[10px] italic"
-						style={{ color: "var(--color-inferay-muted-gray)" }}
-					>
-						reverted
-					</span>
+					<span {...stylex.props(styles.revertedLabel)}>reverted</span>
 				)}
 			</div>
 			{expanded && (
-				<div className="space-y-0.5 px-2 pb-2 pt-1">
+				<div {...stylex.props(styles.checkpointFiles)}>
 					{checkpoint.changedFiles.map((f) => (
-						<div
-							key={f.path}
-							className="flex items-center gap-1.5 px-1 text-[9px] font-mono"
-						>
+						<div key={f.path} {...stylex.props(styles.checkpointFile)}>
 							<span
 								style={{
 									color:
@@ -271,11 +257,7 @@ function CheckpointMarker({
 										? "-"
 										: "~"}
 							</span>
-							<span
-								style={{
-									color: "var(--color-inferay-muted-gray)",
-								}}
-							>
+							<span {...stylex.props(styles.toolMuted)}>
 								{f.path.split("/").pop()}
 							</span>
 						</div>
@@ -313,25 +295,22 @@ const Bubble = React.memo(function Bubble({
 			imagePaths = pathLines.filter((p) => p.includes("/.tmp/"));
 		}
 		return (
-			<div className="flex justify-end">
-				<div className="max-w-[85%] rounded-lg rounded-br-sm px-2.5 py-1.5">
+			<div {...stylex.props(styles.userRow)}>
+				<div {...stylex.props(styles.userBubble)}>
 					{imagePaths.length > 0 && (
-						<div className="flex flex-wrap gap-1.5 mb-1.5">
+						<div {...stylex.props(styles.userImages)}>
 							{imagePaths.map((imgPath) => (
 								<img
 									key={imgPath}
 									src={`/api/file?path=${encodeURIComponent(imgPath)}`}
 									alt=""
-									className="rounded max-h-24 max-w-32 object-cover"
-									style={{
-										border: "1px solid rgba(255,255,255,0.2)",
-									}}
+									{...stylex.props(styles.userImage)}
 								/>
 							))}
 						</div>
 					)}
 					{displayContent && (
-						<p className="whitespace-pre-wrap break-words text-[12px]">
+						<p {...stylex.props(styles.userText)}>
 							{renderTextPills(displayContent)}
 						</p>
 					)}
@@ -345,106 +324,40 @@ const Bubble = React.memo(function Bubble({
 		if (runningMatch?.[1]) {
 			const commandName = runningMatch[1];
 			return (
-				<div className="flex justify-center py-1">
-					<div
-						className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg"
-						style={{
-							backgroundColor: "rgba(0, 122, 255, 0.08)",
-							border: "1px solid rgba(0, 122, 255, 0.2)",
-						}}
-					>
-						<div className="flex items-center gap-[3px]">
-							<span
-								className="h-[5px] w-[5px] rounded-full bg-blue-400 animate-bounce"
-								style={{ animationDuration: "0.6s" }}
-							/>
-							<span
-								className="h-[5px] w-[5px] rounded-full bg-blue-400 animate-bounce"
-								style={{ animationDuration: "0.6s", animationDelay: "0.1s" }}
-							/>
-							<span
-								className="h-[5px] w-[5px] rounded-full bg-blue-400 animate-bounce"
-								style={{ animationDuration: "0.6s", animationDelay: "0.2s" }}
-							/>
+				<div {...stylex.props(styles.systemRunRow)}>
+					<div {...stylex.props(styles.systemRunPill)}>
+						<div {...stylex.props(styles.dots)}>
+							<span {...stylex.props(styles.dot)} />
+							<span {...stylex.props(styles.dot, styles.dot2)} />
+							<span {...stylex.props(styles.dot, styles.dot3)} />
 						</div>
-						<span className="font-mono text-[11px] font-medium text-blue-400">
-							/{commandName}
-						</span>
+						<span {...stylex.props(styles.runningCommand)}>/{commandName}</span>
 					</div>
 				</div>
 			);
 		}
-		return (
-			<p
-				className="text-center text-[10px]"
-				style={{
-					color: "var(--color-inferay-muted-gray)",
-				}}
-			>
-				{msg.content}
-			</p>
-		);
+		return <p {...stylex.props(styles.systemText)}>{msg.content}</p>;
 	}
 
 	if (msg.role === "btw") {
 		return (
-			<div
-				className="rounded-lg border px-3 py-2"
-				style={{
-					backgroundColor: "rgba(0, 122, 255, 0.06)",
-					borderColor: "rgba(0, 122, 255, 0.2)",
-					borderStyle: "dashed",
-				}}
-			>
-				<div className="flex items-center gap-1.5 mb-1.5">
-					<span
-						className="text-[9px] font-semibold uppercase tracking-wider"
-						style={{ color: "rgba(0, 122, 255, 0.7)" }}
-					>
-						btw
-					</span>
+			<div {...stylex.props(styles.btwCard)}>
+				<div {...stylex.props(styles.btwHeader)}>
+					<span {...stylex.props(styles.btwLabel)}>btw</span>
 					{msg.btwQuestion && (
-						<span
-							className="text-[10px] font-mono"
-							style={{
-								color: "var(--color-inferay-muted-gray)",
-							}}
-						>
+						<span {...stylex.props(styles.btwQuestion)}>
 							- {msg.btwQuestion}
 						</span>
 					)}
 				</div>
-				<div
-					className="text-[12px] leading-[1.6]"
-					style={{ color: "var(--color-inferay-soft-white)" }}
-				>
+				<div {...stylex.props(styles.btwBody)}>
 					{msg.content ? (
 						<Markdown text={msg.content} onMdFileClick={onMdFileClick} />
 					) : msg.isStreaming ? (
-						<div className="flex items-center gap-[3px] py-1">
-							<span
-								className="h-[4px] w-[4px] rounded-full animate-bounce"
-								style={{
-									backgroundColor: "rgba(0, 122, 255, 0.5)",
-									animationDuration: "0.6s",
-								}}
-							/>
-							<span
-								className="h-[4px] w-[4px] rounded-full animate-bounce"
-								style={{
-									backgroundColor: "rgba(0, 122, 255, 0.5)",
-									animationDuration: "0.6s",
-									animationDelay: "0.1s",
-								}}
-							/>
-							<span
-								className="h-[4px] w-[4px] rounded-full animate-bounce"
-								style={{
-									backgroundColor: "rgba(0, 122, 255, 0.5)",
-									animationDuration: "0.6s",
-									animationDelay: "0.2s",
-								}}
-							/>
+						<div {...stylex.props(styles.btwDots)}>
+							<span {...stylex.props(styles.smallDot)} />
+							<span {...stylex.props(styles.smallDot, styles.dot2)} />
+							<span {...stylex.props(styles.smallDot, styles.dot3)} />
 						</div>
 					) : null}
 				</div>
@@ -486,23 +399,16 @@ const Bubble = React.memo(function Bubble({
 				<button
 					type="button"
 					onClick={() => onToggle(msg.id)}
-					className="flex items-center gap-1 text-[10px]"
-					style={{ color: "var(--color-inferay-muted-gray)" }}
+					{...stylex.props(styles.toolToggle)}
 				>
 					<IconChevronDown
 						size={7}
-						className={`transition-transform ${collapsed ? "-rotate-90" : ""}`}
+						{...stylex.props(collapsed && styles.rotateClosed)}
 					/>
-					<span className="font-mono text-[9px]">{msg.toolName}</span>
+					<span {...stylex.props(styles.toolName)}>{msg.toolName}</span>
 				</button>
 				{!collapsed && msg.content && (
-					<pre
-						className="mt-0.5 max-h-28 overflow-auto rounded px-2 py-1 font-mono text-[9px] leading-relaxed whitespace-pre-wrap break-all"
-						style={{
-							backgroundColor: "var(--color-inferay-dark-gray)",
-							color: "var(--color-inferay-muted-gray)",
-						}}
-					>
+					<pre {...stylex.props(styles.toolOutput)}>
 						<ToolOutputHighlight content={msg.content} />
 					</pre>
 				)}
@@ -511,10 +417,7 @@ const Bubble = React.memo(function Bubble({
 	}
 
 	return (
-		<div
-			className="group/msg relative w-full min-w-0 break-words text-[12px] leading-[1.6]"
-			style={{ color: "var(--color-inferay-soft-white)" }}
-		>
+		<div {...stylex.props(styles.assistantMessage)}>
 			<Markdown text={msg.content} onMdFileClick={onMdFileClick} />
 		</div>
 	);
@@ -541,15 +444,7 @@ export function ChatMessageList({
 }) {
 	const renderItems = useMemo(() => buildRenderItems(messages), [messages]);
 	return (
-		<div className="min-w-0 px-3 pt-2 pb-8 space-y-2">
-			{messages.length === 0 && (
-				<p
-					className="pt-8 text-center text-[10px]"
-					style={{ color: "var(--color-inferay-muted-gray)" }}
-				>
-					Ready
-				</p>
-			)}
+		<div {...stylex.props(styles.messageList)}>
 			{renderItems.map((item, idx) => {
 				if (item.type === "edit-group") {
 					return (
@@ -589,3 +484,301 @@ export function ChatMessageList({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	toolMuted: {
+		color: color.textMuted,
+	},
+	toolAccent: {
+		color: color.accent,
+	},
+	toolLink: {
+		color: color.accent,
+		textDecorationColor: {
+			default: color.accentBorder,
+			":hover": color.accent,
+		},
+		textDecorationLine: "underline",
+	},
+	checkpointCard: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		borderStyle: "solid",
+		borderWidth: 1,
+		marginBlock: controlSize._1,
+		overflow: "hidden",
+	},
+	checkpointHeader: {
+		alignItems: "center",
+		display: "flex",
+		gap: controlSize._2,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+	},
+	checkpointToggle: {
+		alignItems: "center",
+		color: color.textSoft,
+		display: "flex",
+		flex: 1,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+		gap: controlSize._1_5,
+		minWidth: 0,
+		textAlign: "left",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "opacity",
+		transitionTimingFunction: motion.ease,
+		":hover": {
+			opacity: 0.8,
+		},
+	},
+	undoButton: {
+		borderRadius: radius.md,
+		color: color.textSoft,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+		paddingBlock: 0,
+		paddingInline: controlSize._1_5,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "color, opacity",
+		transitionTimingFunction: motion.ease,
+		":disabled": {
+			opacity: 0.4,
+		},
+	},
+	revertedLabel: {
+		borderRadius: radius.md,
+		color: color.textMuted,
+		fontSize: font.size_2,
+		fontStyle: "italic",
+		paddingBlock: 1,
+		paddingInline: controlSize._1_5,
+	},
+	checkpointFiles: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._0_5,
+		paddingBottom: controlSize._2,
+		paddingInline: controlSize._2,
+		paddingTop: controlSize._1,
+	},
+	checkpointFile: {
+		alignItems: "center",
+		display: "flex",
+		fontFamily: font.familyMono,
+		fontSize: font.size_1,
+		gap: controlSize._1_5,
+		paddingInline: controlSize._1,
+	},
+	checkpointChevron: {
+		flexShrink: 0,
+		opacity: 0.4,
+		transitionDuration: motion.durationBase,
+		transitionProperty: "transform",
+	},
+	rotateClosed: {
+		transform: "rotate(-90deg)",
+	},
+	checkpointIcon: {
+		flexShrink: 0,
+		opacity: 0.4,
+		color: color.textMuted,
+	},
+	revertedIcon: {
+		color: color.danger,
+	},
+	checkpointTitle: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		opacity: 0.8,
+	},
+	spacer: {
+		flex: 1,
+	},
+	userRow: {
+		display: "flex",
+		justifyContent: "flex-end",
+	},
+	userBubble: {
+		maxWidth: "85%",
+		borderRadius: radius.lg,
+		borderBottomRightRadius: radius.xs,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2_5,
+	},
+	userImages: {
+		display: "flex",
+		flexWrap: "wrap",
+		gap: controlSize._1_5,
+		marginBottom: controlSize._1_5,
+	},
+	userImage: {
+		maxWidth: "8rem",
+		maxHeight: "6rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.borderControl,
+		borderRadius: radius.sm,
+		objectFit: "cover",
+	},
+	userText: {
+		whiteSpace: "pre-wrap",
+		overflowWrap: "break-word",
+		fontSize: font.size_3,
+	},
+	systemRunRow: {
+		display: "flex",
+		justifyContent: "center",
+		paddingBlock: controlSize._1,
+	},
+	systemRunPill: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: controlSize._2_5,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.accentBorder,
+		borderRadius: radius.lg,
+		backgroundColor: color.accentWash,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._3,
+	},
+	dots: {
+		display: "flex",
+		alignItems: "center",
+		gap: "3px",
+	},
+	dot: {
+		width: "5px",
+		height: "5px",
+		borderRadius: radius.pill,
+		backgroundColor: color.accent,
+		animationName: stylex.keyframes({
+			"50%": {
+				transform: "translateY(-2px)",
+			},
+		}),
+		animationDuration: "0.6s",
+		animationIterationCount: "infinite",
+	},
+	dot2: {
+		animationDelay: "0.1s",
+	},
+	dot3: {
+		animationDelay: "0.2s",
+	},
+	runningCommand: {
+		color: color.accent,
+		fontFamily: font.familyMono,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
+	},
+	systemText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+		textAlign: "center",
+	},
+	btwCard: {
+		borderWidth: 1,
+		borderStyle: "dashed",
+		borderColor: color.accentBorder,
+		borderRadius: radius.lg,
+		backgroundColor: color.accentWash,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	btwHeader: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1_5,
+		marginBottom: controlSize._1_5,
+	},
+	btwLabel: {
+		color: color.accent,
+		fontSize: font.size_1,
+		fontWeight: font.weight_6,
+		letterSpacing: "0.08em",
+		textTransform: "uppercase",
+	},
+	btwQuestion: {
+		color: color.textMuted,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+	},
+	btwBody: {
+		color: color.textSoft,
+		fontSize: font.size_3,
+		lineHeight: 1.6,
+	},
+	btwDots: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._0_5,
+		paddingBlock: controlSize._1,
+	},
+	smallDot: {
+		width: controlSize._1,
+		height: controlSize._1,
+		borderRadius: radius.pill,
+		backgroundColor: color.accent,
+		animationName: stylex.keyframes({
+			"50%": {
+				transform: "translateY(-2px)",
+			},
+		}),
+		animationDuration: "0.6s",
+		animationIterationCount: "infinite",
+	},
+	toolToggle: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1,
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	toolName: {
+		fontFamily: font.familyMono,
+		fontSize: font.size_1,
+	},
+	toolOutput: {
+		maxHeight: "7rem",
+		overflow: "auto",
+		whiteSpace: "pre-wrap",
+		overflowWrap: "break-word",
+		borderRadius: radius.sm,
+		backgroundColor: color.backgroundRaised,
+		color: color.textMuted,
+		fontFamily: font.familyMono,
+		fontSize: font.size_1,
+		lineHeight: 1.6,
+		marginTop: "0.125rem",
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+	},
+	assistantMessage: {
+		position: "relative",
+		width: "100%",
+		minWidth: 0,
+		overflowWrap: "break-word",
+		color: color.textSoft,
+		fontSize: font.size_3,
+		lineHeight: 1.6,
+	},
+	readyText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+		paddingTop: controlSize._8,
+		textAlign: "center",
+	},
+	messageList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._2,
+		minWidth: 0,
+		paddingBottom: controlSize._8,
+		paddingInline: controlSize._3,
+		paddingTop: controlSize._2,
+	},
+});

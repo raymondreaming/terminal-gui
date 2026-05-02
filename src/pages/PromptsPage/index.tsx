@@ -1,13 +1,22 @@
+import * as stylex from "@stylexjs/stylex";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { usePrompts } from "../../hooks/usePrompts.ts";
-import { PromptDetailPanel } from "./PromptDetailPanel.tsx";
-import type { Prompt } from "./support.ts";
-import { CATEGORIES } from "./support.ts";
 import {
 	IconChevronDown,
 	IconPlus,
 	IconSearch,
 } from "../../components/ui/Icons.tsx";
+import { usePrompts } from "../../hooks/usePrompts.ts";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+	shadow,
+} from "../../tokens.stylex.ts";
+import { PromptDetailPanel } from "./PromptDetailPanel.tsx";
+import type { Prompt } from "./support.ts";
+import { CATEGORIES } from "./support.ts";
 
 interface FormState {
 	name: string;
@@ -187,49 +196,44 @@ export function PromptsPage() {
 	});
 
 	return (
-		<div className="flex h-full flex-col bg-inferay-black">
-			<div className="shrink-0 flex items-center gap-2 px-3 h-12 border-b border-inferay-gray-border bg-inferay-black">
+		<div {...stylex.props(styles.root)}>
+			<div {...stylex.props(styles.toolbar)}>
 				<FilterDropdown filter={filter} onFilterChange={setFilter} />
 
-				<div className="relative">
-					<IconSearch
-						size={12}
-						className="absolute left-2 top-1/2 -translate-y-1/2 text-inferay-muted-gray pointer-events-none"
-					/>
+				<div {...stylex.props(styles.searchWrap)}>
+					<IconSearch size={12} {...stylex.props(styles.searchIcon)} />
 					<input
 						type="text"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Search..."
-						className="h-7 w-44 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray pl-7 pr-2 text-[11px] text-inferay-white placeholder-inferay-muted-gray outline-none"
+						{...stylex.props(styles.searchInput)}
 					/>
 				</div>
 
-				<span className="text-[9px] tabular-nums text-inferay-muted-gray">
-					{filtered.length}
-				</span>
+				<span {...stylex.props(styles.countText)}>{filtered.length}</span>
 
-				<span className="flex-1" />
+				<span {...stylex.props(styles.spacer)} />
 
 				<button
 					type="button"
 					onClick={startCreate}
-					className="flex items-center gap-1 h-7 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-[11px] text-inferay-soft-white hover:bg-inferay-gray transition-colors"
+					{...stylex.props(styles.newButton)}
 				>
 					<IconPlus size={10} />
 					New
 				</button>
 			</div>
 
-			<div className="flex flex-1 min-h-0 overflow-hidden">
-				<div className="flex-1 overflow-y-auto">
+			<div {...stylex.props(styles.content)}>
+				<div {...stylex.props(styles.listPane)}>
 					{filtered.length === 0 ? (
-						<div className="flex items-center justify-center h-full">
-							<div className="text-center">
-								<p className="text-[11px] text-inferay-muted-gray mb-1">
+						<div {...stylex.props(styles.emptyState)}>
+							<div {...stylex.props(styles.emptyCopy)}>
+								<p {...stylex.props(styles.emptyTitle)}>
 									{search ? "No prompts found" : "No prompts yet"}
 								</p>
-								<p className="text-[9px] text-inferay-muted-gray/50">
+								<p {...stylex.props(styles.emptyText)}>
 									{search
 										? "Try a different search"
 										: "Create your first prompt"}
@@ -238,7 +242,12 @@ export function PromptsPage() {
 						</div>
 					) : (
 						<div
-							className={`grid gap-2 p-3 ${selectedPrompt || form.isCreating ? "grid-cols-3" : "grid-cols-4"}`}
+							{...stylex.props(
+								styles.promptGrid,
+								selectedPrompt || form.isCreating
+									? styles.promptGridCompact
+									: styles.promptGridWide
+							)}
 						>
 							{filtered.map((prompt) => {
 								const isActive = selectedPrompt?._id === prompt._id;
@@ -247,30 +256,27 @@ export function PromptsPage() {
 										type="button"
 										key={prompt._id}
 										onClick={() => selectPrompt(prompt)}
-										className={`text-left rounded-lg border p-3 transition-colors ${
-											isActive
-												? "border-inferay-accent/30 bg-inferay-white/[0.04]"
-												: "border-inferay-gray-border hover:bg-inferay-white/[0.03] hover:border-inferay-gray-border-bold"
-										}`}
+										{...stylex.props(
+											styles.promptCard,
+											isActive ? styles.promptCardActive : styles.promptCardIdle
+										)}
 									>
-										<div className="flex items-center gap-2 mb-1.5">
-											<span className="text-[10px] font-mono font-medium text-inferay-white">
+										<div {...stylex.props(styles.cardHeader)}>
+											<span {...stylex.props(styles.commandText)}>
 												/{prompt.command}
 											</span>
 											{prompt.isBuiltIn && (
-												<span className="text-[7px] text-inferay-muted-gray/50 bg-inferay-white/[0.04] px-1 py-0.5 rounded">
+												<span {...stylex.props(styles.cardBadge)}>
 													built-in
 												</span>
 											)}
 										</div>
-										<p className="text-[10px] text-inferay-soft-white mb-1 truncate">
-											{prompt.name}
-										</p>
-										<p className="text-[9px] text-inferay-muted-gray line-clamp-2 leading-relaxed">
+										<p {...stylex.props(styles.promptName)}>{prompt.name}</p>
+										<p {...stylex.props(styles.promptDescription)}>
 											{prompt.description}
 										</p>
 										{prompt.executionCount > 0 && (
-											<p className="mt-2 text-[8px] tabular-nums text-inferay-muted-gray/40">
+											<p {...stylex.props(styles.usageText)}>
 												{prompt.executionCount} uses
 											</p>
 										)}
@@ -282,7 +288,7 @@ export function PromptsPage() {
 				</div>
 
 				{(selectedPrompt || form.isCreating) && (
-					<div className="w-[420px] shrink-0 border-l border-inferay-gray-border overflow-y-auto bg-inferay-black">
+					<div {...stylex.props(styles.detailPane)}>
 						<PromptDetailPanel
 							selectedPrompt={selectedPrompt}
 							isCreatingNew={form.isCreating}
@@ -349,20 +355,20 @@ function FilterDropdown({
 		FILTER_OPTIONS.find((o) => o.value === filter)?.label || "All prompts";
 
 	return (
-		<div ref={ref} className="relative">
+		<div ref={ref} {...stylex.props(styles.filterRoot)}>
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
-				className="flex items-center gap-1.5 h-7 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-[11px] text-inferay-soft-white hover:bg-inferay-gray transition-colors"
+				{...stylex.props(styles.filterButton)}
 			>
 				{activeLabel}
 				<IconChevronDown
 					size={8}
-					className={`transition-transform ${open ? "rotate-180" : ""}`}
+					{...stylex.props(styles.chevron, open && styles.chevronOpen)}
 				/>
 			</button>
 			{open && (
-				<div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] rounded-lg border border-inferay-gray-border bg-inferay-dark-gray p-1 shadow-2xl">
+				<div {...stylex.props(styles.filterMenu)}>
 					{FILTER_OPTIONS.map((opt) => (
 						<button
 							type="button"
@@ -371,11 +377,12 @@ function FilterDropdown({
 								onFilterChange(opt.value);
 								setOpen(false);
 							}}
-							className={`w-full text-left rounded-md px-2.5 py-1.5 text-[10px] transition-colors ${
+							{...stylex.props(
+								styles.filterOption,
 								filter === opt.value
-									? "bg-inferay-white/[0.06] text-inferay-white"
-									: "text-inferay-muted-gray hover:bg-inferay-white/[0.03] hover:text-inferay-soft-white"
-							}`}
+									? styles.filterOptionActive
+									: styles.filterOptionIdle
+							)}
 						>
 							{opt.label}
 						</button>
@@ -385,3 +392,265 @@ function FilterDropdown({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	toolbar: {
+		display: "flex",
+		height: "3rem",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+		paddingInline: controlSize._3,
+	},
+	searchWrap: {
+		position: "relative",
+	},
+	searchIcon: {
+		position: "absolute",
+		left: controlSize._2,
+		top: "50%",
+		transform: "translateY(-50%)",
+		color: color.textMuted,
+		pointerEvents: "none",
+	},
+	searchInput: {
+		width: "11rem",
+		height: controlSize._7,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: 8,
+		backgroundColor: color.backgroundRaised,
+		color: color.textMain,
+		fontSize: font.size_2,
+		outline: "none",
+		paddingLeft: "1.75rem",
+		paddingRight: controlSize._2,
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	countText: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+	},
+	spacer: {
+		flex: 1,
+	},
+	newButton: {
+		display: "flex",
+		height: controlSize._7,
+		alignItems: "center",
+		gap: controlSize._1,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		color: color.textSoft,
+		fontSize: font.size_2,
+		paddingInline: controlSize._2_5,
+		transitionProperty: "background-color, border-color, color",
+		transitionDuration: motion.durationFast,
+	},
+	content: {
+		display: "flex",
+		flex: 1,
+		minHeight: 0,
+		overflow: "hidden",
+	},
+	listPane: {
+		flex: 1,
+		overflowY: "auto",
+	},
+	emptyState: {
+		display: "flex",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	emptyCopy: {
+		textAlign: "center",
+	},
+	emptyTitle: {
+		marginBottom: controlSize._1,
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	emptyText: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		opacity: 0.5,
+	},
+	promptGrid: {
+		display: "grid",
+		gap: controlSize._2,
+		padding: controlSize._3,
+	},
+	promptGridWide: {
+		gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+	},
+	promptGridCompact: {
+		gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+	},
+	promptCard: {
+		textAlign: "left",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderRadius: radius.lg,
+		padding: controlSize._3,
+		transitionProperty: "background-color, border-color",
+		transitionDuration: motion.durationFast,
+	},
+	promptCardIdle: {
+		borderColor: {
+			default: color.border,
+			":hover": color.borderStrong,
+		},
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.surfaceSubtle,
+		},
+	},
+	promptCardActive: {
+		borderColor: color.accentBorder,
+		backgroundColor: color.surfaceSubtle,
+	},
+	cardHeader: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		marginBottom: controlSize._1_5,
+	},
+	commandText: {
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+	},
+	cardBadge: {
+		borderRadius: radius.sm,
+		backgroundColor: color.surfaceSubtle,
+		color: color.textMuted,
+		fontSize: font.size_0,
+		paddingBlock: controlSize._0_5,
+		paddingInline: controlSize._1,
+		opacity: 0.55,
+	},
+	promptName: {
+		marginBottom: controlSize._1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: font.size_2,
+	},
+	promptDescription: {
+		display: "-webkit-box",
+		overflow: "hidden",
+		WebkitBoxOrient: "vertical",
+		WebkitLineClamp: 2,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		lineHeight: 1.55,
+	},
+	usageText: {
+		marginTop: controlSize._2,
+		color: color.textMuted,
+		fontSize: font.size_0_5,
+		fontVariantNumeric: "tabular-nums",
+		opacity: 0.45,
+	},
+	detailPane: {
+		width: "420px",
+		flexShrink: 0,
+		overflowY: "auto",
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		backgroundColor: color.background,
+	},
+	filterRoot: {
+		position: "relative",
+	},
+	filterButton: {
+		display: "flex",
+		height: controlSize._7,
+		alignItems: "center",
+		gap: controlSize._1_5,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		color: color.textSoft,
+		fontSize: font.size_2,
+		paddingInline: controlSize._2_5,
+		transitionProperty: "background-color, border-color, color",
+		transitionDuration: motion.durationFast,
+	},
+	chevron: {
+		transitionProperty: "transform",
+		transitionDuration: motion.durationFast,
+	},
+	chevronOpen: {
+		transform: "rotate(180deg)",
+	},
+	filterMenu: {
+		position: "absolute",
+		zIndex: 50,
+		left: 0,
+		top: "100%",
+		minWidth: "160px",
+		marginTop: controlSize._1,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: shadow.modal,
+		padding: controlSize._1,
+	},
+	filterOption: {
+		width: "100%",
+		textAlign: "left",
+		borderWidth: 0,
+		borderRadius: radius.md,
+		fontSize: font.size_2,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2_5,
+		transitionProperty: "background-color, color",
+		transitionDuration: motion.durationFast,
+	},
+	filterOptionIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.surfaceSubtle,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+	filterOptionActive: {
+		backgroundColor: "rgba(255, 255, 255, 0.06)",
+		color: color.textMain,
+	},
+});

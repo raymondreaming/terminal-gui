@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import type React from "react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import {
@@ -7,6 +8,7 @@ import {
 	IconX,
 } from "../../components/ui/Icons.tsx";
 import { fetchJsonOr } from "../../lib/fetch-json.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 interface QuickPick {
 	name: string;
@@ -21,6 +23,7 @@ interface InlineDirectoryPickerProps {
 	onMultiSelect?: (paths: string[]) => void;
 	hideInput?: boolean;
 	onSelectionChange?: (paths: string[]) => void;
+	showStartButton?: boolean;
 }
 
 interface SearchState {
@@ -73,6 +76,7 @@ export function InlineDirectoryPicker({
 	onMultiSelect,
 	hideInput,
 	onSelectionChange,
+	showStartButton = true,
 }: InlineDirectoryPickerProps) {
 	const [query, setQuery] = useState("");
 	const [pickerData, setPickerData] = useState<{
@@ -91,7 +95,7 @@ export function InlineDirectoryPicker({
 		isSearching ? searchState.results : pickerData.quickPicks
 	)
 		.filter((p) => !multiSelect || !selectedPaths.includes(p.path))
-		.slice(0, 4);
+		.slice(0, 5);
 	const itemCount = displayList.length;
 	const selectedIndex = searchState.selectedIndex;
 	const loading = searchState.loading;
@@ -223,21 +227,23 @@ export function InlineDirectoryPicker({
 
 	if (hideInput) {
 		return (
-			<div className="w-full overflow-hidden rounded-xl border border-inferay-gray-border bg-inferay-dark-gray/95 shadow-lg">
-				<div className="max-h-[210px] overflow-y-auto py-1">
+			<div {...stylex.props(styles.compactRoot)}>
+				<div {...stylex.props(styles.compactList)}>
 					{displayList.map((pick, i) => (
 						<button
 							type="button"
 							key={pick.path}
 							onClick={() => handleItemClick(pick.path)}
-							className={`flex w-full items-center gap-2 px-3 py-2 text-left transition-colors ${
-								i === selectedIndex
-									? "bg-inferay-white/[0.06] text-inferay-white"
-									: "text-inferay-soft-white hover:bg-inferay-white/[0.04]"
-							}`}
+							{...stylex.props(
+								styles.resultRow,
+								i === selectedIndex && styles.resultRowActive
+							)}
 						>
 							<span
-								className={`shrink-0 ${i === selectedIndex ? "text-inferay-accent" : "text-inferay-muted-gray"}`}
+								{...stylex.props(
+									styles.resultIcon,
+									i === selectedIndex && styles.accentText
+								)}
 							>
 								{pick.isGitRepo ? (
 									<IconGitBranch size={13} />
@@ -245,40 +251,34 @@ export function InlineDirectoryPicker({
 									<IconFolder size={13} />
 								)}
 							</span>
-							<div className="min-w-0 flex-1">
-								<span className="block truncate text-[12px] font-medium">
-									{pick.name}
-								</span>
-								<span className="block truncate text-[10px] text-inferay-muted-gray">
+							<div {...stylex.props(styles.resultText)}>
+								<span {...stylex.props(styles.resultName)}>{pick.name}</span>
+								<span {...stylex.props(styles.resultPath)}>
 									{shortenPath(pick.path)}
 								</span>
 							</div>
-							<IconChevronRight
-								size={11}
-								className="shrink-0 text-inferay-muted-gray/70"
-							/>
+							<IconChevronRight size={11} {...stylex.props(styles.chevron)} />
 						</button>
 					))}
 				</div>
 				{multiSelect && selectedPaths.length > 0 && (
-					<div className="flex min-w-0 flex-wrap gap-1 overflow-hidden border-t border-inferay-gray-border/60 px-3 py-2">
+					<div {...stylex.props(styles.selectedBar)}>
 						{selectedPaths.slice(0, 4).map((p) => (
-							<span
-								key={p}
-								className="inline-flex max-w-[140px] items-center gap-1 rounded-md bg-inferay-white/[0.05] px-1.5 py-0.5 text-[9px] font-medium text-inferay-soft-white"
-							>
-								<span className="truncate">{nameFromPath(p)}</span>
+							<span key={p} {...stylex.props(styles.selectedTag)}>
+								<span {...stylex.props(styles.truncate)}>
+									{nameFromPath(p)}
+								</span>
 								<button
 									type="button"
 									onClick={() => togglePath(p)}
-									className="shrink-0 text-inferay-muted-gray hover:text-inferay-white"
+									{...stylex.props(styles.tagRemove)}
 								>
 									<IconX size={8} />
 								</button>
 							</span>
 						))}
 						{selectedPaths.length > 4 && (
-							<span className="text-[9px] text-inferay-muted-gray">
+							<span {...stylex.props(styles.moreCount)}>
 								+{selectedPaths.length - 4}
 							</span>
 						)}
@@ -289,25 +289,26 @@ export function InlineDirectoryPicker({
 	}
 
 	return (
-		<div className="relative w-full" ref={containerRef}>
-			{/* Results popout — above the input */}
-			{showResults && itemCount > 0 && (
-				<div className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray shadow-lg overflow-hidden z-10">
-					<div className="max-h-[180px] overflow-y-auto">
+		<div {...stylex.props(styles.root)} ref={containerRef}>
+			<div {...stylex.props(styles.unifiedFrame)}>
+				{showResults && itemCount > 0 && (
+					<div {...stylex.props(styles.unifiedList)}>
 						{displayList.map((pick, i) => (
 							<button
 								type="button"
 								key={pick.path}
 								onMouseDown={(e) => e.preventDefault()}
 								onClick={() => handleItemClick(pick.path)}
-								className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors ${
-									i === selectedIndex
-										? "bg-inferay-accent/15 text-inferay-white"
-										: "text-inferay-soft-white hover:bg-inferay-gray"
-								}`}
+								{...stylex.props(
+									styles.resultRowCompact,
+									i === selectedIndex && styles.resultRowActiveAccent
+								)}
 							>
 								<span
-									className={`shrink-0 ${i === selectedIndex ? "text-inferay-accent" : "text-inferay-muted-gray"}`}
+									{...stylex.props(
+										styles.resultIcon,
+										i === selectedIndex && styles.accentText
+									)}
 								>
 									{pick.isGitRepo ? (
 										<IconGitBranch size={12} />
@@ -315,81 +316,353 @@ export function InlineDirectoryPicker({
 										<IconFolder size={12} />
 									)}
 								</span>
-								<div className="flex-1 min-w-0">
-									<span className="block truncate text-xs font-medium">
-										{pick.name}
-									</span>
-									<span className="block truncate text-[9px] text-inferay-muted-gray">
+								<div {...stylex.props(styles.resultText)}>
+									<span {...stylex.props(styles.resultName)}>{pick.name}</span>
+									<span {...stylex.props(styles.resultPathSmall)}>
 										{shortenPath(pick.path)}
 									</span>
 								</div>
-								<IconChevronRight
-									size={10}
-									className="text-inferay-muted-gray shrink-0"
-								/>
+								<IconChevronRight size={10} {...stylex.props(styles.chevron)} />
 							</button>
 						))}
 					</div>
-					{loading && (
-						<div className="absolute right-2 top-2">
-							<div className="w-3 h-3 border border-inferay-muted-gray border-t-transparent rounded-full animate-spin" />
+				)}
+				{multiSelect && selectedPaths.length > 0 && (
+					<div {...stylex.props(styles.selectedWrap)}>
+						<div {...stylex.props(styles.selectedList)}>
+							{selectedPaths.map((p, i) => (
+								<span key={p} {...stylex.props(styles.selectedTagStrong)}>
+									{i === 0 ? "● " : ""}
+									{nameFromPath(p)}
+									<button
+										type="button"
+										onClick={() => togglePath(p)}
+										{...stylex.props(styles.tagRemove)}
+									>
+										<IconX size={8} />
+									</button>
+								</span>
+							))}
 						</div>
+					</div>
+				)}
+				<div {...stylex.props(styles.inputRow)}>
+					<span {...stylex.props(styles.inputIcon)}>
+						<IconFolder size={14} />
+					</span>
+					<input
+						ref={inputRef}
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						onKeyDown={handleKeyDown}
+						placeholder="Search folder..."
+						autoComplete="off"
+						autoCorrect="off"
+						autoCapitalize="off"
+						spellCheck={false}
+						{...stylex.props(styles.input)}
+					/>
+					{loading && <div {...stylex.props(styles.spinner)} />}
+					{showStartButton && multiSelect && selectedPaths.length > 0 && (
+						<button
+							type="button"
+							onClick={handleStart}
+							{...stylex.props(styles.startButton)}
+						>
+							Start
+							{selectedPaths.length > 1 ? ` (${selectedPaths.length})` : ""}
+						</button>
 					)}
 				</div>
-			)}
-
-			{/* Selected tags */}
-			{multiSelect && selectedPaths.length > 0 && (
-				<div className="mb-1.5">
-					<div className="flex flex-wrap gap-1 max-h-[60px] overflow-y-auto">
-						{selectedPaths.map((p, i) => (
-							<span
-								key={p}
-								className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-inferay-gray text-inferay-soft-white border border-inferay-gray-border"
-							>
-								{i === 0 ? "● " : ""}
-								{nameFromPath(p)}
-								<button
-									type="button"
-									onClick={() => togglePath(p)}
-									className="hover:text-inferay-white transition-colors"
-								>
-									<IconX size={8} />
-								</button>
-							</span>
-						))}
-					</div>
-				</div>
-			)}
-
-			{/* Input — styled like chat message input */}
-			<div className="flex items-center gap-2 rounded-xl border border-inferay-gray-border bg-inferay-dark-gray px-3 py-2">
-				<span className="shrink-0 text-inferay-muted-gray">
-					<IconFolder size={14} />
-				</span>
-				<input
-					ref={inputRef}
-					type="text"
-					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					onKeyDown={handleKeyDown}
-					placeholder="Search folder..."
-					autoComplete="off"
-					autoCorrect="off"
-					autoCapitalize="off"
-					spellCheck={false}
-					className="flex-1 bg-transparent text-[13px] text-inferay-white placeholder:text-inferay-muted-gray outline-none"
-				/>
-				{multiSelect && selectedPaths.length > 0 && (
-					<button
-						type="button"
-						onClick={handleStart}
-						className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-medium bg-inferay-gray text-inferay-soft-white hover:bg-inferay-light-gray transition-colors border border-inferay-gray-border"
-					>
-						Start{selectedPaths.length > 1 ? ` (${selectedPaths.length})` : ""}
-					</button>
-				)}
 			</div>
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		position: "relative",
+		width: "100%",
+	},
+	compactRoot: {
+		width: "100%",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: "rgba(28, 28, 30, 0.95)",
+		boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.6)",
+	},
+	compactList: {
+		maxHeight: "210px",
+		overflowY: "auto",
+		paddingBlock: controlSize._1,
+	},
+	resultRow: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		color: color.textSoft,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	resultRowActive: {
+		backgroundColor: color.controlHover,
+		color: color.textMain,
+	},
+	resultRowActiveAccent: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	resultIcon: {
+		flexShrink: 0,
+		color: color.textMuted,
+	},
+	accentText: {
+		color: color.textSoft,
+	},
+	resultText: {
+		minWidth: 0,
+		flex: 1,
+	},
+	resultName: {
+		display: "block",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
+	},
+	resultPath: {
+		display: "block",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	resultPathSmall: {
+		display: "block",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	chevron: {
+		flexShrink: 0,
+		color: color.textMuted,
+	},
+	selectedBar: {
+		display: "flex",
+		minWidth: 0,
+		flexWrap: "wrap",
+		gap: controlSize._1,
+		overflow: "hidden",
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: "rgba(255, 255, 255, 0.06)",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	selectedTag: {
+		display: "inline-flex",
+		maxWidth: "140px",
+		alignItems: "center",
+		gap: controlSize._1,
+		borderRadius: "0.375rem",
+		backgroundColor: "rgba(255, 255, 255, 0.05)",
+		color: color.textSoft,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+	},
+	selectedTagStrong: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: controlSize._1,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.25rem",
+		backgroundColor: color.controlActive,
+		color: color.textSoft,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+	},
+	truncate: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	tagRemove: {
+		flexShrink: 0,
+		color: {
+			default: color.textMuted,
+			":hover": color.textMain,
+		},
+		transitionProperty: "color",
+		transitionDuration: "120ms",
+	},
+	moreCount: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	resultsPopout: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: "100%",
+		zIndex: 10,
+		overflow: "hidden",
+		marginBottom: controlSize._1,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.6)",
+	},
+	resultsList: {
+		maxHeight: "180px",
+		overflowY: "auto",
+	},
+	loadingSlot: {
+		position: "absolute",
+		right: controlSize._2,
+		top: controlSize._2,
+	},
+	spinner: {
+		width: font.size_3,
+		height: font.size_3,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.textMuted,
+		borderTopColor: "transparent",
+		borderRadius: "999px",
+		animationName: stylex.keyframes({
+			to: {
+				transform: "rotate(360deg)",
+			},
+		}),
+		animationDuration: "800ms",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
+	},
+	selectedWrap: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	selectedList: {
+		display: "flex",
+		maxHeight: "60px",
+		flexWrap: "wrap",
+		gap: controlSize._1,
+		overflowY: "auto",
+	},
+	inputFrame: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: color.backgroundRaised,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	unifiedFrame: {
+		display: "flex",
+		flexDirection: "column",
+		width: "100%",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: color.backgroundRaised,
+	},
+	unifiedList: {
+		display: "flex",
+		flexDirection: "column",
+		maxHeight: "220px",
+		overflowY: "auto",
+		paddingBlock: controlSize._1,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+	},
+	resultRowCompact: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		color: color.textSoft,
+		paddingBlock: "0.1875rem",
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	inputRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	inputIcon: {
+		flexShrink: 0,
+		color: color.textMuted,
+	},
+	input: {
+		minWidth: 0,
+		flex: 1,
+		backgroundColor: "transparent",
+		color: color.textMain,
+		fontSize: "0.8125rem",
+		outline: "none",
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	startButton: {
+		flexShrink: 0,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.controlActive,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		paddingBlock: "0.125rem",
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		":hover": {
+			backgroundColor: color.controlHover,
+		},
+	},
+});

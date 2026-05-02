@@ -11,7 +11,20 @@ if (!buildDir) {
 
 const sourceIndex = join(process.cwd(), "dist", "index.html");
 
+async function waitForFile(path: string, timeoutMs = 5000) {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		if (await Bun.file(path).exists()) return true;
+		await Bun.sleep(100);
+	}
+	return false;
+}
+
 try {
+	if (!(await waitForFile(sourceIndex))) {
+		throw new Error(`renderer index was not built at ${sourceIndex}`);
+	}
+
 	const entries = await readdir(buildDir, { withFileTypes: true });
 	const apps = entries.filter(
 		(entry) => entry.isDirectory() && entry.name.endsWith(".app")

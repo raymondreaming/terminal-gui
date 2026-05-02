@@ -14,7 +14,7 @@ case "${1:-}" in
 		bun run build:renderer
 		trap 'kill 0' EXIT INT TERM
 		bunx concurrently --kill-others \
-			"bun --watch scripts/build-renderer.ts" \
+			"bun scripts/watch-renderer.ts" \
 			"bun run scripts/watch-server.ts" &
 		wait
 		;;

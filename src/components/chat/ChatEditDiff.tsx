@@ -1,5 +1,7 @@
+import * as stylex from "@stylexjs/stylex";
 import { useEffect, useMemo, useState } from "react";
 import { useShikiSnippet } from "../../hooks/useShikiHighlighter.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { IconChevronRight, IconFilePlus } from "../ui/Icons.tsx";
 
 type EditMessage = {
@@ -174,31 +176,24 @@ function EditDiffCard({
 	const { highlighted, isReady } = useShikiSnippet(allLines, fileName, true);
 	const [isExpanded, setIsExpanded] = useState(true);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: resetKey intentionally resets expansion when edit content changes.
 	useEffect(() => {
 		setIsExpanded(true);
 	}, [resetKey]);
 
-	const removedBg = "rgba(248,81,73,0.12)";
-	const removedBorder = "rgba(248,81,73,0.5)";
-	const addedBg = "rgba(46,160,67,0.12)";
-	const addedBorder = "rgba(46,160,67,0.5)";
+	const removedBg = "rgba(248,81,73,0.08)";
+	const removedBorder = "rgba(248,81,73,0.32)";
+	const addedBg = "rgba(46,160,67,0.08)";
+	const addedBorder = "rgba(46,160,67,0.32)";
 	let globalLineIdx = 0;
 
 	return (
-		<div
-			className="overflow-hidden rounded-lg border text-[11px]"
-			style={{
-				backgroundColor: "var(--color-inferay-dark-gray)",
-				borderColor: "var(--color-inferay-gray-border)",
-			}}
-		>
+		<div {...stylex.props(styles.card)}>
 			<button
 				type="button"
 				onClick={() => setIsExpanded(!isExpanded)}
-				className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-[11px] font-medium transition-opacity hover:opacity-80"
+				{...stylex.props(styles.header)}
 				style={{
-					color: "var(--color-inferay-soft-white)",
-					backgroundColor: "var(--color-inferay-dark-gray)",
 					borderBottom: isExpanded
 						? "1px solid var(--color-inferay-gray-border)"
 						: "none",
@@ -206,27 +201,28 @@ function EditDiffCard({
 			>
 				<IconChevronRight
 					size={10}
-					className={`opacity-40 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
+					{...stylex.props(
+						styles.chevron,
+						isExpanded ? styles.chevronExpanded : null
+					)}
 				/>
 				{isStreaming ? (
-					<span className="w-2 h-2 rounded-full bg-current opacity-50 animate-pulse" />
+					<span {...stylex.props(styles.streamingDot)} />
 				) : (
-					<IconFilePlus size={10} className="opacity-40" />
+					<IconFilePlus size={10} {...stylex.props(styles.headerIcon)} />
 				)}
-				<span className="min-w-0 flex-1 truncate opacity-80">{fileName}</span>
-				<span className="flex items-center gap-1 text-[10px]">
+				<span {...stylex.props(styles.fileName)}>{fileName}</span>
+				<span {...stylex.props(styles.stats)}>
 					{stats.added > 0 && (
-						<span style={{ color: "rgba(46,160,67,0.8)" }}>+{stats.added}</span>
+						<span {...stylex.props(styles.addedStat)}>+{stats.added}</span>
 					)}
 					{stats.removed > 0 && (
-						<span style={{ color: "rgba(248,81,73,0.8)" }}>
-							−{stats.removed}
-						</span>
+						<span {...stylex.props(styles.removedStat)}>−{stats.removed}</span>
 					)}
 				</span>
 			</button>
 			{isExpanded && (
-				<div className="max-h-60 overflow-auto overflow-x-auto font-diff">
+				<div {...stylex.props(styles.body)}>
 					{hunks.map((hunk, hunkIdx) => {
 						let hunkLineIdx = globalLineIdx;
 						const changedLines = hunk.filter(
@@ -235,15 +231,7 @@ function EditDiffCard({
 
 						return (
 							<div key={hunkIdx}>
-								{hunkIdx > 0 && (
-									<div
-										className="h-px my-0.5"
-										style={{
-											backgroundColor: "var(--color-inferay-gray-border)",
-											opacity: 0.3,
-										}}
-									/>
-								)}
+								{hunkIdx > 0 && <div {...stylex.props(styles.hunkDivider)} />}
 								{changedLines.map((line, lineIdx) => {
 									const currentLineIdx = hunkLineIdx++;
 									const highlightedHtml = highlighted.get(currentLineIdx);
@@ -257,10 +245,23 @@ function EditDiffCard({
 										globalLineIdx = currentLineIdx + 1;
 									}
 
+									const lineContent =
+										isReady && highlightedHtml ? (
+											<span
+												{...stylex.props(styles.lineText)}
+												// biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki returns escaped syntax-highlighted HTML.
+												dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+											/>
+										) : (
+											<span {...stylex.props(styles.lineText)}>
+												{line.text || " "}
+											</span>
+										);
+
 									return (
 										<div
 											key={`${hunkIdx}-${lineIdx}`}
-											className="flex leading-[15px] w-fit min-w-full"
+											{...stylex.props(styles.diffLine)}
 											style={{
 												backgroundColor: isRemoved
 													? removedBg
@@ -271,7 +272,7 @@ function EditDiffCard({
 											}}
 										>
 											<span
-												className="shrink-0 w-5 text-center select-none text-[10px]"
+												{...stylex.props(styles.sign)}
 												style={{
 													color: isRemoved
 														? "rgba(248,81,73,0.7)"
@@ -280,21 +281,7 @@ function EditDiffCard({
 											>
 												{isRemoved ? "−" : "+"}
 											</span>
-											<span
-												className="flex-1 whitespace-pre pr-2 text-[10px] shiki-line"
-												style={{
-													color: "var(--color-inferay-white)",
-												}}
-												dangerouslySetInnerHTML={
-													isReady && highlightedHtml
-														? { __html: highlightedHtml }
-														: undefined
-												}
-											>
-												{!(isReady && highlightedHtml)
-													? line.text || " "
-													: undefined}
-											</span>
+											{lineContent}
 										</div>
 									);
 								})}
@@ -306,6 +293,110 @@ function EditDiffCard({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	card: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		fontSize: "0.6875rem",
+		overflow: "hidden",
+	},
+	header: {
+		alignItems: "center",
+		backgroundColor: color.backgroundRaised,
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+		display: "flex",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+		gap: "0.375rem",
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		transitionDuration: "150ms",
+		transitionProperty: "color, opacity",
+		transitionTimingFunction: "ease",
+		width: "100%",
+		":hover": {
+			opacity: 0.8,
+		},
+	},
+	chevron: {
+		opacity: 0.4,
+		transitionDuration: "150ms",
+		transitionProperty: "transform",
+		transitionTimingFunction: "ease",
+	},
+	chevronExpanded: {
+		transform: "rotate(90deg)",
+	},
+	streamingDot: {
+		backgroundColor: "currentColor",
+		borderRadius: 999,
+		height: controlSize._2,
+		opacity: 0.5,
+		width: controlSize._2,
+	},
+	headerIcon: {
+		opacity: 0.4,
+	},
+	fileName: {
+		flex: 1,
+		minWidth: 0,
+		opacity: 0.8,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	stats: {
+		alignItems: "center",
+		display: "flex",
+		fontSize: font.size_2,
+		gap: controlSize._1,
+	},
+	addedStat: {
+		color: "rgba(46,160,67,0.68)",
+	},
+	removedStat: {
+		color: "rgba(248,81,73,0.68)",
+	},
+	body: {
+		fontFamily: "var(--font-diff)",
+		maxHeight: 240,
+		overflow: "auto",
+	},
+	hunkDivider: {
+		backgroundColor: color.border,
+		height: 1,
+		marginBlock: "0.125rem",
+		opacity: 0.3,
+	},
+	diffLine: {
+		display: "flex",
+		lineHeight: "15px",
+		minWidth: "100%",
+		width: "fit-content",
+	},
+	sign: {
+		flexShrink: 0,
+		fontSize: font.size_2,
+		textAlign: "center",
+		userSelect: "none",
+		width: controlSize._5,
+	},
+	lineText: {
+		color: color.textMain,
+		flex: 1,
+		fontSize: font.size_2,
+		paddingRight: controlSize._2,
+		whiteSpace: "pre",
+	},
+});
 
 export function MiniEditDiff({
 	oldStr,

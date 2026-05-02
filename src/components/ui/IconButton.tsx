@@ -1,4 +1,6 @@
+import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes } from "react";
+import { color, controlSize, motion, radius } from "../../tokens.stylex.ts";
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: "ghost" | "danger" | "subtle";
@@ -12,21 +14,66 @@ export function IconButton({
 	children,
 	...props
 }: IconButtonProps) {
-	const base =
-		"inline-flex items-center justify-center rounded-md transition-all disabled:opacity-40 disabled:pointer-events-none";
-	const sizes = { xs: "p-0.5", sm: "p-1", md: "p-1.5" };
-	const variants = {
-		ghost:
-			"text-inferay-muted-gray hover:text-inferay-soft-white hover:bg-inferay-white/[0.06]",
-		danger: "text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/10",
-		subtle: "text-inferay-muted-gray hover:text-inferay-soft-white",
-	};
+	const buttonProps = stylex.props(styles.base, styles[size], styles[variant]);
+
 	return (
 		<button
-			className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
+			{...buttonProps}
+			className={`${buttonProps.className ?? ""} ${className}`}
 			{...props}
 		>
 			{children}
 		</button>
 	);
 }
+
+const styles = stylex.create({
+	base: {
+		alignItems: "center",
+		borderRadius: radius.md,
+		display: "inline-flex",
+		justifyContent: "center",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "background-color, color, opacity",
+		transitionTimingFunction: motion.ease,
+		":disabled": {
+			opacity: 0.4,
+			pointerEvents: "none",
+		},
+	},
+	xs: {
+		padding: controlSize._0_5,
+	},
+	sm: {
+		padding: controlSize._1,
+	},
+	md: {
+		padding: controlSize._1_5,
+	},
+	ghost: {
+		backgroundColor: {
+			default: color.transparent,
+			":hover": color.controlHover,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+	danger: {
+		backgroundColor: {
+			default: color.transparent,
+			":hover": color.dangerWash,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.danger,
+		},
+	},
+	subtle: {
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+});

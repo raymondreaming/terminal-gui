@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/Button.tsx";
 import { IconButton } from "../../components/ui/IconButton.tsx";
@@ -17,14 +18,13 @@ import {
 	IconX,
 } from "../../components/ui/Icons.tsx";
 import type { RunningPort } from "../../hooks/useRunningPorts.ts";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import { getAgentDefinition, NEW_PANE_AGENT_KINDS } from "../../lib/agents.ts";
 import {
 	type AgentKind,
 	getPaneTitle,
 	getStatusInfo,
 	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { StatusIcon } from "./StatusIcon.tsx";
 
 interface PopoutHeaderProps {
@@ -63,13 +63,25 @@ const SectionHeader = ({
 	border: string;
 }) => (
 	<div
-		className={`px-3 py-1.5 flex items-center gap-1.5 ${border} border-inferay-gray-border`}
+		{...stylex.props(
+			styles.sectionHeader,
+			border === "border-b" && styles.borderBottom,
+			border === "border-t" && styles.borderTop
+		)}
 	>
 		{icon}
-		<span className="text-[9px] text-inferay-muted-gray uppercase tracking-wider font-medium">
-			{label}
-		</span>
-		{count > 0 && <span className={`text-[9px] ${color}`}>{count}</span>}
+		<span {...stylex.props(styles.sectionLabel)}>{label}</span>
+		{count > 0 && (
+			<span
+				{...stylex.props(
+					styles.sectionCount,
+					color.includes("accent") && styles.accentText,
+					color.includes("red") && styles.dangerText
+				)}
+			>
+				{count}
+			</span>
+		)}
 	</div>
 );
 
@@ -81,7 +93,8 @@ const DropdownMenu = ({
 	className?: string;
 }) => (
 	<div
-		className={`absolute top-full mt-1 z-50 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray shadow-lg overflow-hidden ${className}`}
+		{...stylex.props(styles.dropdown)}
+		className={`${stylex.props(styles.dropdown).className ?? ""} ${className}`}
 	>
 		{children}
 	</div>
@@ -106,14 +119,14 @@ const MenuTrigger = ({
 		size="sm"
 		variant={variant}
 		onClick={onClick}
-		className="flex items-center gap-1"
+		className={stylex.props(styles.menuTrigger).className}
 	>
 		{icon}
 		{label && <span>{label}</span>}
 		{chevron && (
 			<IconChevronDown
 				size={10}
-				className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+				{...stylex.props(styles.chevron, isOpen && styles.chevronOpen)}
 			/>
 		)}
 	</Button>
@@ -206,18 +219,18 @@ export const PopoutHeader = memo(function PopoutHeader(
 	};
 
 	return (
-		<div className="relative shrink-0 flex h-14 items-center gap-1.5 border-b border-inferay-gray-border bg-inferay-black px-2 pt-2 sm:px-3">
+		<div {...stylex.props(styles.root)}>
 			<IconButton
 				size="sm"
 				onClick={onRestore}
 				title="Restore to main window"
-				className="relative z-10 text-inferay-soft-white hover:text-inferay-white"
+				className={stylex.props(styles.zLayer).className}
 			>
 				<IconArrowLeft size={14} />
 			</IconButton>
-			<div className="relative z-10 h-3 w-px bg-inferay-gray-border" />
+			<div {...stylex.props(styles.divider)} />
 
-			<div className="relative z-10" ref={refs.groupMenu}>
+			<div {...stylex.props(styles.menuShell)} ref={refs.groupMenu}>
 				<MenuTrigger
 					onClick={() => toggleMenu("groupMenu")}
 					icon={<IconFolderOpen size={12} />}
@@ -229,7 +242,10 @@ export const PopoutHeader = memo(function PopoutHeader(
 						{groups.map((g) => (
 							<div
 								key={g.id}
-								className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${g.id === selectedGroupId ? "bg-inferay-gray" : "hover:bg-inferay-gray"}`}
+								{...stylex.props(
+									styles.groupRow,
+									g.id === selectedGroupId && styles.menuRowActive
+								)}
 							>
 								{editingGroupId === g.id ? (
 									<input
@@ -241,7 +257,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 											if (e.key === "Escape") setEditingGroupId(null);
 										}}
 										onClick={(e) => e.stopPropagation()}
-										className="flex-1 bg-transparent text-xs text-inferay-white outline-none border-0"
+										{...stylex.props(styles.groupInput)}
 									/>
 								) : (
 									<button
@@ -250,62 +266,67 @@ export const PopoutHeader = memo(function PopoutHeader(
 											onSelectGroup(g.id);
 											closeMenu("groupMenu");
 										}}
-										className="flex-1 flex items-center gap-2 text-left"
+										{...stylex.props(styles.groupSelect)}
 									>
 										{g.id === selectedGroupId ? (
 											<IconFolderOpen
 												size={12}
-												className="text-inferay-muted-gray"
+												{...stylex.props(styles.mutedIcon)}
 											/>
 										) : (
 											<IconFolder
 												size={12}
-												className="text-inferay-muted-gray"
+												{...stylex.props(styles.mutedIcon)}
 											/>
 										)}
 										<span
-											className={`text-xs ${g.id === selectedGroupId ? "text-inferay-white" : "text-inferay-soft-white"}`}
+											{...stylex.props(
+												styles.groupName,
+												g.id === selectedGroupId && styles.selectedText
+											)}
 										>
 											{g.name}
 										</span>
-										<span className="text-[10px] text-inferay-muted-gray">
+										<span {...stylex.props(styles.groupCount)}>
 											({g.panes.length})
 										</span>
 									</button>
 								)}
-								<button
+								<IconButton
 									type="button"
 									onClick={(e) => {
 										e.stopPropagation();
 										setEditingGroupId(g.id);
 										setEditingGroupName(g.name);
 									}}
-									className="p-1 rounded hover:bg-inferay-light-gray text-inferay-muted-gray hover:text-inferay-soft-white transition-colors"
+									variant="ghost"
+									size="xs"
 								>
 									<IconPencil size={10} />
-								</button>
+								</IconButton>
 								{groups.length > 1 && (
-									<button
+									<IconButton
 										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
 											onRemoveGroup(g.id);
 										}}
-										className="p-1 rounded hover:bg-red-500/20 text-inferay-muted-gray hover:text-red-400 transition-colors"
+										variant="danger"
+										size="xs"
 									>
 										<IconTrash size={10} />
-									</button>
+									</IconButton>
 								)}
 							</div>
 						))}
-						<div className="border-t border-inferay-gray-border">
+						<div {...stylex.props(styles.borderTop)}>
 							<button
 								type="button"
 								onClick={() => {
 									onAddGroup(`Group ${groups.length + 1}`);
 									closeMenu("groupMenu");
 								}}
-								className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-inferay-muted-gray hover:bg-inferay-gray hover:text-inferay-soft-white transition-colors"
+								{...stylex.props(styles.menuActionRow)}
 							>
 								<IconPlus size={10} />
 								<span>New Group</span>
@@ -314,9 +335,9 @@ export const PopoutHeader = memo(function PopoutHeader(
 					</DropdownMenu>
 				)}
 			</div>
-			<div className="relative z-10 h-3 w-px bg-inferay-gray-border" />
+			<div {...stylex.props(styles.divider)} />
 
-			<div className="relative z-10 flex items-center gap-1 overflow-x-auto flex-1 min-w-0 scrollbar-none">
+			<div {...stylex.props(styles.paneTabs)}>
 				{currentGroup?.panes.map((pane) => {
 					const si = getStatusInfo(agentStatuses.get(pane.id) ?? "idle");
 					const isSelected = pane.id === currentGroup.selectedPaneId;
@@ -338,29 +359,33 @@ export const PopoutHeader = memo(function PopoutHeader(
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") onSelectPane(pane.id);
 							}}
-							className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors shrink-0 cursor-pointer ${isSelected ? "bg-inferay-gray text-inferay-white" : "text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"}`}
+							{...stylex.props(
+								styles.paneTab,
+								isSelected && styles.paneTabActive
+							)}
 						>
 							{paneIcon}
-							<span className="text-xs font-medium max-w-[80px] truncate">
+							<span {...stylex.props(styles.paneTitle)}>
 								{getPaneTitle(pane)}
 							</span>
-							<button
+							<IconButton
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
 									onRemovePane(pane.id);
 								}}
-								className="rounded p-0.5 hover:bg-inferay-gray text-inferay-muted-gray hover:text-inferay-white transition-colors"
+								variant="ghost"
+								size="xs"
 							>
 								<IconX size={10} />
-							</button>
+							</IconButton>
 						</button>
 					);
 				})}
 			</div>
 
-			<div className="relative z-10 flex items-center gap-1.5 shrink-0">
-				<div className="relative" ref={refs.servicesMenu}>
+			<div {...stylex.props(styles.trailingActions)}>
+				<div {...stylex.props(styles.relative)} ref={refs.servicesMenu}>
 					<MenuTrigger
 						onClick={() => toggleMenu("servicesMenu")}
 						icon={<IconGlobe size={14} />}
@@ -376,26 +401,17 @@ export const PopoutHeader = memo(function PopoutHeader(
 								border="border-b"
 							/>
 							{ports.length === 0 ? (
-								<div className="px-3 py-1.5 text-[10px] text-inferay-muted-gray">
-									None running
-								</div>
+								<div {...stylex.props(styles.emptyMenuRow)}>None running</div>
 							) : (
 								ports.map((p) => (
 									<div
 										key={`${p.port}-${p.pid}`}
-										className="flex items-center gap-2 px-3 py-1.5 hover:bg-inferay-gray transition-colors group"
+										{...stylex.props(styles.portRow)}
 									>
-										<IconCircle
-											size={8}
-											className="text-inferay-accent fill-inferay-accent shrink-0"
-										/>
-										<span className="text-[11px] font-medium text-inferay-white shrink-0">
-											:{p.port}
-										</span>
-										<span className="text-[10px] text-inferay-muted-gray truncate min-w-0">
-											{p.name}
-										</span>
-										<div className="flex items-center gap-0.5 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+										<IconCircle size={8} {...stylex.props(styles.portDot)} />
+										<span {...stylex.props(styles.portNumber)}>:{p.port}</span>
+										<span {...stylex.props(styles.portName)}>{p.name}</span>
+										<div {...stylex.props(styles.portActions)}>
 											<IconButton
 												variant="ghost"
 												size="xs"
@@ -420,7 +436,7 @@ export const PopoutHeader = memo(function PopoutHeader(
 					)}
 				</div>
 
-				<div className="relative" ref={refs.layoutMenu}>
+				<div {...stylex.props(styles.relative)} ref={refs.layoutMenu}>
 					<MenuTrigger
 						onClick={() => toggleMenu("layoutMenu")}
 						icon={<IconLayout size={12} />}
@@ -429,16 +445,17 @@ export const PopoutHeader = memo(function PopoutHeader(
 					/>
 					{menus.layoutMenu && (
 						<DropdownMenu className="right-0 p-2">
-							<span className="text-[9px] text-inferay-muted-gray uppercase tracking-wider font-medium">
-								Columns
-							</span>
-							<div className="flex gap-1 mt-1">
+							<span {...stylex.props(styles.sectionLabel)}>Columns</span>
+							<div {...stylex.props(styles.layoutGrid)}>
 								{[1, 2, 3, 4].map((n) => (
 									<button
 										type="button"
 										key={n}
 										onClick={() => onColumnsChange(n)}
-										className={`w-6 h-6 text-[10px] rounded transition-colors flex items-center justify-center ${columns === n ? "bg-inferay-accent text-white" : "bg-inferay-gray text-inferay-soft-white hover:bg-inferay-light-gray"}`}
+										{...stylex.props(
+											styles.layoutButton,
+											columns === n && styles.layoutButtonActive
+										)}
 									>
 										{n}
 									</button>
@@ -460,4 +477,297 @@ export const PopoutHeader = memo(function PopoutHeader(
 			</div>
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	root: {
+		position: "relative",
+		display: "flex",
+		height: "3.5rem",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.375rem",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+		paddingTop: controlSize._2,
+		paddingInline: {
+			default: controlSize._2,
+			"@media (min-width: 640px)": controlSize._3,
+		},
+	},
+	zLayer: {
+		position: "relative",
+		zIndex: 10,
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+	},
+	divider: {
+		position: "relative",
+		zIndex: 10,
+		width: 1,
+		height: font.size_3,
+		backgroundColor: color.border,
+	},
+	menuShell: {
+		position: "relative",
+		zIndex: 10,
+	},
+	relative: {
+		position: "relative",
+	},
+	sectionHeader: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	borderBottom: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+	},
+	borderTop: {
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: color.border,
+	},
+	sectionLabel: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		letterSpacing: "0.08em",
+		textTransform: "uppercase",
+	},
+	sectionCount: {
+		fontSize: font.size_1,
+	},
+	accentText: {
+		color: "var(--color-inferay-accent)",
+	},
+	dangerText: {
+		color: color.danger,
+	},
+	dropdown: {
+		position: "absolute",
+		top: "100%",
+		zIndex: 50,
+		marginTop: controlSize._1,
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.6)",
+	},
+	menuTrigger: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1,
+	},
+	chevron: {
+		transitionProperty: "transform",
+		transitionDuration: "120ms",
+	},
+	chevronOpen: {
+		transform: "rotate(180deg)",
+	},
+	paneTabs: {
+		position: "relative",
+		zIndex: 10,
+		display: "flex",
+		minWidth: 0,
+		flex: 1,
+		alignItems: "center",
+		gap: controlSize._1,
+		overflowX: "auto",
+		scrollbarWidth: "none",
+	},
+	paneTab: {
+		display: "flex",
+		flexShrink: 0,
+		cursor: "pointer",
+		alignItems: "center",
+		gap: "0.375rem",
+		borderRadius: "0.375rem",
+		color: color.textMuted,
+		paddingBlock: "0.375rem",
+		paddingInline: "0.625rem",
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+		":hover": {
+			color: color.textSoft,
+		},
+	},
+	paneTabActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	paneTitle: {
+		maxWidth: "80px",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
+	},
+	trailingActions: {
+		position: "relative",
+		zIndex: 10,
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.375rem",
+	},
+	groupRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	menuRowActive: {
+		backgroundColor: color.controlActive,
+	},
+	groupInput: {
+		minWidth: 0,
+		flex: 1,
+		borderWidth: 0,
+		backgroundColor: "transparent",
+		color: color.textMain,
+		fontSize: font.size_3,
+		outline: "none",
+	},
+	groupSelect: {
+		display: "flex",
+		minWidth: 0,
+		flex: 1,
+		alignItems: "center",
+		gap: controlSize._2,
+		textAlign: "left",
+	},
+	mutedIcon: {
+		color: color.textMuted,
+	},
+	groupName: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: font.size_3,
+	},
+	selectedText: {
+		color: color.textMain,
+	},
+	groupCount: {
+		flexShrink: 0,
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	menuActionRow: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		color: color.textMuted,
+		fontSize: font.size_3,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+		":hover": {
+			color: color.textSoft,
+		},
+	},
+	emptyMenuRow: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	portRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	portDot: {
+		flexShrink: 0,
+		color: "var(--color-inferay-accent)",
+		fill: "var(--color-inferay-accent)",
+	},
+	portNumber: {
+		flexShrink: 0,
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	portName: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	portActions: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.125rem",
+		marginLeft: "auto",
+	},
+	layoutGrid: {
+		display: "flex",
+		gap: controlSize._1,
+		marginTop: controlSize._1,
+	},
+	layoutButton: {
+		display: "flex",
+		width: controlSize._6,
+		height: controlSize._6,
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: "0.25rem",
+		backgroundColor: {
+			default: color.controlActive,
+			":hover": color.controlHover,
+		},
+		color: color.textSoft,
+		fontSize: font.size_2,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+	},
+	layoutButtonActive: {
+		backgroundColor: "var(--color-inferay-accent)",
+		color: "#ffffff",
+	},
 });

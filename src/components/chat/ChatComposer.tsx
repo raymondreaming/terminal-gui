@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import type React from "react";
 import { useMemo, useRef } from "react";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
@@ -6,7 +7,9 @@ import {
 	getAgentDefinition,
 } from "../../lib/agents.ts";
 import type { AgentKind } from "../../lib/terminal-utils.ts";
+import { color, colorValues, controlSize, font } from "../../tokens.stylex.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
+import { IconButton } from "../ui/IconButton.tsx";
 import {
 	IconCheck,
 	IconPencil,
@@ -185,7 +188,7 @@ export function ChatComposer({
 				ref={fileInputRef}
 				accept="image/*"
 				multiple
-				className="hidden"
+				{...stylex.props(styles.hidden)}
 				onChange={async (e) => {
 					for (const file of Array.from(e.target.files || [])) {
 						if (file.type.startsWith("image/")) await attachImage(file);
@@ -197,56 +200,39 @@ export function ChatComposer({
 			{attachedImages.length > 0 && (
 				<div
 					role="group"
-					className="shrink-0 flex items-center gap-2 overflow-x-auto overflow-y-hidden px-3 py-1.5"
+					{...stylex.props(styles.attachments)}
 					aria-label="Attached images"
 				>
 					{attachedImages.map((img) => (
-						<div
-							key={img.path}
-							className="relative group h-14 w-14 shrink-0 overflow-hidden rounded-lg"
-							style={{
-								border: "1px solid var(--color-inferay-gray-border)",
-							}}
-						>
+						<div key={img.path} {...stylex.props(styles.attachmentTile)}>
 							<img
 								src={img.previewUrl}
 								alt={img.name}
 								title={img.name}
-								className="h-full w-full object-cover"
+								{...stylex.props(styles.attachmentImage)}
 							/>
-							<button
+							<IconButton
 								type="button"
 								onClick={() => removeAttachedImage(img.path)}
-								className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+								variant="ghost"
+								size="xs"
+								className={stylex.props(styles.attachmentRemove).className}
 								title="Remove image"
 							>
 								<IconX size={10} />
-							</button>
+							</IconButton>
 						</div>
 					))}
 				</div>
 			)}
 
 			{queuedMessages.length > 0 && (
-				<div
-					className="shrink-0 overflow-y-auto"
-					style={{ maxHeight: "140px" }}
-				>
+				<div {...stylex.props(styles.queueList)}>
 					{queuedMessages.map((qm, idx) => (
-						<div
-							key={qm.id}
-							className="group flex items-start gap-2 px-3 py-1 transition-colors"
-						>
-							<span
-								className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums"
-								style={{
-									color: "var(--color-inferay-muted-gray)",
-								}}
-							>
-								{idx + 1}
-							</span>
+						<div key={qm.id} {...stylex.props(styles.queueRow)}>
+							<span {...stylex.props(styles.queueIndex)}>{idx + 1}</span>
 							{editingQueueId === qm.id ? (
-								<div className="flex-1 flex items-center gap-1">
+								<div {...stylex.props(styles.queueEditRow)}>
 									<input
 										type="text"
 										ref={(el) => el?.focus()}
@@ -270,13 +256,9 @@ export function ChatComposer({
 												setEditingQueueId(null);
 											}
 										}}
-										className="flex-1 bg-transparent text-[11px] outline-none border-none px-1 py-0.5 rounded"
-										style={{
-											color: "var(--color-inferay-white)",
-											backgroundColor: "rgba(255,255,255,0.06)",
-										}}
+										{...stylex.props(styles.queueEditInput)}
 									/>
-									<button
+									<IconButton
 										type="button"
 										onClick={() => {
 											const trimmed = editingQueueText.trim();
@@ -292,25 +274,22 @@ export function ChatComposer({
 											}
 											setEditingQueueId(null);
 										}}
-										className="shrink-0 p-0.5 rounded transition-colors"
-										style={{
-											color: "var(--color-inferay-accent)",
-										}}
+										variant="ghost"
+										size="xs"
+										className={stylex.props(styles.saveButton).className}
 										title="Save"
 									>
 										<IconCheck size={11} />
-									</button>
-									<button
+									</IconButton>
+									<IconButton
 										type="button"
 										onClick={() => setEditingQueueId(null)}
-										className="shrink-0 p-0.5 rounded transition-colors"
-										style={{
-											color: "var(--color-inferay-muted-gray)",
-										}}
+										variant="ghost"
+										size="xs"
 										title="Cancel"
 									>
 										<IconX size={11} />
-									</button>
+									</IconButton>
 								</div>
 							) : (
 								<>
@@ -318,33 +297,26 @@ export function ChatComposer({
 										<img
 											src={`/api/file?path=${encodeURIComponent(qm.images[0]!)}`}
 											alt=""
-											className="shrink-0 h-6 w-6 rounded object-cover"
+											{...stylex.props(styles.queueImage)}
 										/>
 									)}
-									<span
-										className="flex-1 text-[11px] truncate"
-										style={{
-											color: "var(--color-inferay-white)",
-										}}
-									>
+									<span {...stylex.props(styles.queueText)}>
 										{qm.displayText}
 									</span>
-									<div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-										<button
+									<div {...stylex.props(styles.queueActions)}>
+										<IconButton
 											type="button"
 											onClick={() => {
 												setEditingQueueId(qm.id);
 												setEditingQueueText(qm.text);
 											}}
-											className="p-0.5 rounded transition-colors hover:bg-white/10"
-											style={{
-												color: "var(--color-inferay-muted-gray)",
-											}}
+											variant="ghost"
+											size="xs"
 											title="Edit"
 										>
 											<IconPencil size={11} />
-										</button>
-										<button
+										</IconButton>
+										<IconButton
 											type="button"
 											onClick={() => {
 												const next = (queueRef.current ?? []).filter(
@@ -354,12 +326,12 @@ export function ChatComposer({
 												setQueuedMessages([...next]);
 												if (editingQueueId === qm.id) setEditingQueueId(null);
 											}}
-											className="p-0.5 rounded transition-colors hover:bg-red-500/20"
-											style={{ color: "rgb(248,113,113)" }}
+											variant="danger"
+											size="xs"
 											title="Remove from queue"
 										>
 											<IconTrash size={11} />
-										</button>
+										</IconButton>
 									</div>
 								</>
 							)}
@@ -371,31 +343,11 @@ export function ChatComposer({
 			{statusBar}
 
 			{showInput && (
-				<div className="shrink-0 px-3 pb-2 pt-1">
-					<div
-						className="relative flex flex-col rounded-xl overflow-visible"
-						ref={inputContainerRef}
-						style={{
-							border: "1px solid var(--color-inferay-gray-border)",
-							backgroundColor: "var(--color-inferay-dark-gray)",
-						}}
-					>
+				<div {...stylex.props(styles.inputDock)}>
+					<div {...stylex.props(styles.inputFrame)} ref={inputContainerRef}>
 						{fileMenu.show && fileResults.length > 0 && (
-							<div
-								className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-y-auto z-[9999]"
-								style={{
-									maxHeight: 300,
-									backgroundColor: "var(--color-inferay-dark-gray)",
-									borderColor: "var(--color-inferay-gray-border)",
-								}}
-							>
-								<div
-									className="px-3 py-1.5 text-[9px] font-semibold tracking-wide"
-									style={{
-										color: "var(--color-inferay-muted-gray)",
-										borderBottom: "1px solid var(--color-inferay-gray-border)",
-									}}
-								>
+							<div {...stylex.props(styles.fileMenu)}>
+								<div {...stylex.props(styles.menuHeader)}>
 									FILES
 									{fileMenu.query ? ` matching "${fileMenu.query}"` : ""}
 								</div>
@@ -407,36 +359,18 @@ export function ChatComposer({
 										onMouseEnter={() =>
 											setFileMenu((prev) => ({ ...prev, selectedIdx: idx }))
 										}
-										className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors"
-										style={{
-											backgroundColor:
-												idx === fileMenu.selectedIdx
-													? "rgba(0,122,255,0.15)"
-													: "transparent",
-										}}
+										{...stylex.props(
+											styles.fileMenuRow,
+											idx === fileMenu.selectedIdx && styles.fileMenuRowActive
+										)}
 									>
-										<span
-											className="shrink-0 text-[11px]"
-											style={{
-												color: "var(--color-inferay-muted-gray)",
-											}}
-										>
+										<span {...stylex.props(styles.fileMenuIcon)}>
 											{file.isDir ? "\u{1F4C1}" : "\u{1F4C4}"}
 										</span>
-										<span
-											className="truncate font-mono text-[11px] font-medium"
-											style={{
-												color: "var(--color-inferay-accent)",
-											}}
-										>
+										<span {...stylex.props(styles.fileMenuName)}>
 											{file.name}
 										</span>
-										<span
-											className="flex-1 truncate text-right text-[9px]"
-											style={{
-												color: "var(--color-inferay-muted-gray)",
-											}}
-										>
+										<span {...stylex.props(styles.fileMenuPath)}>
 											{file.path}
 										</span>
 									</button>
@@ -444,21 +378,9 @@ export function ChatComposer({
 							</div>
 						)}
 						{showCommands && filteredCommands.length > 0 && (
-							<div
-								className="absolute bottom-full left-0 right-0 mb-2 rounded-xl border shadow-2xl overflow-hidden z-[9999]"
-								style={{
-									maxHeight: 320,
-									backgroundColor: "var(--color-inferay-dark-gray)",
-									borderColor: "var(--color-inferay-gray-border)",
-								}}
-							>
-								<div
-									className="px-3 py-2 text-[10px] font-medium tracking-wide uppercase"
-									style={{ color: "var(--color-inferay-muted-gray)" }}
-								>
-									Skills
-								</div>
-								<div className="overflow-y-auto" style={{ maxHeight: 280 }}>
+							<div {...stylex.props(styles.commandMenu)}>
+								<div {...stylex.props(styles.commandHeader)}>Skills</div>
+								<div {...stylex.props(styles.commandList)}>
 									{filteredCommands.map((cmd, idx) => {
 										const isSelected = idx === slashMenu.selectedIdx;
 										return (
@@ -472,27 +394,20 @@ export function ChatComposer({
 														selectedIdx: idx,
 													}))
 												}
-												className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors"
-												style={{
-													backgroundColor: isSelected
-														? "var(--color-inferay-gray)"
-														: "transparent",
-												}}
+												{...stylex.props(
+													styles.commandRow,
+													isSelected && styles.commandRowActive
+												)}
 											>
 												<span
-													className="font-mono text-[12px] font-medium"
-													style={{
-														color: isSelected
-															? "var(--color-inferay-accent)"
-															: "var(--color-inferay-white)",
-													}}
+													{...stylex.props(
+														styles.commandName,
+														isSelected && styles.commandNameActive
+													)}
 												>
 													/{cmd.name}
 												</span>
-												<span
-													className="text-[11px]"
-													style={{ color: "var(--color-inferay-muted-gray)" }}
-												>
+												<span {...stylex.props(styles.commandDescription)}>
 													{cmd.description}
 												</span>
 											</button>
@@ -502,26 +417,25 @@ export function ChatComposer({
 							</div>
 						)}
 
-						<div className="flex items-end gap-2 px-3 py-1.5">
-							<button
+						<div {...stylex.props(styles.inputRow)}>
+							<IconButton
 								type="button"
 								onClick={() => fileInputRef.current?.click()}
-								className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md transition-colors"
-								style={{
-									color: "var(--color-inferay-muted-gray)",
-								}}
+								variant="ghost"
+								size="md"
+								className="shrink-0"
 								title="Attach image"
 							>
 								<IconPlus size={16} />
-							</button>
+							</IconButton>
 
 							<div
-								className="relative min-w-0 flex-1 overflow-hidden"
+								{...stylex.props(styles.textAreaWrap)}
 								style={{ maxHeight: "120px" }}
 							>
 								<div
 									ref={highlightOverlayRef}
-									className="absolute top-0 left-0 right-0 pr-8 text-[13px] pointer-events-none whitespace-pre-wrap"
+									{...stylex.props(styles.highlightOverlay)}
 									style={{
 										lineHeight: "20px",
 										wordBreak: "break-word",
@@ -561,11 +475,11 @@ export function ChatComposer({
 									spellCheck
 									autoCorrect="on"
 									autoCapitalize="sentences"
-									className="relative block w-full resize-none pr-8 text-[13px] outline-none ring-0 border-none shadow-none focus:outline-none focus:ring-0 focus:border-none focus:shadow-none bg-transparent overflow-y-auto scrollbar-none"
+									{...stylex.props(styles.textarea)}
 									style={{
 										minHeight: "20px",
 										color: "transparent",
-										caretColor: "var(--color-inferay-white)",
+										caretColor: colorValues.textMain,
 										WebkitTextFillColor: "transparent",
 										lineHeight: "20px",
 										wordBreak: "break-word",
@@ -573,55 +487,45 @@ export function ChatComposer({
 									}}
 								/>
 								{isLoading && (
-									<div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+									<div {...stylex.props(styles.loadingDots)}>
+										<span {...stylex.props(styles.loadingDot)} />
 										<span
-											className="h-1 w-1 rounded-full animate-pulse"
-											style={{
-												backgroundColor: "var(--color-inferay-accent)",
-											}}
+											{...stylex.props(styles.loadingDot, styles.loadingDot2)}
 										/>
 										<span
-											className="h-1 w-1 rounded-full animate-pulse"
-											style={{
-												backgroundColor: "var(--color-inferay-accent)",
-												animationDelay: "150ms",
-											}}
-										/>
-										<span
-											className="h-1 w-1 rounded-full animate-pulse"
-											style={{
-												backgroundColor: "var(--color-inferay-accent)",
-												animationDelay: "300ms",
-											}}
+											{...stylex.props(styles.loadingDot, styles.loadingDot3)}
 										/>
 									</div>
 								)}
 							</div>
 						</div>
-						<div className="flex min-w-0 items-center gap-1.5 overflow-x-auto px-2 pb-1.5">
+						<div {...stylex.props(styles.pickerRow)}>
 							<DropdownButton
 								value={agentKind}
 								options={agentKindOptions}
 								onChange={(id) => onAgentKindChange(id as AgentKind)}
 								icon={
-									<span className="text-inferay-accent">
+									<span {...stylex.props(styles.accentText)}>
 										{getAgentIcon(agentKind, 10)}
 									</span>
 								}
 								minWidth={120}
 								menuPlacement="top"
-								buttonClassName="h-5 rounded-md border-transparent px-1 text-[10px] font-medium text-inferay-accent hover:bg-inferay-white/[0.06] gap-1"
-								labelClassName="text-[10px]"
+								buttonClassName={
+									stylex.props(styles.pickerButtonAccent).className
+								}
+								labelClassName={stylex.props(styles.pickerLabel).className}
 								renderOption={(opt, isOptionSelected) => (
 									<div
-										className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
-											isOptionSelected
-												? "bg-inferay-white/[0.08] text-inferay-white"
-												: "text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-white"
-										}`}
+										{...stylex.props(
+											styles.agentOption,
+											isOptionSelected && styles.agentOptionSelected
+										)}
 									>
-										<span className="shrink-0">{opt.icon}</span>
-										<span className="font-medium">{opt.label}</span>
+										<span {...stylex.props(styles.shrink)}>{opt.icon}</span>
+										<span {...stylex.props(styles.optionLabel)}>
+											{opt.label}
+										</span>
 									</div>
 								)}
 							/>
@@ -632,8 +536,10 @@ export function ChatComposer({
 									onChange={onModelChange}
 									minWidth={190}
 									menuPlacement="top"
-									buttonClassName="h-5 rounded-md border-transparent px-1 text-[10px] font-medium text-inferay-muted-gray hover:bg-inferay-white/[0.06] gap-1"
-									labelClassName="max-w-[96px] truncate text-[10px]"
+									buttonClassName={
+										stylex.props(styles.pickerButtonMuted).className
+									}
+									labelClassName={stylex.props(styles.modelLabel).className}
 								/>
 							)}
 							{agentKind === "codex" && (
@@ -643,8 +549,10 @@ export function ChatComposer({
 									onChange={onReasoningLevelChange}
 									minWidth={150}
 									menuPlacement="top"
-									buttonClassName="h-5 rounded-md border-transparent px-1 text-[10px] font-medium text-inferay-muted-gray hover:bg-inferay-white/[0.06] gap-1"
-									labelClassName="max-w-[76px] truncate text-[10px]"
+									buttonClassName={
+										stylex.props(styles.pickerButtonMuted).className
+									}
+									labelClassName={stylex.props(styles.reasoningLabel).className}
 								/>
 							)}
 						</div>
@@ -654,7 +562,7 @@ export function ChatComposer({
 
 			{mdPreview.show && (
 				<div
-					className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+					{...stylex.props(styles.modalBackdrop)}
 					onClick={() =>
 						setMdPreview({
 							show: false,
@@ -666,28 +574,12 @@ export function ChatComposer({
 					}
 				>
 					<div
-						className="relative w-[90%] max-w-2xl max-h-[80%] rounded-lg border overflow-hidden flex flex-col"
-						style={{
-							backgroundColor: "var(--color-inferay-black)",
-							borderColor: "var(--color-inferay-gray-border)",
-						}}
+						{...stylex.props(styles.modal)}
 						onClick={(e) => e.stopPropagation()}
 					>
-						<div
-							className="flex items-center justify-between px-3 py-2 border-b"
-							style={{
-								borderColor: "var(--color-inferay-gray-border)",
-							}}
-						>
-							<span
-								className="text-[11px] font-medium truncate"
-								style={{
-									color: "var(--color-inferay-white)",
-								}}
-							>
-								{mdPreview.path}
-							</span>
-							<button
+						<div {...stylex.props(styles.modalHeader)}>
+							<span {...stylex.props(styles.modalTitle)}>{mdPreview.path}</span>
+							<IconButton
 								type="button"
 								onClick={() =>
 									setMdPreview({
@@ -698,37 +590,23 @@ export function ChatComposer({
 										error: null,
 									})
 								}
-								className="p-1 rounded hover:bg-white/10 transition-colors"
+								variant="ghost"
+								size="xs"
 							>
-								<IconX
-									className="w-3.5 h-3.5"
-									style={{
-										color: "var(--color-inferay-muted-gray)",
-									}}
-								/>
-							</button>
+								<IconX size={14} />
+							</IconButton>
 						</div>
-						<div
-							className="flex-1 overflow-y-auto p-4 text-[12px]"
-							style={{
-								color: "var(--color-inferay-white)",
-							}}
-						>
+						<div {...stylex.props(styles.modalBody)}>
 							{mdPreview.loading && (
-								<div className="flex items-center justify-center py-8">
-									<span
-										className="text-[10px]"
-										style={{
-											color: "var(--color-inferay-muted-gray)",
-										}}
-									>
+								<div {...stylex.props(styles.modalState)}>
+									<span {...stylex.props(styles.modalStateText)}>
 										Loading...
 									</span>
 								</div>
 							)}
 							{mdPreview.error && (
-								<div className="flex items-center justify-center py-8">
-									<span className="text-[10px] text-inferay-error">
+								<div {...stylex.props(styles.modalState)}>
+									<span {...stylex.props(styles.modalError)}>
 										{mdPreview.error}
 									</span>
 								</div>
@@ -746,3 +624,484 @@ export function ChatComposer({
 		</>
 	);
 }
+
+const styles = stylex.create({
+	hidden: {
+		display: "none",
+	},
+	attachments: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		overflowX: "auto",
+		overflowY: "hidden",
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	attachmentTile: {
+		position: "relative",
+		width: "3.5rem",
+		height: "3.5rem",
+		flexShrink: 0,
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+	},
+	attachmentImage: {
+		width: "100%",
+		height: "100%",
+		objectFit: "cover",
+	},
+	attachmentRemove: {
+		position: "absolute",
+		right: controlSize._1,
+		top: controlSize._1,
+		width: controlSize._5,
+		height: controlSize._5,
+		borderRadius: "999px",
+		backgroundColor: "rgba(0, 0, 0, 0.7)",
+		color: "#ffffff",
+	},
+	queueList: {
+		maxHeight: "140px",
+		flexShrink: 0,
+		overflowY: "auto",
+	},
+	queueRow: {
+		display: "flex",
+		alignItems: "flex-start",
+		gap: controlSize._2,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._3,
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		":hover": {
+			backgroundColor: "rgba(255, 255, 255, 0.03)",
+		},
+	},
+	queueIndex: {
+		flexShrink: 0,
+		marginTop: "0.125rem",
+		color: color.textMuted,
+		fontFamily: "var(--font-diff)",
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+	},
+	queueEditRow: {
+		display: "flex",
+		flex: 1,
+		alignItems: "center",
+		gap: controlSize._1,
+	},
+	queueEditInput: {
+		flex: 1,
+		borderWidth: 0,
+		borderRadius: "0.25rem",
+		backgroundColor: "rgba(255, 255, 255, 0.06)",
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		outline: "none",
+		paddingBlock: "0.125rem",
+		paddingInline: controlSize._1,
+	},
+	saveButton: {
+		color: color.accent,
+	},
+	queueImage: {
+		width: controlSize._6,
+		height: controlSize._6,
+		flexShrink: 0,
+		borderRadius: "0.25rem",
+		objectFit: "cover",
+	},
+	queueText: {
+		minWidth: 0,
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: "0.6875rem",
+	},
+	queueActions: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.125rem",
+	},
+	fileMenu: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: "100%",
+		zIndex: 9999,
+		maxHeight: "300px",
+		overflowY: "auto",
+		marginBottom: controlSize._1,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.6)",
+	},
+	menuHeader: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: 600,
+		letterSpacing: "0.04em",
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	fileMenuRow: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	fileMenuRowActive: {
+		backgroundColor: color.accentWash,
+	},
+	fileMenuIcon: {
+		flexShrink: 0,
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	fileMenuName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.accent,
+		fontFamily: "var(--font-diff)",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	fileMenuPath: {
+		minWidth: 0,
+		flex: 1,
+		overflow: "hidden",
+		textAlign: "right",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	commandMenu: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: "100%",
+		zIndex: 9999,
+		maxHeight: "320px",
+		overflow: "hidden",
+		marginBottom: controlSize._2,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
+	},
+	commandHeader: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		letterSpacing: "0.04em",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textTransform: "uppercase",
+	},
+	commandList: {
+		maxHeight: "280px",
+		overflowY: "auto",
+	},
+	commandRow: {
+		display: "flex",
+		width: "100%",
+		flexDirection: "column",
+		gap: "0.125rem",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	commandRowActive: {
+		backgroundColor: color.accentWash,
+	},
+	commandName: {
+		color: color.textMain,
+		fontFamily: "var(--font-diff)",
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
+	},
+	commandNameActive: {
+		color: color.accent,
+	},
+	commandDescription: {
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	loadingDots: {
+		position: "absolute",
+		right: 0,
+		top: "50%",
+		display: "flex",
+		alignItems: "center",
+		gap: "0.125rem",
+		transform: "translateY(-50%)",
+	},
+	loadingDot: {
+		width: controlSize._1,
+		height: controlSize._1,
+		borderRadius: "999px",
+		backgroundColor: color.accent,
+		animationName: stylex.keyframes({
+			"50%": {
+				opacity: 0.35,
+			},
+		}),
+		animationDuration: "1s",
+		animationIterationCount: "infinite",
+	},
+	loadingDot2: {
+		animationDelay: "150ms",
+	},
+	loadingDot3: {
+		animationDelay: "300ms",
+	},
+	accentText: {
+		color: color.accent,
+	},
+	agentOption: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		color: color.textMuted,
+		fontSize: font.size_3,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+		":hover": {
+			color: color.textMain,
+		},
+	},
+	agentOptionSelected: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	shrink: {
+		flexShrink: 0,
+	},
+	optionLabel: {
+		fontWeight: font.weight_5,
+	},
+	modalBackdrop: {
+		position: "absolute",
+		inset: 0,
+		zIndex: 50,
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: "rgba(0, 0, 0, 0.6)",
+		backdropFilter: "blur(4px)",
+	},
+	modal: {
+		position: "relative",
+		display: "flex",
+		width: "90%",
+		maxWidth: "42rem",
+		maxHeight: "80%",
+		flexDirection: "column",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.background,
+	},
+	modalHeader: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	modalTitle: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	modalBody: {
+		flex: 1,
+		overflowY: "auto",
+		color: color.textMain,
+		fontSize: font.size_3,
+		padding: controlSize._4,
+	},
+	modalState: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		paddingBlock: controlSize._8,
+	},
+	modalStateText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	modalError: {
+		color: color.danger,
+		fontSize: font.size_2,
+	},
+	inputDock: {
+		flexShrink: 0,
+		paddingBottom: controlSize._2,
+		paddingInline: controlSize._3,
+		paddingTop: controlSize._1,
+	},
+	inputFrame: {
+		backgroundColor: color.backgroundRaised,
+		borderColor: {
+			default: color.border,
+			":focus-within": color.border,
+		},
+		borderRadius: 12,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		flexDirection: "column",
+		overflow: "visible",
+		position: "relative",
+		boxShadow: {
+			default: "none",
+			":focus-within": "none",
+		},
+		transitionProperty: "border-color, box-shadow, background-color",
+		transitionDuration: "150ms",
+	},
+	pickerButtonAccent: {
+		height: controlSize._5,
+		borderRadius: 6,
+		borderColor: "transparent",
+		color: color.accent,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		gap: controlSize._1,
+		paddingInline: controlSize._1,
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.accentWash,
+		},
+	},
+	pickerButtonMuted: {
+		height: controlSize._5,
+		borderRadius: 6,
+		borderColor: "transparent",
+		color: color.textMuted,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		gap: controlSize._1,
+		paddingInline: controlSize._1,
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.accentWash,
+		},
+	},
+	pickerLabel: {
+		fontSize: font.size_2,
+	},
+	modelLabel: {
+		maxWidth: "96px",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		fontSize: font.size_2,
+	},
+	reasoningLabel: {
+		maxWidth: "76px",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		fontSize: font.size_2,
+	},
+	inputRow: {
+		alignItems: "flex-end",
+		display: "flex",
+		gap: controlSize._2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	textAreaWrap: {
+		flex: 1,
+		minWidth: 0,
+		overflow: "hidden",
+		position: "relative",
+	},
+	highlightOverlay: {
+		fontSize: "0.8125rem",
+		left: 0,
+		overflowWrap: "break-word",
+		paddingRight: controlSize._8,
+		pointerEvents: "none",
+		position: "absolute",
+		right: 0,
+		top: 0,
+		whiteSpace: "pre-wrap",
+		wordBreak: "break-word",
+	},
+	textarea: {
+		backgroundColor: "transparent",
+		borderWidth: 0,
+		boxShadow: "none",
+		display: "block",
+		fontSize: "0.8125rem",
+		outline: "none",
+		overflowY: "auto",
+		paddingRight: controlSize._8,
+		position: "relative",
+		resize: "none",
+		width: "100%",
+	},
+	pickerRow: {
+		alignItems: "center",
+		display: "flex",
+		gap: "0.375rem",
+		minWidth: 0,
+		overflowX: "auto",
+		paddingBottom: "0.375rem",
+		paddingInline: controlSize._2,
+	},
+});

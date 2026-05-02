@@ -1,4 +1,12 @@
+import * as stylex from "@stylexjs/stylex";
 import type { ButtonHTMLAttributes } from "react";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+} from "../../tokens.stylex.ts";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: "primary" | "secondary" | "ghost" | "danger";
@@ -12,28 +20,90 @@ export function Button({
 	children,
 	...props
 }: ButtonProps) {
-	const base =
-		"inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-all disabled:opacity-40 disabled:pointer-events-none active:scale-[0.97]";
-	const sizes = {
-		sm: "h-7 px-2.5 text-xs",
-		md: "h-8 px-3 text-sm",
-		lg: "h-9 px-4 text-sm",
-	};
-	const variants = {
-		primary: "bg-inferay-accent text-white hover:bg-inferay-accent-hover",
-		secondary:
-			"bg-inferay-gray text-inferay-soft-white hover:bg-inferay-light-gray border border-inferay-gray-border",
-		ghost:
-			"text-inferay-muted-gray hover:text-inferay-white hover:bg-inferay-white/[0.08] backdrop-blur-sm",
-		danger:
-			"bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20",
-	};
+	const buttonProps = stylex.props(styles.base, styles[size], styles[variant]);
+
 	return (
 		<button
-			className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
+			{...buttonProps}
+			className={`${buttonProps.className ?? ""} ${className}`}
 			{...props}
 		>
 			{children}
 		</button>
 	);
 }
+
+const styles = stylex.create({
+	base: {
+		alignItems: "center",
+		borderRadius: radius.lg,
+		display: "inline-flex",
+		fontWeight: font.weight_5,
+		gap: controlSize._1_5,
+		justifyContent: "center",
+		transitionDuration: motion.durationBase,
+		transitionProperty:
+			"background-color, border-color, color, transform, opacity",
+		transitionTimingFunction: motion.ease,
+		":active": {
+			transform: "scale(0.97)",
+		},
+		":disabled": {
+			opacity: 0.4,
+			pointerEvents: "none",
+		},
+	},
+	sm: {
+		fontSize: font.size_3,
+		height: controlSize._7,
+		paddingInline: controlSize._2_5,
+	},
+	md: {
+		fontSize: font.size_5,
+		height: controlSize._8,
+		paddingInline: controlSize._3,
+	},
+	lg: {
+		fontSize: font.size_5,
+		height: controlSize._9,
+		paddingInline: controlSize._4,
+	},
+	primary: {
+		backgroundColor: {
+			default: color.accent,
+			":hover": color.accentHover,
+		},
+		color: color.accentForeground,
+	},
+	secondary: {
+		backgroundColor: {
+			default: color.surfaceControl,
+			":hover": color.surfaceControlHover,
+		},
+		borderColor: color.border,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+	},
+	ghost: {
+		backdropFilter: "blur(8px)",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlActive,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textMain,
+		},
+	},
+	danger: {
+		backgroundColor: {
+			default: color.dangerWash,
+			":hover": color.dangerHover,
+		},
+		borderColor: color.dangerBorder,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.danger,
+	},
+});

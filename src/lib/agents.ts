@@ -146,3 +146,63 @@ export function isChatAgentKind(kind: AgentKind): kind is ChatAgentKind {
 export function getAgentDefinition(kind: AgentKind): AgentDefinition {
 	return AGENT_DEFINITIONS[kind];
 }
+
+export interface DefaultChatSettings {
+	readonly agentKind: ChatAgentKind;
+	readonly model: string;
+	readonly reasoningLevel: string;
+}
+
+const DEFAULT_CHAT_SETTINGS_KEY = "inferay-default-chat-settings";
+
+const FALLBACK_DEFAULT_CHAT_SETTINGS: DefaultChatSettings = {
+	agentKind: "codex",
+	model: "gpt-5.5",
+	reasoningLevel: "low",
+};
+
+export function normalizeDefaultChatSettings(
+	settings: Partial<DefaultChatSettings> | null | undefined
+): DefaultChatSettings {
+	const agentKind: ChatAgentKind =
+		settings?.agentKind === "claude" || settings?.agentKind === "codex"
+			? settings.agentKind
+			: FALLBACK_DEFAULT_CHAT_SETTINGS.agentKind;
+	const definition = getAgentDefinition(agentKind);
+	const fallbackModel =
+		agentKind === FALLBACK_DEFAULT_CHAT_SETTINGS.agentKind
+			? FALLBACK_DEFAULT_CHAT_SETTINGS.model
+			: definition.defaultModel;
+	const model = definition.models.some(
+		(option) => option.id === settings?.model
+	)
+		? settings!.model!
+		: fallbackModel;
+	const reasoningLevel = CODEX_REASONING_LEVELS.some(
+		(level) => level.id === settings?.reasoningLevel
+	)
+		? settings!.reasoningLevel!
+		: FALLBACK_DEFAULT_CHAT_SETTINGS.reasoningLevel;
+	return { agentKind, model, reasoningLevel };
+}
+
+export function loadDefaultChatSettings(): DefaultChatSettings {
+	try {
+		const raw = localStorage.getItem(DEFAULT_CHAT_SETTINGS_KEY);
+		const parsed = raw
+			? (JSON.parse(raw) as Partial<DefaultChatSettings>)
+			: null;
+		return normalizeDefaultChatSettings(parsed);
+	} catch {
+		return FALLBACK_DEFAULT_CHAT_SETTINGS;
+	}
+}
+
+export function saveDefaultChatSettings(settings: DefaultChatSettings) {
+	try {
+		localStorage.setItem(
+			DEFAULT_CHAT_SETTINGS_KEY,
+			JSON.stringify(normalizeDefaultChatSettings(settings))
+		);
+	} catch {}
+}

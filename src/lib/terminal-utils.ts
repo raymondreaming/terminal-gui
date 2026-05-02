@@ -2,6 +2,7 @@ import {
 	type AgentKind,
 	type ChatAgentKind,
 	getAgentDefinition,
+	loadDefaultChatSettings,
 } from "./agents.ts";
 
 import { sendJson } from "./fetch-json.ts";
@@ -159,7 +160,7 @@ export const DEFAULT_COLUMNS = 2 as const;
 
 export const DEFAULT_ROWS = 1 as const;
 
-export const DEFAULT_CHAT_AGENT_KIND: ChatAgentKind = "claude";
+export const DEFAULT_CHAT_AGENT_KIND: ChatAgentKind = "codex";
 
 function isValidTerminalState(value: unknown): value is TerminalSavedState {
 	if (typeof value !== "object" || value === null) return false;
@@ -251,7 +252,7 @@ export function createTerminalPane(
 }
 
 function createAgentChatPane(
-	agentKind: ChatAgentKind = DEFAULT_CHAT_AGENT_KIND,
+	agentKind: ChatAgentKind = loadDefaultChatSettings().agentKind,
 	cwd?: string,
 	pendingCwd = false
 ): TerminalPaneModel {
@@ -259,17 +260,18 @@ function createAgentChatPane(
 }
 
 export function createPendingAgentChatPane(
-	agentKind: ChatAgentKind = DEFAULT_CHAT_AGENT_KIND
+	agentKind: ChatAgentKind = loadDefaultChatSettings().agentKind
 ): TerminalPaneModel {
 	return createAgentChatPane(agentKind, undefined, true);
 }
 
 function createDefaultGroup(): TerminalGroupModel {
+	const pane = createPendingAgentChatPane();
 	return {
 		id: createGroupId(),
 		name: "Default",
-		panes: [],
-		selectedPaneId: null,
+		panes: [pane],
+		selectedPaneId: pane.id,
 		columns: DEFAULT_COLUMNS,
 		rows: DEFAULT_ROWS,
 	};
@@ -283,9 +285,14 @@ export function migrateGroup(
 		selectedPaneId: PaneId | null;
 	}
 ): TerminalGroupModel {
+	const panes =
+		group.panes.length > 0 ? group.panes : [createPendingAgentChatPane()];
+	const selectedPaneId = panes.some((pane) => pane.id === group.selectedPaneId)
+		? group.selectedPaneId
+		: (panes[0]?.id ?? null);
 	return {
 		...group,
-		panes: group.panes.map((pane) => ({
+		panes: panes.map((pane) => ({
 			...pane,
 			agentKind:
 				pane.agentKind ??
@@ -297,6 +304,7 @@ export function migrateGroup(
 			isClaude: pane.agentKind ? pane.agentKind === "claude" : pane.isClaude,
 			paneType: pane.paneType ?? (pane.isClaude ? "claude" : "terminal"),
 		})),
+		selectedPaneId,
 		columns: group.columns ?? DEFAULT_COLUMNS,
 		rows: group.rows ?? DEFAULT_ROWS,
 	};

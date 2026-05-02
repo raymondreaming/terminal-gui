@@ -1,19 +1,29 @@
+import * as stylex from "@stylexjs/stylex";
 import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
-import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
+import { BottomTerminalPanel } from "./components/layout/BottomTerminalPanel.tsx";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { TerminalShellHeader } from "./components/layout/TerminalShellHeader.tsx";
-import { BottomTerminalPanel } from "./components/layout/BottomTerminalPanel.tsx";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
 import { preloadPrompts } from "./hooks/usePrompts.ts";
 import { applyAppTheme, loadAppThemeId } from "./lib/app-theme.ts";
 import { getServerOrigin, resolveServerUrl } from "./lib/server-origin.ts";
 import { readStoredBoolean } from "./lib/stored-json.ts";
 import { GitPage } from "./pages/GitPage";
 import { ImagesPage } from "./pages/ImagesPage";
-import { OnboardingPage, ONBOARDING_DONE_KEY } from "./pages/OnboardingPage";
+import { ONBOARDING_DONE_KEY, OnboardingPage } from "./pages/OnboardingPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { PromptsPage } from "./pages/PromptsPage";
+import {
+	colorTheme,
+	controlSizeTheme,
+	effectTheme,
+	fontTheme,
+	motionTheme,
+	radiusTheme,
+	shadowTheme,
+} from "./tokens.stylex.ts";
 
 const TerminalPage = lazy(() =>
 	import("./pages/Terminal").then((m) => ({ default: m.TerminalPage }))
@@ -66,8 +76,21 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 function AppShell() {
+	const themeProps = stylex.props(
+		colorTheme,
+		controlSizeTheme,
+		fontTheme,
+		radiusTheme,
+		motionTheme,
+		shadowTheme,
+		effectTheme
+	);
+
 	return (
-		<div className="flex h-screen flex-col bg-inferay-black">
+		<div
+			{...themeProps}
+			className={`flex h-screen flex-col bg-inferay-black ${themeProps.className ?? ""}`}
+		>
 			<div className="electrobun-webkit-app-region-drag h-6 shrink-0 bg-inferay-black" />
 			<div className="flex min-h-0 flex-1">
 				<Sidebar />
@@ -92,8 +115,21 @@ function AppShell() {
 }
 
 function OnboardingShell() {
+	const themeProps = stylex.props(
+		colorTheme,
+		controlSizeTheme,
+		fontTheme,
+		radiusTheme,
+		motionTheme,
+		shadowTheme,
+		effectTheme
+	);
+
 	return (
-		<div className="flex h-screen flex-col bg-inferay-black">
+		<div
+			{...themeProps}
+			className={`flex h-screen flex-col bg-inferay-black ${themeProps.className ?? ""}`}
+		>
 			<div className="electrobun-webkit-app-region-drag h-6 shrink-0 bg-inferay-black" />
 			<div className="min-h-0 flex-1">
 				<OnboardingPage />

@@ -1,6 +1,8 @@
+import * as stylex from "@stylexjs/stylex";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { IconChevronDown } from "./Icons.tsx";
 
 interface DropdownOption {
@@ -146,6 +148,11 @@ export function DropdownButton({
 		setOpen(!open);
 	};
 	const selected = options.find((o) => o.id === value);
+	const buttonProps = stylex.props(
+		styles.button,
+		fullWidth ? styles.fullWidth : null,
+		open ? styles.buttonOpen : styles.buttonClosed
+	);
 	const showSearch = options.length > 5;
 	const filtered = search
 		? options.filter(
@@ -156,14 +163,14 @@ export function DropdownButton({
 			)
 		: options;
 	const searchBox = showSearch ? (
-		<div className="border-b border-inferay-gray-border px-2 py-1.5">
+		<div {...stylex.props(styles.searchWrap)}>
 			<input
 				ref={searchRef}
 				type="text"
 				value={search}
 				onChange={(e) => setSearch(e.target.value)}
 				placeholder="Search..."
-				className="w-full rounded-md border border-inferay-gray-border/50 bg-inferay-dark-gray/50 px-2.5 py-1.5 text-xs text-inferay-white placeholder-inferay-muted-gray outline-none focus:border-inferay-gray-border"
+				{...stylex.props(styles.searchInput)}
 				onKeyDown={(e) => {
 					if (e.key === "Escape") {
 						setOpen(false);
@@ -174,11 +181,11 @@ export function DropdownButton({
 	) : null;
 	const optionsBox = (
 		<div
-			className="overflow-y-auto"
+			{...stylex.props(styles.optionsBox)}
 			style={{ maxHeight: pos.maxH - (showSearch ? 42 : 2) }}
 		>
 			{filtered.length === 0 ? (
-				<p className="px-3 py-4 text-center text-xs text-inferay-muted-gray">
+				<p {...stylex.props(styles.empty)}>
 					{search ? "No matches" : emptyLabel}
 				</p>
 			) : (
@@ -200,11 +207,10 @@ export function DropdownButton({
 								onChange(opt.id);
 								setOpen(false);
 							}}
-							className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
-								opt.id === value
-									? "bg-inferay-white/[0.08] text-inferay-white"
-									: "text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-white"
-							}`}
+							{...stylex.props(
+								styles.option,
+								opt.id === value ? styles.optionSelected : null
+							)}
 						>
 							{opt.icon && (
 								<span className="shrink-0 text-inferay-muted-gray">
@@ -244,17 +250,12 @@ export function DropdownButton({
 				type="button"
 				ref={btnRef}
 				onClick={toggle}
-				className={`flex items-center gap-2 text-xs transition-colors ${
-					fullWidth ? "w-full" : ""
-				} ${
+				{...(buttonClassName ? {} : buttonProps)}
+				className={
 					buttonClassName
-						? buttonClassName
-						: `h-7 rounded-lg border px-3 ${
-								open
-									? "border-inferay-accent/40 bg-inferay-white/[0.08] text-inferay-white"
-									: "border-inferay-gray-border bg-inferay-dark-gray hover:border-inferay-gray-border text-inferay-soft-white"
-							}`
-				}`}
+						? `flex items-center text-xs transition-colors ${fullWidth ? "w-full" : ""} ${buttonClassName}`
+						: buttonProps.className
+				}
 			>
 				{icon}
 				<span
@@ -271,7 +272,7 @@ export function DropdownButton({
 				createPortal(
 					<div
 						ref={menuRef}
-						className="fixed z-50 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray/95 shadow-2xl backdrop-blur-xl overflow-hidden"
+						{...stylex.props(styles.menu)}
 						style={{
 							top: pos.top,
 							left: pos.left,
@@ -300,3 +301,109 @@ export function DropdownButton({
 		</>
 	);
 }
+
+const styles = stylex.create({
+	button: {
+		alignItems: "center",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		fontSize: font.size_3,
+		gap: controlSize._2,
+		height: controlSize._7,
+		paddingInline: controlSize._3,
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+	},
+	buttonClosed: {
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		borderColor: color.border,
+		color: color.textSoft,
+	},
+	buttonOpen: {
+		backgroundColor: color.controlActive,
+		borderColor: "rgba(229, 229, 231, 0.4)",
+		color: color.textMain,
+	},
+	fullWidth: {
+		width: "100%",
+	},
+	menu: {
+		backdropFilter: "blur(24px)",
+		backgroundColor: "rgba(28, 28, 30, 0.95)",
+		borderColor: color.border,
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.75)",
+		overflow: "hidden",
+		position: "fixed",
+		zIndex: 50,
+	},
+	searchWrap: {
+		borderBottomColor: color.border,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._2,
+	},
+	searchInput: {
+		backgroundColor: "rgba(28, 28, 30, 0.5)",
+		borderColor: "rgba(255, 255, 255, 0.04)",
+		borderRadius: 6,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textMain,
+		fontSize: font.size_3,
+		outline: "none",
+		paddingBlock: "0.375rem",
+		paddingInline: "0.625rem",
+		width: "100%",
+		"::placeholder": {
+			color: color.textMuted,
+		},
+		":focus": {
+			borderColor: color.border,
+		},
+	},
+	optionsBox: {
+		overflowY: "auto",
+	},
+	empty: {
+		color: color.textMuted,
+		fontSize: font.size_3,
+		paddingBlock: controlSize._4,
+		paddingInline: controlSize._3,
+		textAlign: "center",
+	},
+	option: {
+		alignItems: "center",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textMain,
+		},
+		display: "flex",
+		fontSize: font.size_3,
+		gap: controlSize._2,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: "ease",
+		width: "100%",
+	},
+	optionSelected: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+});

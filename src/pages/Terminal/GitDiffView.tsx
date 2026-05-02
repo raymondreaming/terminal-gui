@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
 	memo,
 	type ReactNode,
@@ -8,6 +9,7 @@ import {
 	useState,
 } from "react";
 import { MarkdownPreview } from "../../components/diff/MarkdownPreview.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconChevronRight,
 	IconCopy,
@@ -19,6 +21,13 @@ import {
 import type { DiffLine, HunkDiff } from "../../hooks/useGitDiff.ts";
 import { useShikiHighlighter } from "../../hooks/useShikiHighlighter.ts";
 import { type Token, tokenizeLine } from "../../lib/syntax-tokens.ts";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+} from "../../tokens.stylex.ts";
 
 export type DiffViewMode = "split" | "stacked" | "hunks";
 
@@ -72,6 +81,365 @@ const MAX_RENDERED_DIFF_LINES = 6000;
 const MAX_RENDERED_LINE_CHARS = 4000;
 const MAX_PANEL_CONTENT_WIDTH = 8000;
 
+const diffStyles = stylex.create({
+	virtualRoot: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+	},
+	virtualScroller: {
+		flex: 1,
+		overflow: "auto",
+	},
+	minimap: {
+		width: "14px",
+		flexShrink: 0,
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.borderSubtle,
+		backgroundColor: color.background,
+	},
+	minimapInteractive: {
+		position: "relative",
+		cursor: "pointer",
+	},
+	minimapSegment: {
+		position: "absolute",
+		right: 0,
+		width: "6px",
+	},
+	minimapAdd: {
+		backgroundColor: color.gitAdded,
+	},
+	minimapDelete: {
+		backgroundColor: color.gitDeleted,
+	},
+	minimapThumb: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		pointerEvents: "none",
+		borderTopWidth: 1,
+		borderBottomWidth: 1,
+		borderTopStyle: "solid",
+		borderBottomStyle: "solid",
+		borderTopColor: "rgba(255, 255, 255, 0.2)",
+		borderBottomColor: "rgba(255, 255, 255, 0.2)",
+		backgroundColor: "rgba(255, 255, 255, 0.1)",
+	},
+	copyFeedback: {
+		position: "absolute",
+		top: controlSize._2,
+		right: controlSize._2,
+		zIndex: 10,
+		borderRadius: radius.sm,
+		backgroundColor: color.accent,
+		color: color.backgroundRaised,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		animationName: stylex.keyframes({
+			"50%": {
+				opacity: 0.55,
+			},
+		}),
+		animationDuration: "1s",
+		animationIterationCount: "infinite",
+	},
+	singlePanel: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+		flexDirection: "column",
+	},
+	toolbar: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "flex-end",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._3,
+	},
+	segmented: {
+		display: "flex",
+		height: controlSize._5,
+		alignItems: "center",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.md,
+		backgroundColor: color.backgroundRaised,
+	},
+	viewButton: {
+		display: "flex",
+		height: "100%",
+		width: controlSize._6,
+		alignItems: "center",
+		justifyContent: "center",
+		color: color.textMuted,
+		transitionProperty: "background-color, color",
+		transitionDuration: motion.durationFast,
+		backgroundColor: {
+			default: color.transparent,
+			":hover": color.controlHover,
+		},
+	},
+	viewButtonActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	header: {
+		display: "flex",
+		height: controlSize._9,
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._1_5,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+		paddingInline: controlSize._3,
+	},
+	pathDir: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontFamily: font.familyDiff,
+		fontSize: font.size_2,
+	},
+	pathName: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontFamily: font.familyDiff,
+		fontSize: font.size_2,
+		fontWeight: 500,
+	},
+	stagedPill: {
+		flexShrink: 0,
+		borderRadius: radius.sm,
+		backgroundColor: color.accentWash,
+		color: color.accent,
+		fontSize: font.size_0_5,
+		paddingBlock: controlSize._0_5,
+		paddingInline: controlSize._1,
+	},
+	stats: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1_5,
+		marginLeft: controlSize._2,
+		fontSize: font.size_1,
+	},
+	addedText: {
+		color: color.gitAdded,
+	},
+	deletedText: {
+		color: color.gitDeleted,
+	},
+	headerSpacer: {
+		flex: 1,
+	},
+	changeNav: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._0_5,
+		marginRight: controlSize._2,
+	},
+	changeCount: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+		paddingInline: controlSize._1,
+	},
+	shell: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	shellRelative: {
+		position: "relative",
+	},
+	centerState: {
+		display: "flex",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: color.background,
+	},
+	centerInline: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	spinner: {
+		width: font.size_3,
+		height: font.size_3,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.textMuted,
+		borderTopColor: color.transparent,
+		borderRadius: radius.pill,
+		animationName: stylex.keyframes({
+			to: {
+				transform: "rotate(360deg)",
+			},
+		}),
+		animationDuration: "800ms",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
+	},
+	centerText: {
+		color: color.textMuted,
+		fontSize: font.size_4,
+	},
+	centerBody: {
+		display: "flex",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingInline: controlSize._6,
+	},
+	centerMessage: {
+		maxWidth: "24rem",
+		color: color.textMuted,
+		fontSize: font.size_4,
+		lineHeight: 1.55,
+		textAlign: "center",
+	},
+	body: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+		overflow: "hidden",
+	},
+	diffPane: {
+		display: "flex",
+		minWidth: 0,
+		flex: 1,
+		flexDirection: "column",
+	},
+	diffPaneBorderRight: {
+		borderRightWidth: 1,
+		borderRightStyle: "solid",
+		borderRightColor: color.border,
+	},
+	diffPaneBorderBottom: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+	},
+	emptyPane: {
+		display: "flex",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		color: color.textFaint,
+		fontSize: font.size_4,
+	},
+	stacked: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	imageBody: {
+		display: "flex",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "auto",
+		padding: controlSize._4,
+	},
+	image: {
+		maxWidth: "100%",
+		maxHeight: "100%",
+		objectFit: "contain",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.sm,
+	},
+	markdownBody: {
+		flex: 1,
+		overflowY: "auto",
+		padding: controlSize._6,
+	},
+	markdownInner: {
+		maxWidth: "48rem",
+		marginInline: "auto",
+	},
+	hunkSeparator: {
+		backgroundColor: color.border,
+		height: 6,
+		marginBlock: 2,
+		opacity: 0.15,
+	},
+	spacer: {
+		backgroundColor: "rgba(255,255,255,0.02)",
+		backgroundImage:
+			"repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 9px)",
+		height: LINE_H,
+	},
+	row: {
+		display: "flex",
+		height: LINE_H,
+		position: "relative",
+	},
+	lineNumber: {
+		flexShrink: 0,
+		fontFamily: font.familyDiff,
+		paddingRight: controlSize._1,
+		textAlign: "right",
+		userSelect: "none",
+		width: DIFF_CONFIG.lineNumWidth,
+	},
+	sign: {
+		flexShrink: 0,
+		fontFamily: font.familyDiff,
+		textAlign: "center",
+		userSelect: "none",
+		width: DIFF_CONFIG.signWidth,
+	},
+	content: {
+		flex: 1,
+		fontFamily: font.familyDiff,
+		minWidth: "max-content",
+		paddingLeft: controlSize._1,
+		paddingRight: controlSize._3,
+		whiteSpace: "pre",
+	},
+	copyLineButton: {
+		backgroundColor: color.surfaceControl,
+		borderRadius: radius.sm,
+		opacity: {
+			default: 0.35,
+			":hover": 1,
+		},
+		padding: controlSize._0_5,
+		position: "absolute",
+		right: controlSize._1,
+		top: "50%",
+		transform: "translateY(-50%)",
+		transitionDuration: motion.durationBase,
+		transitionProperty: "opacity",
+		transitionTimingFunction: motion.ease,
+	},
+});
+
 const DiffRow = memo(function DiffRow({
 	line,
 	tokens,
@@ -91,12 +459,8 @@ const DiffRow = memo(function DiffRow({
 	if (line.type === "hunk") {
 		return (
 			<div
+				{...stylex.props(diffStyles.hunkSeparator)}
 				style={{
-					height: 6,
-					marginTop: 2,
-					marginBottom: 2,
-					backgroundColor: "var(--color-inferay-gray-border)",
-					opacity: 0.15,
 					minWidth: minWidth || "100%",
 				}}
 			/>
@@ -106,11 +470,8 @@ const DiffRow = memo(function DiffRow({
 	if (line.type === "spacer") {
 		return (
 			<div
+				{...stylex.props(diffStyles.spacer)}
 				style={{
-					height: LINE_H,
-					backgroundColor: "rgba(255,255,255,0.02)",
-					backgroundImage:
-						"repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 9px)",
 					minWidth: minWidth || "100%",
 				}}
 			/>
@@ -145,6 +506,7 @@ const DiffRow = memo(function DiffRow({
 			onCopy(line.content);
 		}
 	};
+	const rowProps = stylex.props(diffStyles.row);
 	const renderContent = () => {
 		const content =
 			line.content.length > MAX_RENDERED_LINE_CHARS
@@ -171,9 +533,9 @@ const DiffRow = memo(function DiffRow({
 
 	return (
 		<div
-			className="group relative flex diff-row"
+			{...rowProps}
+			className={`diff-row ${rowProps.className ?? ""}`}
 			style={{
-				height: LINE_H,
 				lineHeight: `${LINE_H}px`,
 				backgroundColor: getBgColor(),
 				minWidth: minWidth || "100%",
@@ -181,10 +543,8 @@ const DiffRow = memo(function DiffRow({
 			}}
 		>
 			<span
-				className="shrink-0 text-right font-diff select-none"
+				{...stylex.props(diffStyles.lineNumber)}
 				style={{
-					width: DIFF_CONFIG.lineNumWidth,
-					paddingRight: 4,
 					fontSize: DIFF_CONFIG.lineNumFontSize,
 					color: isAdd
 						? DIFF_CONFIG.addLineNumColor
@@ -197,9 +557,8 @@ const DiffRow = memo(function DiffRow({
 			</span>
 
 			<span
-				className="shrink-0 text-center font-diff select-none"
+				{...stylex.props(diffStyles.sign)}
 				style={{
-					width: DIFF_CONFIG.signWidth,
 					fontSize: DIFF_CONFIG.signFontSize,
 					color: isAdd
 						? DIFF_CONFIG.addSignColor
@@ -212,11 +571,9 @@ const DiffRow = memo(function DiffRow({
 			</span>
 
 			<span
-				className="flex-1 min-w-max font-diff whitespace-pre"
+				{...stylex.props(diffStyles.content)}
 				style={{
 					fontSize: DIFF_CONFIG.contentFontSize,
-					paddingRight: 12,
-					paddingLeft: 4,
 					color: highlightedHtml ? undefined : "var(--color-inferay-white)",
 				}}
 			>
@@ -227,7 +584,7 @@ const DiffRow = memo(function DiffRow({
 				<button
 					type="button"
 					onClick={handleCopy}
-					className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-inferay-gray p-0.5 opacity-0 transition-opacity group-hover:opacity-50 hover:!opacity-100"
+					{...stylex.props(diffStyles.copyLineButton)}
 					title="Copy line"
 				>
 					<IconCopy
@@ -412,11 +769,11 @@ function VirtualPanel({
 	}, [lines, _showMinimap]);
 
 	return (
-		<div className="flex flex-1 min-h-0">
+		<div {...stylex.props(diffStyles.virtualRoot)}>
 			<div
 				ref={scrollRef}
 				onScroll={handleScroll}
-				className="flex-1 overflow-auto"
+				{...stylex.props(diffStyles.virtualScroller)}
 			>
 				<div
 					style={{
@@ -516,12 +873,7 @@ const DiffMinimap = memo(function DiffMinimap({
 	}, []);
 
 	if (totalHeight <= 0 || lines.length === 0 || containerHeight <= 0) {
-		return (
-			<div
-				ref={containerRef}
-				className="w-[14px] shrink-0 bg-inferay-black border-l border-inferay-gray-border/30"
-			/>
-		);
+		return <div ref={containerRef} {...stylex.props(diffStyles.minimap)} />;
 	}
 
 	const scale = containerHeight / totalHeight;
@@ -546,13 +898,18 @@ const DiffMinimap = memo(function DiffMinimap({
 	return (
 		<div
 			ref={containerRef}
-			className="w-[14px] shrink-0 bg-inferay-black border-l border-inferay-gray-border/30 cursor-pointer relative"
+			{...stylex.props(diffStyles.minimap, diffStyles.minimapInteractive)}
 			onClick={handleClick}
 		>
 			{segments.map((seg, i) => (
 				<div
 					key={i}
-					className={`absolute right-0 w-[6px] ${seg.type === "add" ? "bg-git-added" : "bg-git-deleted"}`}
+					{...stylex.props(
+						diffStyles.minimapSegment,
+						seg.type === "add"
+							? diffStyles.minimapAdd
+							: diffStyles.minimapDelete
+					)}
 					style={{
 						top: seg.startLine * lineHeight,
 						height: Math.max(2, (seg.endLine - seg.startLine) * lineHeight),
@@ -561,7 +918,7 @@ const DiffMinimap = memo(function DiffMinimap({
 				/>
 			))}
 			<div
-				className="absolute left-0 right-0 bg-inferay-white/10 border-y border-inferay-white/20 pointer-events-none"
+				{...stylex.props(diffStyles.minimapThumb)}
 				style={{ top: thumbTop, height: thumbHeight }}
 			/>
 		</div>
@@ -569,17 +926,7 @@ const DiffMinimap = memo(function DiffMinimap({
 });
 const CopyFeedback = memo(function CopyFeedback({ show }: { show: boolean }) {
 	if (!show) return null;
-	return (
-		<div
-			className="absolute top-2 right-2 px-2 py-1 rounded text-[10px] font-medium z-10 animate-pulse"
-			style={{
-				backgroundColor: "var(--color-inferay-accent)",
-				color: "var(--color-inferay-dark-gray)",
-			}}
-		>
-			Copied!
-		</div>
-	);
+	return <div {...stylex.props(diffStyles.copyFeedback)}>Copied!</div>;
 });
 
 export const GitDiffView = memo(function GitDiffView({
@@ -806,12 +1153,10 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (loading) {
 		return (
-			<div className="flex h-full items-center justify-center bg-inferay-black">
-				<div className="flex items-center gap-2">
-					<div className="w-3 h-3 border border-inferay-muted-gray border-t-transparent rounded-full animate-spin" />
-					<span className="text-[11px] text-inferay-muted-gray">
-						Loading...
-					</span>
+			<div {...stylex.props(diffStyles.centerState)}>
+				<div {...stylex.props(diffStyles.centerInline)}>
+					<div {...stylex.props(diffStyles.spinner)} />
+					<span {...stylex.props(diffStyles.centerText)}>Loading...</span>
 				</div>
 			</div>
 		);
@@ -819,21 +1164,19 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (diff.isBinary) {
 		return (
-			<div className="flex h-full flex-col bg-inferay-black">
+			<div {...stylex.props(diffStyles.shell)}>
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
-				<div className="flex-1 flex items-center justify-center overflow-auto p-4">
+				<div {...stylex.props(diffStyles.imageBody)}>
 					{diff.isImage && diff.imagePath ? (
 						<img
 							src={`/api/file?path=${encodeURIComponent(diff.imagePath)}`}
 							alt={filePath}
-							className="max-w-full max-h-full object-contain rounded border border-inferay-gray-border"
+							{...stylex.props(diffStyles.image)}
 						/>
 					) : (
-						<span className="text-[11px] text-inferay-muted-gray">
-							Binary file
-						</span>
+						<span {...stylex.props(diffStyles.centerText)}>Binary file</span>
 					)}
 				</div>
 			</div>
@@ -842,14 +1185,12 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (statusMessage) {
 		return (
-			<div className="flex h-full flex-col bg-inferay-black">
+			<div {...stylex.props(diffStyles.shell)}>
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
-				<div className="flex flex-1 items-center justify-center px-6">
-					<p className="max-w-xs text-center text-[11px] leading-5 text-inferay-muted-gray">
-						{statusMessage}
-					</p>
+				<div {...stylex.props(diffStyles.centerBody)}>
+					<p {...stylex.props(diffStyles.centerMessage)}>{statusMessage}</p>
 				</div>
 			</div>
 		);
@@ -857,14 +1198,12 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (oversizedMessage) {
 		return (
-			<div className="flex h-full flex-col bg-inferay-black">
+			<div {...stylex.props(diffStyles.shell)}>
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
-				<div className="flex flex-1 items-center justify-center px-6">
-					<p className="max-w-sm text-center text-[11px] leading-5 text-inferay-muted-gray">
-						{oversizedMessage}
-					</p>
+				<div {...stylex.props(diffStyles.centerBody)}>
+					<p {...stylex.props(diffStyles.centerMessage)}>{oversizedMessage}</p>
 				</div>
 			</div>
 		);
@@ -880,12 +1219,12 @@ export const GitDiffView = memo(function GitDiffView({
 
 	if (isMarkdown) {
 		return (
-			<div className="flex h-full flex-col bg-inferay-black">
+			<div {...stylex.props(diffStyles.shell)}>
 				{!hideHeader && (
 					<DiffHeader filePath={filePath} staged={staged} onClose={onClose} />
 				)}
-				<div className="flex-1 overflow-y-auto p-6">
-					<div className="mx-auto max-w-3xl">
+				<div {...stylex.props(diffStyles.markdownBody)}>
+					<div {...stylex.props(diffStyles.markdownInner)}>
 						<MarkdownPreview content={markdownContent} />
 					</div>
 				</div>
@@ -896,7 +1235,7 @@ export const GitDiffView = memo(function GitDiffView({
 	return (
 		<div
 			ref={containerRef}
-			className="flex h-full flex-col bg-inferay-black relative"
+			{...stylex.props(diffStyles.shell, diffStyles.shellRelative)}
 		>
 			<CopyFeedback show={showCopyFeedback} />
 			{!hideHeader && (
@@ -913,14 +1252,17 @@ export const GitDiffView = memo(function GitDiffView({
 			{!hideToolbar && (
 				<DiffViewToolbar viewMode={viewMode} onChange={setViewMode} />
 			)}
-			<div className="flex flex-1 min-h-0 overflow-hidden">
+			<div {...stylex.props(diffStyles.body)}>
 				{viewMode === "split" ? (
 					<>
-						<div className="flex-1 flex flex-col min-w-0 border-r border-inferay-gray-border">
+						<div
+							{...stylex.props(
+								diffStyles.diffPane,
+								diffStyles.diffPaneBorderRight
+							)}
+						>
 							{diff.isNew ? (
-								<div className="flex-1 flex items-center justify-center text-[11px] text-inferay-muted-gray/30">
-									New file
-								</div>
+								<div {...stylex.props(diffStyles.emptyPane)}>New file</div>
 							) : (
 								<VirtualPanel
 									lines={diff.oldLines}
@@ -936,7 +1278,7 @@ export const GitDiffView = memo(function GitDiffView({
 								/>
 							)}
 						</div>
-						<div className="flex-1 flex flex-col min-w-0">
+						<div {...stylex.props(diffStyles.diffPane)}>
 							<VirtualPanel
 								lines={diff.newLines}
 								ext={ext}
@@ -953,12 +1295,15 @@ export const GitDiffView = memo(function GitDiffView({
 						</div>
 					</>
 				) : viewMode === "stacked" ? (
-					<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-						<div className="flex-1 flex min-h-0 flex-col border-b border-inferay-gray-border">
+					<div {...stylex.props(diffStyles.stacked)}>
+						<div
+							{...stylex.props(
+								diffStyles.diffPane,
+								diffStyles.diffPaneBorderBottom
+							)}
+						>
 							{diff.isNew ? (
-								<div className="flex-1 flex items-center justify-center text-[11px] text-inferay-muted-gray/30">
-									New file
-								</div>
+								<div {...stylex.props(diffStyles.emptyPane)}>New file</div>
 							) : (
 								<VirtualPanel
 									lines={diff.oldLines}
@@ -974,7 +1319,7 @@ export const GitDiffView = memo(function GitDiffView({
 								/>
 							)}
 						</div>
-						<div className="flex-1 flex min-h-0 flex-col">
+						<div {...stylex.props(diffStyles.diffPane)}>
 							<VirtualPanel
 								lines={diff.newLines}
 								ext={ext}
@@ -1055,7 +1400,7 @@ function SinglePanel({
 }) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	return (
-		<div className="flex min-h-0 flex-1 flex-col">
+		<div {...stylex.props(diffStyles.singlePanel)}>
 			<VirtualPanel
 				lines={lines}
 				ext={ext}
@@ -1079,8 +1424,8 @@ function DiffViewToolbar({
 	onChange: (viewMode: DiffViewMode) => void;
 }) {
 	return (
-		<div className="flex shrink-0 items-center justify-end gap-2 border-b border-inferay-gray-border bg-inferay-black px-3 py-1.5">
-			<div className="flex h-5 items-center overflow-hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray">
+		<div {...stylex.props(diffStyles.toolbar)}>
+			<div {...stylex.props(diffStyles.segmented)}>
 				<DiffViewButton
 					active={viewMode === "split"}
 					title="Split diff"
@@ -1120,11 +1465,10 @@ function DiffViewButton({
 			type="button"
 			title={title}
 			onClick={onClick}
-			className={`flex h-full w-6 items-center justify-center transition-colors ${
-				active
-					? "bg-inferay-white/10 text-inferay-white"
-					: "text-inferay-muted-gray hover:bg-inferay-white/[0.04] hover:text-inferay-soft-white"
-			}`}
+			{...stylex.props(
+				diffStyles.viewButton,
+				active && diffStyles.viewButtonActive
+			)}
 		>
 			{icon}
 		</button>
@@ -1154,68 +1498,64 @@ function DiffHeader({
 	const name = filePath.split("/").pop() || filePath;
 
 	return (
-		<div className="shrink-0 flex items-center gap-1.5 px-3 h-9 border-b border-inferay-gray-border bg-inferay-black">
-			{dir && (
-				<span className="text-[10px] font-mono text-inferay-muted-gray/50 truncate">
-					{dir}
-				</span>
-			)}
-			<span className="text-[10px] font-mono font-medium text-inferay-white truncate">
-				{name}
-			</span>
-			{staged && (
-				<span className="text-[8px] text-inferay-accent/80 bg-inferay-accent/8 px-1 py-0.5 rounded shrink-0">
-					staged
-				</span>
-			)}
+		<div {...stylex.props(diffStyles.header)}>
+			{dir && <span {...stylex.props(diffStyles.pathDir)}>{dir}</span>}
+			<span {...stylex.props(diffStyles.pathName)}>{name}</span>
+			{staged && <span {...stylex.props(diffStyles.stagedPill)}>staged</span>}
 
 			{stats && (stats.added > 0 || stats.removed > 0) && (
-				<div className="flex items-center gap-1.5 text-[9px] ml-2">
+				<div {...stylex.props(diffStyles.stats)}>
 					{stats.added > 0 && (
-						<span className="text-git-added">+{stats.added}</span>
+						<span {...stylex.props(diffStyles.addedText)}>+{stats.added}</span>
 					)}
 					{stats.removed > 0 && (
-						<span className="text-git-deleted">−{stats.removed}</span>
+						<span {...stylex.props(diffStyles.deletedText)}>
+							−{stats.removed}
+						</span>
 					)}
 				</div>
 			)}
 
-			<span className="flex-1" />
+			<span {...stylex.props(diffStyles.headerSpacer)} />
 
 			{totalChanges !== undefined &&
 				totalChanges > 0 &&
 				onPrevChange &&
 				onNextChange && (
-					<div className="flex items-center gap-0.5 mr-2">
-						<button
+					<div {...stylex.props(diffStyles.changeNav)}>
+						<IconButton
 							type="button"
 							onClick={onPrevChange}
-							className="flex items-center justify-center h-5 w-5 rounded text-inferay-muted-gray hover:text-inferay-white hover:bg-inferay-gray transition-colors"
+							variant="ghost"
+							size="xs"
 							title="Previous change (k/p)"
 						>
 							<IconChevronRight size={10} className="rotate-180" />
-						</button>
-						<span className="text-[9px] text-inferay-muted-gray tabular-nums px-1">
+						</IconButton>
+						<span {...stylex.props(diffStyles.changeCount)}>
 							{totalChanges}
 						</span>
-						<button
+						<IconButton
 							type="button"
 							onClick={onNextChange}
-							className="flex items-center justify-center h-5 w-5 rounded text-inferay-muted-gray hover:text-inferay-white hover:bg-inferay-gray transition-colors"
+							variant="ghost"
+							size="xs"
 							title="Next change (j/n)"
 						>
 							<IconChevronRight size={10} />
-						</button>
+						</IconButton>
 					</div>
 				)}
 
-			<button
+			<IconButton
 				type="button"
 				onClick={onClose}
-				className="flex items-center justify-center h-5 w-5 rounded text-inferay-muted-gray/50 hover:text-inferay-white hover:bg-inferay-gray transition-colors"
+				variant="ghost"
+				size="xs"
+				title="Close diff"
 			>
 				<IconX size={9} />
-			</button>
+			</IconButton>
 		</div>
 	);
 }

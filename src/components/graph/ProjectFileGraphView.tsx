@@ -1,5 +1,14 @@
+import * as stylex from "@stylexjs/stylex";
 import { useEffect, useMemo, useState } from "react";
 import type { GitProjectStatus } from "../../hooks/useGitStatus.ts";
+import {
+	color,
+	controlSize,
+	font,
+	motion,
+	radius,
+	shadow,
+} from "../../tokens.stylex.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
 import {
 	IconFolder,
@@ -38,26 +47,16 @@ function fileStatusType(
 	return "modified";
 }
 
-function statusClasses(status: FileGraphNode["status"]) {
-	if (status === "added") {
-		return {
-			border: "border-emerald-500/40",
-			bg: "bg-emerald-500/10",
-			dot: "bg-emerald-400",
-		};
-	}
-	if (status === "modified") {
-		return {
-			border: "border-amber-500/40",
-			bg: "bg-amber-500/10",
-			dot: "bg-amber-400",
-		};
-	}
-	return {
-		border: "border-inferay-gray-border",
-		bg: "bg-inferay-dark-gray",
-		dot: "bg-inferay-muted-gray/60",
-	};
+function statusNodeStyle(status: FileGraphNode["status"]) {
+	if (status === "added") return styles.nodeAdded;
+	if (status === "modified") return styles.nodeModified;
+	return styles.nodeNormal;
+}
+
+function statusDotStyle(status: FileGraphNode["status"]) {
+	if (status === "added") return styles.dotAdded;
+	if (status === "modified") return styles.dotModified;
+	return styles.dotNormal;
 }
 
 function buildGraphNodes(
@@ -192,8 +191,8 @@ export function ProjectFileGraphView({
 
 	if (!activeCwd) {
 		return (
-			<div className="flex h-full items-center justify-center p-6">
-				<p className="text-sm text-inferay-white">
+			<div {...stylex.props(styles.noProject)}>
+				<p {...stylex.props(styles.noProjectText)}>
 					Open a project directory in one of this group's panes to populate the
 					file graph.
 				</p>
@@ -202,17 +201,10 @@ export function ProjectFileGraphView({
 	}
 
 	return (
-		<div className="flex h-full overflow-hidden">
-			<div className="relative min-w-0 flex-1 overflow-hidden bg-black">
-				<div
-					className="absolute inset-0"
-					style={{
-						backgroundImage:
-							"radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)",
-						backgroundSize: "20px 20px",
-					}}
-				/>
-				<div className="absolute left-4 top-4 z-10 flex items-center gap-2">
+		<div {...stylex.props(styles.root)}>
+			<div {...stylex.props(styles.canvasPane)}>
+				<div {...stylex.props(styles.gridBackdrop)} />
+				<div {...stylex.props(styles.canvasControls)}>
 					<DropdownButton
 						value={activeCwd}
 						options={cwds.map((cwd) => ({
@@ -223,56 +215,61 @@ export function ProjectFileGraphView({
 						}))}
 						onChange={onSelectCwd}
 						minWidth={220}
-						buttonClassName="h-7 rounded-lg border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-[10px] font-medium hover:bg-inferay-gray"
-						labelClassName="max-w-[140px] truncate text-[10px]"
+						buttonClassName={stylex.props(styles.dropdownButton).className}
+						labelClassName={stylex.props(styles.dropdownLabel).className}
 					/>
 					{project ? (
-						<div className="flex h-7 items-center gap-1.5 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 text-[10px] text-inferay-soft-white">
+						<div {...stylex.props(styles.branchPill)}>
 							<IconGitBranch size={11} />
-							<span className="font-mono">{project.branch}</span>
+							<span {...stylex.props(styles.monoText)}>{project.branch}</span>
 						</div>
 					) : null}
 				</div>
-				<div className="absolute inset-0 overflow-auto px-12 py-16">
+				<div {...stylex.props(styles.canvasScroll)}>
 					{loading ? (
-						<div className="flex h-full items-center justify-center">
-							<p className="text-[11px] text-inferay-muted-gray">
+						<div {...stylex.props(styles.centerState)}>
+							<p {...stylex.props(styles.centerText)}>
 								Loading project files...
 							</p>
 						</div>
 					) : nodes.length === 0 ? (
-						<div className="flex h-full items-center justify-center">
-							<p className="text-[11px] text-inferay-muted-gray">
+						<div {...stylex.props(styles.centerState)}>
+							<p {...stylex.props(styles.centerText)}>
 								No files available for this project yet.
 							</p>
 						</div>
 					) : (
-						<div className="relative mx-auto h-[640px] min-w-[820px] max-w-[980px]">
+						<div {...stylex.props(styles.graphStage)}>
 							<ProjectGraphConnectionsLayer
-								className="absolute inset-0 h-full w-full"
+								className={stylex.props(styles.connectionsLayer).className}
 								nodes={nodes}
 								hoveredNodeId={hoveredNodeId}
 								selectedNodeId={selectedNodeId}
 							/>
 							{nodes.map((node) => {
-								const styles = statusClasses(node.status);
 								const selected = node.id === selectedNodeId;
 								return (
 									<button
 										type="button"
 										key={node.id}
-										className={`absolute flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-all ${
+										{...stylex.props(
+											styles.nodeButton,
 											selected
-												? `${styles.border} ${styles.bg} shadow-[0_0_0_1px_rgba(255,255,255,0.05)]`
-												: "border-inferay-gray-border bg-inferay-dark-gray hover:bg-inferay-gray"
-										}`}
+												? [styles.nodeSelected, statusNodeStyle(node.status)]
+												: styles.nodeIdle
+										)}
 										style={{ left: node.x, top: node.y }}
 										onClick={() => setSelectedNodeId(node.id)}
 										onMouseEnter={() => setHoveredNodeId(node.id)}
 										onMouseLeave={() => setHoveredNodeId(null)}
 									>
-										<div className={`h-2 w-2 rounded-full ${styles.dot}`} />
-										<span className="whitespace-nowrap font-mono text-[10px] text-inferay-white">
+										<div
+											{...stylex.props(
+												styles.statusDot,
+												statusDotStyle(node.status)
+											)}
+										/>
+										<span {...stylex.props(styles.nodeLabel)}>
 											{node.label}
 										</span>
 									</button>
@@ -282,65 +279,60 @@ export function ProjectFileGraphView({
 					)}
 				</div>
 			</div>
-			<div className="w-80 shrink-0 border-l border-inferay-gray-border bg-inferay-dark-gray/20">
-				<div className="border-b border-inferay-gray-border px-4 py-3">
-					<p className="text-[11px] font-medium text-inferay-white">
-						File Graph
-					</p>
-					<p className="text-[10px] text-inferay-muted-gray">
+			<div {...stylex.props(styles.inspector)}>
+				<div {...stylex.props(styles.inspectorHeader)}>
+					<p {...stylex.props(styles.inspectorTitle)}>File Graph</p>
+					<p {...stylex.props(styles.inspectorSubtitle)}>
 						{project?.name ?? cwdLabel(activeCwd)}
 					</p>
 				</div>
-				<div className="space-y-4 overflow-y-auto p-4">
+				<div {...stylex.props(styles.inspectorBody)}>
 					{selectedNode ? (
 						<>
 							<div>
-								<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-inferay-muted-gray">
-									Selected File
-								</p>
-								<p className="font-mono text-[11px] text-inferay-white">
+								<p {...stylex.props(styles.sectionLabel)}>Selected File</p>
+								<p {...stylex.props(styles.selectedFileName)}>
 									{selectedNode.label}
 								</p>
-								<p className="mt-1 break-all text-[10px] text-inferay-muted-gray">
+								<p {...stylex.props(styles.selectedPath)}>
 									{selectedNode.path}
 								</p>
 							</div>
 							<div>
-								<p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-inferay-muted-gray">
-									Status
-								</p>
-								<p className="text-[11px] capitalize text-inferay-soft-white">
+								<p {...stylex.props(styles.sectionLabel)}>Status</p>
+								<p {...stylex.props(styles.statusText)}>
 									{selectedNode.status}
 								</p>
 							</div>
 							<div>
-								<p className="mb-2 text-[10px] uppercase tracking-[0.12em] text-inferay-muted-gray">
-									Related Files
-								</p>
-								<div className="space-y-2">
+								<p {...stylex.props(styles.relatedLabel)}>Related Files</p>
+								<div {...stylex.props(styles.relatedList)}>
 									{selectedConnections.length > 0 ? (
 										selectedConnections.map((node) => (
 											<button
 												type="button"
 												key={node.id}
 												onClick={() => setSelectedNodeId(node.id)}
-												className="flex w-full items-center gap-2 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray px-2.5 py-2 text-left transition-colors hover:bg-inferay-gray"
+												{...stylex.props(styles.relatedButton)}
 											>
 												<div
-													className={`h-2 w-2 rounded-full ${statusClasses(node.status).dot}`}
+													{...stylex.props(
+														styles.statusDot,
+														statusDotStyle(node.status)
+													)}
 												/>
-												<div className="min-w-0">
-													<p className="truncate font-mono text-[10px] text-inferay-white">
+												<div {...stylex.props(styles.relatedText)}>
+													<p {...stylex.props(styles.relatedName)}>
 														{node.label}
 													</p>
-													<p className="truncate text-[9px] text-inferay-muted-gray">
+													<p {...stylex.props(styles.relatedPath)}>
 														{node.path}
 													</p>
 												</div>
 											</button>
 										))
 									) : (
-										<p className="text-[10px] text-inferay-muted-gray">
+										<p {...stylex.props(styles.centerText)}>
 											No related files detected yet.
 										</p>
 									)}
@@ -348,7 +340,7 @@ export function ProjectFileGraphView({
 							</div>
 						</>
 					) : (
-						<p className="text-[11px] text-inferay-muted-gray">
+						<p {...stylex.props(styles.centerText)}>
 							Select a file node to inspect its relationships.
 						</p>
 					)}
@@ -357,3 +349,271 @@ export function ProjectFileGraphView({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	noProject: {
+		display: "flex",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+		padding: controlSize._6,
+	},
+	noProjectText: {
+		color: color.textMain,
+		fontSize: font.size_5,
+	},
+	root: {
+		display: "flex",
+		height: "100%",
+		overflow: "hidden",
+	},
+	canvasPane: {
+		position: "relative",
+		minWidth: 0,
+		flex: 1,
+		overflow: "hidden",
+		backgroundColor: color.background,
+	},
+	gridBackdrop: {
+		position: "absolute",
+		inset: 0,
+		backgroundImage:
+			"radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)",
+		backgroundSize: "20px 20px",
+	},
+	canvasControls: {
+		position: "absolute",
+		zIndex: 10,
+		left: controlSize._4,
+		top: controlSize._4,
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	dropdownButton: {
+		height: controlSize._7,
+		borderRadius: radius.lg,
+		borderColor: color.border,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		paddingInline: controlSize._2_5,
+	},
+	dropdownLabel: {
+		maxWidth: "140px",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		fontSize: font.size_2,
+	},
+	branchPill: {
+		display: "flex",
+		height: controlSize._7,
+		alignItems: "center",
+		gap: controlSize._1_5,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		backgroundColor: color.backgroundRaised,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		paddingInline: controlSize._2_5,
+	},
+	monoText: {
+		fontFamily: font.familyMono,
+	},
+	canvasScroll: {
+		position: "absolute",
+		inset: 0,
+		overflow: "auto",
+		paddingBlock: controlSize._16,
+		paddingInline: controlSize._12,
+	},
+	centerState: {
+		display: "flex",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	centerText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	graphStage: {
+		position: "relative",
+		width: "100%",
+		minWidth: "820px",
+		maxWidth: "980px",
+		height: "640px",
+		marginInline: "auto",
+	},
+	connectionsLayer: {
+		position: "absolute",
+		inset: 0,
+		width: "100%",
+		height: "100%",
+	},
+	nodeButton: {
+		position: "absolute",
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderRadius: radius.lg,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		transitionProperty: "background-color, border-color, box-shadow",
+		transitionDuration: motion.durationFast,
+	},
+	nodeIdle: {
+		borderColor: color.border,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+	},
+	nodeSelected: {
+		boxShadow: shadow.selectedRing,
+	},
+	nodeAdded: {
+		borderColor: color.successBorder,
+		backgroundColor: color.successWash,
+	},
+	nodeModified: {
+		borderColor: color.warningBorder,
+		backgroundColor: color.warningWash,
+	},
+	nodeNormal: {
+		borderColor: color.border,
+		backgroundColor: color.backgroundRaised,
+	},
+	statusDot: {
+		width: controlSize._2,
+		height: controlSize._2,
+		borderRadius: radius.pill,
+	},
+	dotAdded: {
+		backgroundColor: color.success,
+	},
+	dotModified: {
+		backgroundColor: color.warning,
+	},
+	dotNormal: {
+		backgroundColor: color.textMuted,
+	},
+	nodeLabel: {
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+	},
+	inspector: {
+		width: "20rem",
+		flexShrink: 0,
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		backgroundColor: color.surfaceTranslucent,
+	},
+	inspectorHeader: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingBlock: controlSize._3,
+		paddingInline: controlSize._4,
+	},
+	inspectorTitle: {
+		color: color.textMain,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+	},
+	inspectorSubtitle: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	inspectorBody: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._4,
+		overflowY: "auto",
+		padding: controlSize._4,
+	},
+	sectionLabel: {
+		marginBottom: controlSize._1,
+		color: color.textMuted,
+		fontSize: font.size_2,
+		letterSpacing: "0.12em",
+		textTransform: "uppercase",
+	},
+	selectedFileName: {
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+	},
+	selectedPath: {
+		marginTop: controlSize._1,
+		overflowWrap: "anywhere",
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	statusText: {
+		color: color.textSoft,
+		fontSize: font.size_2,
+		textTransform: "capitalize",
+	},
+	relatedLabel: {
+		marginBottom: controlSize._2,
+		color: color.textMuted,
+		fontSize: font.size_2,
+		letterSpacing: "0.12em",
+		textTransform: "uppercase",
+	},
+	relatedList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._2,
+	},
+	relatedButton: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: radius.lg,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._2_5,
+		textAlign: "left",
+		transitionProperty: "background-color",
+		transitionDuration: motion.durationFast,
+	},
+	relatedText: {
+		minWidth: 0,
+	},
+	relatedName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontFamily: font.familyMono,
+		fontSize: font.size_2,
+	},
+	relatedPath: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+});

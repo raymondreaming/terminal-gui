@@ -1,15 +1,17 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal } from "@xterm/xterm";
-import { IconPlus, IconTerminal, IconX } from "../ui/Icons.tsx";
-import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
-import { wsClient } from "../../lib/websocket.ts";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
 	loadAppThemeId,
 	mapAppThemeToTerminalTheme,
 } from "../../lib/app-theme.ts";
+import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
 import { getThemeById } from "../../lib/terminal-utils.ts";
+import { wsClient } from "../../lib/websocket.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
+import { IconPlus, IconTerminal, IconX } from "../ui/Icons.tsx";
 
 interface BottomTerminal {
 	id: string;
@@ -183,7 +185,7 @@ const BottomTerminalInstance = memo(function BottomTerminalInstance({
 	return (
 		<div
 			ref={containerRef}
-			className="h-full w-full"
+			{...stylex.props(styles.terminalInstance)}
 			style={{ display: visible ? "block" : "none" }}
 		/>
 	);
@@ -325,11 +327,11 @@ export function BottomTerminalPanel() {
 	if (state.terminals.length === 0 && !state.open) {
 		// Just the bar with a "New Terminal" button
 		return (
-			<div className="flex h-10 shrink-0 items-center gap-2 border-t border-inferay-gray-border bg-inferay-black px-3">
+			<div {...stylex.props(styles.emptyBar)}>
 				<button
 					type="button"
 					onClick={addTerminal}
-					className="flex h-6 items-center gap-1.5 rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-2 text-[11px] font-medium text-inferay-soft-white transition-colors hover:bg-inferay-gray"
+					{...stylex.props(styles.newTerminalButton)}
 				>
 					<IconTerminal size={11} />
 					<span>Terminal</span>
@@ -340,16 +342,14 @@ export function BottomTerminalPanel() {
 	}
 
 	return (
-		<div className="flex flex-col shrink-0">
-			{/* Resize handle */}
+		<div {...stylex.props(styles.root)}>
 			{state.open && (
 				<div
-					className="h-1 cursor-row-resize bg-inferay-gray-border/50 hover:bg-inferay-accent/30 transition-colors"
+					{...stylex.props(styles.resizeHandle)}
 					onMouseDown={handleResizeStart}
 				/>
 			)}
-			{/* Tab bar - same height as top bar concept */}
-			<div className="flex h-10 shrink-0 items-center gap-0.5 border-t border-inferay-gray-border bg-inferay-black px-2">
+			<div {...stylex.props(styles.tabBar)}>
 				{state.terminals.map((term, idx) => (
 					<div
 						key={term.id}
@@ -358,19 +358,20 @@ export function BottomTerminalPanel() {
 						onDragEnd={handleTabDragEnd}
 						onDragOver={(e) => handleTabDragOver(e, idx)}
 						onDrop={(e) => handleTabDrop(e, idx)}
-						className={`group flex items-center gap-1.5 rounded-md px-2 h-6 text-[11px] font-medium cursor-grab active:cursor-grabbing select-none transition-all ${
+						{...stylex.props(
+							styles.tab,
 							state.selectedId === term.id && state.open
-								? "bg-inferay-gray text-inferay-white"
-								: "text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-						} ${
+								? styles.tabSelected
+								: styles.tabIdle,
 							dragOverTabIndex === idx && dragTabIndex !== idx
-								? "ring-1 ring-inferay-accent/40"
-								: ""
-						} ${dragTabIndex === idx ? "opacity-40" : ""}`}
+								? styles.tabDropTarget
+								: null,
+							dragTabIndex === idx ? styles.tabDragging : null
+						)}
 					>
 						<button
 							type="button"
-							className="flex items-center gap-1.5"
+							{...stylex.props(styles.tabButton)}
 							onClick={() => {
 								if (state.selectedId === term.id && state.open) {
 									togglePanel();
@@ -388,7 +389,7 @@ export function BottomTerminalPanel() {
 								e.stopPropagation();
 								closeTerminal(term.id);
 							}}
-							className="flex items-center justify-center h-3.5 w-3.5 rounded opacity-0 group-hover:opacity-100 transition-opacity text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
+							{...stylex.props(styles.closeButton)}
 						>
 							<IconX size={7} />
 						</button>
@@ -397,7 +398,7 @@ export function BottomTerminalPanel() {
 				<button
 					type="button"
 					onClick={addTerminal}
-					className="flex items-center justify-center h-6 w-6 rounded-md text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white transition-colors"
+					{...stylex.props(styles.addButton)}
 					title="New Terminal"
 				>
 					<IconPlus size={10} />
@@ -406,7 +407,7 @@ export function BottomTerminalPanel() {
 			{/* Terminal panel */}
 			{state.open && (
 				<div
-					className="bg-inferay-black overflow-hidden"
+					{...stylex.props(styles.panel)}
 					style={{ height: state.panelHeight }}
 				>
 					{state.terminals.map((term) => (
@@ -421,3 +422,162 @@ export function BottomTerminalPanel() {
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	terminalInstance: {
+		width: "100%",
+		height: "100%",
+	},
+	emptyBar: {
+		display: "flex",
+		height: "2.5rem",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: color.border,
+		backgroundColor: color.background,
+		paddingInline: controlSize._3,
+	},
+	newTerminalButton: {
+		display: "flex",
+		height: controlSize._6,
+		alignItems: "center",
+		gap: "0.375rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: 6,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+	},
+	root: {
+		display: "flex",
+		flexDirection: "column",
+		flexShrink: 0,
+	},
+	resizeHandle: {
+		height: "0.25rem",
+		cursor: "row-resize",
+		backgroundColor: {
+			default: "rgba(63, 63, 70, 0.5)",
+			":hover": "rgba(99, 102, 241, 0.3)",
+		},
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+	},
+	tabBar: {
+		display: "flex",
+		height: "2.5rem",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.125rem",
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: color.border,
+		backgroundColor: color.background,
+		paddingInline: controlSize._2,
+	},
+	tab: {
+		display: "flex",
+		height: controlSize._6,
+		alignItems: "center",
+		gap: "0.375rem",
+		borderRadius: 6,
+		color: color.textMuted,
+		cursor: "grab",
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		paddingInline: controlSize._2,
+		userSelect: "none",
+		transitionProperty: "background-color, box-shadow, color, opacity",
+		transitionDuration: "120ms",
+		":active": {
+			cursor: "grabbing",
+		},
+	},
+	tabIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+	tabSelected: {
+		backgroundColor: color.controlHover,
+		color: color.textMain,
+	},
+	tabDropTarget: {
+		boxShadow: "0 0 0 1px rgba(99, 102, 241, 0.4)",
+	},
+	tabDragging: {
+		opacity: 0.4,
+	},
+	tabButton: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		borderWidth: 0,
+		backgroundColor: "transparent",
+		color: "inherit",
+		padding: 0,
+	},
+	closeButton: {
+		display: "flex",
+		width: "0.875rem",
+		height: "0.875rem",
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 0,
+		borderRadius: 4,
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(239, 68, 68, 0.15)",
+		},
+		color: {
+			default: color.textMuted,
+			":hover": "#f87171",
+		},
+		opacity: {
+			default: 0,
+			":hover": 1,
+		},
+		transitionProperty: "background-color, color, opacity",
+		transitionDuration: "120ms",
+	},
+	addButton: {
+		display: "flex",
+		width: controlSize._6,
+		height: controlSize._6,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 0,
+		borderRadius: 6,
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+	},
+	panel: {
+		overflow: "hidden",
+		backgroundColor: color.background,
+	},
+});

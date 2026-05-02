@@ -1,4 +1,7 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "../../components/ui/Button.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import { IconX } from "../../components/ui/Icons.tsx";
 import {
 	APP_THEMES,
@@ -18,6 +21,7 @@ import {
 	saveTerminalState,
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 interface TerminalSettingsPanelProps {
 	themeId: ThemeId;
@@ -35,17 +39,15 @@ function ColorInput({
 	onChange: (v: HexColor) => void;
 }) {
 	return (
-		<label className="flex items-center gap-2">
+		<label {...stylex.props(styles.colorRow)}>
 			<input
 				type="color"
 				value={value}
 				onChange={(e) => onChange(e.target.value as HexColor)}
-				className="h-7 w-7 cursor-pointer rounded border border-inferay-gray-border bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
+				{...stylex.props(styles.colorInput)}
 			/>
-			<span className="text-[10px] text-inferay-muted-gray">{label}</span>
-			<span className="ml-auto font-mono text-[9px] text-inferay-muted-gray">
-				{value}
-			</span>
+			<span {...stylex.props(styles.mutedText)}>{label}</span>
+			<span {...stylex.props(styles.colorValue)}>{value}</span>
 		</label>
 	);
 }
@@ -70,18 +72,17 @@ function ThemeOrb({
 		<button
 			type="button"
 			onClick={onClick}
-			className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all ${
-				selected
-					? "border-inferay-gray-border-bold bg-inferay-dark-gray/40"
-					: "border-transparent hover:bg-inferay-gray"
-			}`}
+			{...stylex.props(
+				styles.themeOrbButton,
+				selected && styles.themeOrbSelected
+			)}
 		>
 			<div
-				className={`relative h-12 w-12 rounded-full ${dashed ? "border border-dashed border-inferay-gray-border" : ""}`}
+				{...stylex.props(styles.themeOrb, dashed && styles.themeOrbDashed)}
 				style={{ backgroundColor: black }}
 			>
 				<div
-					className="absolute inset-0 rounded-full transition-transform group-hover:scale-105"
+					{...stylex.props(styles.themeOrbFill)}
 					style={{
 						background: `radial-gradient(circle at 35% 35%, ${darkGray} 0%, ${black} 60%, ${black} 100%)`,
 						boxShadow: selected
@@ -90,7 +91,7 @@ function ThemeOrb({
 					}}
 				/>
 				<div
-					className="absolute rounded-full"
+					{...stylex.props(styles.themeOrbGlow)}
 					style={{
 						top: "15%",
 						left: "20%",
@@ -101,7 +102,7 @@ function ThemeOrb({
 					}}
 				/>
 				<div
-					className="absolute rounded-full"
+					{...stylex.props(styles.themeOrbHighlight)}
 					style={{
 						top: "18%",
 						left: "24%",
@@ -113,7 +114,10 @@ function ThemeOrb({
 				/>
 			</div>
 			<span
-				className={`text-[9px] leading-none ${selected ? "font-semibold text-inferay-white" : "text-inferay-muted-gray"}`}
+				{...stylex.props(
+					styles.themeOrbLabel,
+					selected && styles.themeOrbLabelSelected
+				)}
 			>
 				{theme.name}
 			</span>
@@ -173,42 +177,38 @@ function SearchFoldersSection() {
 	if (!loaded) return null;
 
 	return (
-		<div>
-			<h4 className="mb-2 text-[10px] font-semibold text-inferay-soft-white">
-				SEARCH FOLDERS
-			</h4>
-			<p className="mb-2 text-[9px] text-inferay-muted-gray">
+		<div {...stylex.props(styles.section)}>
+			<h4 {...stylex.props(styles.sectionHeading)}>SEARCH FOLDERS</h4>
+			<p {...stylex.props(styles.sectionDescription)}>
 				Directories to scan when searching for projects. Use ~/path for
 				home-relative paths.
 			</p>
-			<div className="space-y-1 max-h-32 overflow-y-auto mb-2">
+			<div {...stylex.props(styles.folderList)}>
 				{folders.map((folder, idx) => (
-					<div
-						key={folder}
-						className="flex items-center gap-1.5 rounded px-1.5 py-0.5 group hover:bg-inferay-gray"
-					>
-						<span className="flex-1 truncate font-mono text-[10px] text-inferay-soft-white">
-							{folder}
-						</span>
-						<button
+					<div key={folder} {...stylex.props(styles.folderRow)}>
+						<span {...stylex.props(styles.folderPath)}>{folder}</span>
+						<IconButton
 							type="button"
 							onClick={() => removeFolder(idx)}
-							className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-4 w-4 rounded transition-opacity text-inferay-muted-gray hover:text-red-400"
+							variant="danger"
+							size="xs"
 							title="Remove"
 						>
 							<IconX size={8} />
-						</button>
+						</IconButton>
 					</div>
 				))}
 			</div>
-			<button
+			<Button
 				type="button"
 				onClick={browseFolder}
-				className="w-full rounded border border-dashed border-inferay-gray-border bg-inferay-black px-2 py-1.5 text-[10px] text-inferay-soft-white hover:bg-inferay-gray transition-colors mb-1.5"
+				variant="secondary"
+				size="sm"
+				className={stylex.props(styles.browseButton).className}
 			>
 				+ Browse Folder
-			</button>
-			<div className="flex gap-1.5">
+			</Button>
+			<div {...stylex.props(styles.folderInputRow)}>
 				<input
 					ref={inputRef}
 					type="text"
@@ -218,16 +218,17 @@ function SearchFoldersSection() {
 						if (e.key === "Enter") addFolder();
 					}}
 					placeholder="~/path/to/folder"
-					className="flex-1 rounded border border-inferay-gray-border bg-inferay-black px-2 py-1 text-[10px] text-inferay-soft-white outline-none placeholder:text-inferay-muted-gray"
+					{...stylex.props(styles.folderInput)}
 				/>
-				<button
+				<Button
 					type="button"
 					onClick={addFolder}
 					disabled={!newFolder.trim()}
-					className="rounded border border-inferay-gray-border bg-inferay-black px-2 py-1 text-[10px] text-inferay-soft-white hover:bg-inferay-gray disabled:opacity-30"
+					variant="secondary"
+					size="sm"
 				>
 					Add
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
@@ -284,25 +285,25 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 		<>
 			<div
 				role="presentation"
-				className="fixed inset-0 bg-inferay-black/30 z-[50]"
+				{...stylex.props(styles.backdrop)}
 				onClick={onClose}
 			/>
-			<div className="fixed right-3 top-8 z-[51] w-[330px] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-xl border border-inferay-gray-border bg-inferay-black shadow-2xl">
-				<div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-inferay-gray-border bg-inferay-black rounded-t-xl">
-					<span className="text-[10px] font-bold tracking-widest text-inferay-muted-gray">
-						THEME
-					</span>
-					<button
+			<div {...stylex.props(styles.panel)}>
+				<div {...stylex.props(styles.panelHeader)}>
+					<span {...stylex.props(styles.panelTitle)}>THEME</span>
+					<IconButton
 						type="button"
 						onClick={onClose}
-						className="text-[10px] font-bold text-inferay-muted-gray hover:text-inferay-white"
+						variant="ghost"
+						size="xs"
+						title="Close"
 					>
-						x
-					</button>
+						<IconX size={10} />
+					</IconButton>
 				</div>
-				<div className="space-y-5 p-4 pb-6">
+				<div {...stylex.props(styles.panelBody)}>
 					<div>
-						<div className="grid grid-cols-3 gap-2.5">
+						<div {...stylex.props(styles.themeGrid)}>
 							{APP_THEMES.map((t) => (
 								<ThemeOrb
 									key={t.id}
@@ -329,12 +330,14 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 					</div>
 					{isCustom && (
 						<>
-							<div className="h-px bg-inferay-gray-border" />
-							<div>
-								<h4 className="mb-3 text-[10px] font-semibold text-inferay-soft-white">
+							<div {...stylex.props(styles.divider)} />
+							<div {...stylex.props(styles.section)}>
+								<h4
+									{...stylex.props(styles.sectionHeading, styles.customHeading)}
+								>
 									CUSTOM COLORS
 								</h4>
-								<div className="space-y-2.5">
+								<div {...stylex.props(styles.colorList)}>
 									<ColorInput
 										label="Background"
 										value={custom.bg}
@@ -357,7 +360,7 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 									/>
 								</div>
 								<div
-									className="mt-3 rounded-md p-3 font-mono text-[11px] leading-relaxed border border-inferay-gray-border"
+									{...stylex.props(styles.terminalPreview)}
 									style={{ backgroundColor: custom.bg, color: custom.fg }}
 								>
 									<span style={{ color: custom.cursor }}>$</span> terminal-gui
@@ -370,10 +373,251 @@ export const TerminalSettingsPanel = memo(function TerminalSettingsPanel({
 							</div>
 						</>
 					)}
-					<div className="h-px bg-inferay-gray-border" />
+					<div {...stylex.props(styles.divider)} />
 					<SearchFoldersSection />
 				</div>
 			</div>
 		</>
 	);
+});
+
+const styles = stylex.create({
+	backdrop: {
+		position: "fixed",
+		inset: 0,
+		zIndex: 50,
+		backgroundColor: "rgba(0, 0, 0, 0.3)",
+	},
+	panel: {
+		position: "fixed",
+		right: controlSize._3,
+		top: controlSize._8,
+		zIndex: 51,
+		width: "330px",
+		maxHeight: "calc(100vh - 3rem)",
+		overflowY: "auto",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: color.background,
+		boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)",
+	},
+	panelHeader: {
+		position: "sticky",
+		top: 0,
+		zIndex: 10,
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+		paddingBlock: "0.625rem",
+		paddingInline: controlSize._4,
+	},
+	panelTitle: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+		fontWeight: 700,
+		letterSpacing: "0.08em",
+	},
+	panelBody: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._5,
+		paddingBlock: controlSize._4,
+		paddingInline: controlSize._4,
+		paddingBottom: controlSize._6,
+	},
+	themeGrid: {
+		display: "grid",
+		gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+		gap: "0.625rem",
+	},
+	themeOrbButton: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+		gap: "0.375rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: "transparent",
+		borderRadius: controlSize._3,
+		padding: controlSize._2,
+		transitionProperty: "background-color, border-color",
+		transitionDuration: "150ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	themeOrbSelected: {
+		borderColor: color.borderStrong,
+		backgroundColor: "rgba(255, 255, 255, 0.05)",
+	},
+	themeOrb: {
+		position: "relative",
+		width: controlSize._12,
+		height: controlSize._12,
+		borderRadius: "999px",
+	},
+	themeOrbDashed: {
+		borderWidth: 1,
+		borderStyle: "dashed",
+		borderColor: color.border,
+	},
+	themeOrbFill: {
+		position: "absolute",
+		inset: 0,
+		borderRadius: "999px",
+		transitionProperty: "transform",
+		transitionDuration: "150ms",
+	},
+	themeOrbGlow: {
+		position: "absolute",
+		borderRadius: "999px",
+	},
+	themeOrbHighlight: {
+		position: "absolute",
+		borderRadius: "999px",
+	},
+	themeOrbLabel: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		lineHeight: 1,
+	},
+	themeOrbLabelSelected: {
+		color: color.textMain,
+		fontWeight: 600,
+	},
+	divider: {
+		height: 1,
+		backgroundColor: color.border,
+	},
+	section: {
+		display: "flex",
+		flexDirection: "column",
+	},
+	sectionHeading: {
+		marginBottom: controlSize._2,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: 600,
+	},
+	customHeading: {
+		marginBottom: controlSize._3,
+	},
+	sectionDescription: {
+		marginBottom: controlSize._2,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		lineHeight: 1.45,
+	},
+	colorList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: "0.625rem",
+	},
+	colorRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	colorInput: {
+		width: controlSize._7,
+		height: controlSize._7,
+		cursor: "pointer",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.25rem",
+		backgroundColor: "transparent",
+		padding: 0,
+	},
+	mutedText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	colorValue: {
+		marginLeft: "auto",
+		color: color.textMuted,
+		fontFamily:
+			"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		fontSize: font.size_1,
+	},
+	terminalPreview: {
+		marginTop: controlSize._3,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		fontFamily:
+			"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		fontSize: "0.6875rem",
+		lineHeight: 1.55,
+		padding: controlSize._3,
+	},
+	folderList: {
+		display: "flex",
+		maxHeight: "8rem",
+		flexDirection: "column",
+		gap: controlSize._1,
+		overflowY: "auto",
+		marginBottom: controlSize._2,
+	},
+	folderRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		borderRadius: "0.25rem",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	folderPath: {
+		minWidth: 0,
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontFamily:
+			"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		fontSize: font.size_2,
+	},
+	browseButton: {
+		width: "100%",
+		marginBottom: "0.375rem",
+		borderStyle: "dashed",
+		fontSize: font.size_2,
+	},
+	folderInputRow: {
+		display: "flex",
+		gap: "0.375rem",
+	},
+	folderInput: {
+		minWidth: 0,
+		flex: 1,
+		height: controlSize._7,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: {
+			default: color.border,
+			":focus": color.borderStrong,
+		},
+		borderRadius: "0.375rem",
+		backgroundColor: color.background,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		outline: "none",
+		paddingInline: controlSize._2,
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
 });

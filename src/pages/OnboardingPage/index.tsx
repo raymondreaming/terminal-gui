@@ -1,5 +1,8 @@
+import * as stylex from "@stylexjs/stylex";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../../components/ui/Button.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconArrowLeft,
 	IconCheck,
@@ -19,13 +22,14 @@ import {
 	createGroupId,
 	createTerminalPane,
 	DEFAULT_COLUMNS,
-	DEFAULT_ROWS,
-	DEFAULT_FONT_SIZE,
 	DEFAULT_FONT_FAMILY,
+	DEFAULT_FONT_SIZE,
 	DEFAULT_OPACITY,
+	DEFAULT_ROWS,
 	loadTerminalState,
 	saveTerminalState,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 export const ONBOARDING_DONE_KEY = "inferay-onboarding-done";
 
@@ -229,7 +233,7 @@ export function OnboardingPage() {
 	}, [finish]);
 
 	return (
-		<main className="relative h-full overflow-hidden bg-inferay-black font-sans text-inferay-white antialiased">
+		<main {...stylex.props(styles.root)}>
 			{/* Grid background — like Helmor */}
 			<div
 				aria-hidden
@@ -246,7 +250,7 @@ export function OnboardingPage() {
 			{/* Bottom fade */}
 			<div
 				aria-hidden
-				className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
+				{...stylex.props(styles.bottomFade)}
 				style={{
 					background:
 						"linear-gradient(to top, var(--color-inferay-black), transparent)",
@@ -308,37 +312,31 @@ function IntroStep({
 			className={`absolute inset-0 z-10 flex items-center justify-center transition-all duration-700 ${vis}`}
 			style={{ transitionTimingFunction: EASING }}
 		>
-			<div className="flex flex-col items-center text-center">
-				<div className="mb-7 flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-2xl border border-inferay-gray-border bg-inferay-dark-gray shadow-2xl shadow-black/40">
+			<div {...stylex.props(styles.introStack)}>
+				<div {...stylex.props(styles.logoFrame)}>
 					<img
 						src={logoUrl}
 						alt=""
 						draggable={false}
-						className="h-[72px] w-[72px] rounded-2xl object-cover"
+						{...stylex.props(styles.logo)}
 					/>
 				</div>
-				<h1 className="text-[28px] font-semibold leading-tight tracking-tight text-inferay-white">
-					Welcome to Inferay
-				</h1>
-				<p className="mt-4 max-w-md text-[13px] font-medium leading-6 text-inferay-muted-gray">
+				<h1 {...stylex.props(styles.heroTitle)}>Welcome to Inferay</h1>
+				<p {...stylex.props(styles.heroText)}>
 					Multi-agent terminal workbench. Connect your GitHub, bring in your
 					projects, and start building.
 				</p>
 
-				<div className="mt-8 flex items-center gap-3">
-					<button
-						type="button"
-						onClick={onNext}
-						className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-inferay-white px-5 text-[13px] font-medium text-inferay-black transition-all hover:opacity-85 active:scale-[0.97]"
-					>
+				<div {...stylex.props(styles.primaryActions)}>
+					<Button type="button" onClick={onNext} variant="primary" size="lg">
 						Get started
 						<IconChevronRight size={16} />
-					</button>
+					</Button>
 				</div>
 				<button
 					type="button"
 					onClick={onSkip}
-					className="mt-5 text-[11px] text-inferay-muted-gray transition-colors hover:text-inferay-soft-white"
+					{...stylex.props(styles.skipButton)}
 				>
 					Skip setup
 				</button>
@@ -384,47 +382,45 @@ function GithubStep({
 			className={`absolute inset-0 z-10 flex items-center justify-center transition-all duration-700 ${vis}`}
 			style={{ transitionTimingFunction: EASING }}
 		>
-			<div className="flex w-[520px] max-w-full flex-col px-6">
-				<div className="text-center">
-					<h2 className="text-[24px] font-semibold tracking-tight text-inferay-white">
-						Connect GitHub
-					</h2>
-					<p className="mx-auto mt-3 max-w-md text-[12px] leading-6 text-inferay-muted-gray">
+			<div {...stylex.props(styles.stepPanel)}>
+				<div {...stylex.props(styles.centerText)}>
+					<h2 {...stylex.props(styles.stepTitle)}>Connect GitHub</h2>
+					<p {...stylex.props(styles.stepDescription)}>
 						Inferay detects accounts from the GitHub CLI. If you already have{" "}
-						<span className="font-mono text-inferay-soft-white">gh</span>{" "}
+						<span {...stylex.props(styles.inlineCodeText)}>gh</span>{" "}
 						authenticated, your account appears automatically.
 					</p>
 				</div>
 
-				<div className="mt-7">
+				<div {...stylex.props(styles.stepContent)}>
 					{loading ? (
-						<div className="flex h-20 items-center justify-center text-[12px] text-inferay-muted-gray">
-							<IconRefreshCw size={15} className="mr-2.5 animate-spin" />
+						<div {...stylex.props(styles.loadingState)}>
+							<IconRefreshCw size={15} {...stylex.props(styles.spinIcon)} />
 							Checking gh auth status...
 						</div>
 					) : accounts.length > 0 ? (
-						<div className="space-y-2">
+						<div {...stylex.props(styles.accountList)}>
 							{accounts.map((account) => (
 								<div
 									key={`${account.host}:${account.login}`}
-									className="flex items-center gap-3 rounded-lg border border-inferay-gray-border bg-inferay-dark-gray p-3"
+									{...stylex.props(styles.accountRow)}
 								>
-									<div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-inferay-gray-border bg-inferay-gray">
+									<div {...stylex.props(styles.avatarFrame)}>
 										{account.avatarUrl ? (
 											<img
 												src={account.avatarUrl}
 												alt={account.login}
-												className="h-full w-full object-cover"
+												{...stylex.props(styles.avatar)}
 											/>
 										) : (
-											<IconUser size={18} className="text-inferay-muted-gray" />
+											<IconUser size={18} {...stylex.props(styles.mutedIcon)} />
 										)}
 									</div>
-									<div className="min-w-0 flex-1">
-										<p className="truncate text-[13px] font-medium text-inferay-white">
+									<div {...stylex.props(styles.rowText)}>
+										<p {...stylex.props(styles.accountName)}>
 											{account.name || account.login}
 										</p>
-										<p className="truncate text-[11px] text-inferay-muted-gray">
+										<p {...stylex.props(styles.accountMeta)}>
 											@{account.login} · {account.host}
 										</p>
 									</div>
@@ -432,57 +428,51 @@ function GithubStep({
 							))}
 						</div>
 					) : (
-						<div className="rounded-lg border border-inferay-gray-border bg-inferay-dark-gray p-5 text-center">
-							<div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-black text-inferay-muted-gray">
+						<div {...stylex.props(styles.noticeCard)}>
+							<div {...stylex.props(styles.noticeIconBox)}>
 								<IconGitBranch size={20} />
 							</div>
-							<p className="text-[12px] font-medium text-inferay-white">
+							<p {...stylex.props(styles.noticeTitle)}>
 								No GitHub accounts detected
 							</p>
-							<p className="mt-1 text-[11px] text-inferay-muted-gray">
+							<p {...stylex.props(styles.noticeText)}>
 								Run the GitHub CLI login to connect your account.
 							</p>
-							<div className="mt-4 flex items-center justify-center gap-2">
-								<button
+							<div {...stylex.props(styles.noticeActions)}>
+								<Button
 									type="button"
 									onClick={onConnect}
 									disabled={connecting}
-									className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-inferay-gray border border-inferay-gray-border px-4 text-[12px] font-medium text-inferay-soft-white transition-all hover:bg-inferay-light-gray disabled:opacity-40 disabled:pointer-events-none active:scale-[0.97]"
+									variant="secondary"
+									size="lg"
 								>
 									<IconTerminal size={14} />
 									{connecting ? "Opening terminal..." : "Run gh auth login"}
-								</button>
-								<button
+								</Button>
+								<Button
 									type="button"
 									onClick={onRefresh}
 									disabled={loading}
-									className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-[12px] text-inferay-muted-gray transition-all hover:text-inferay-white hover:bg-inferay-white/[0.08] disabled:opacity-40"
+									variant="ghost"
+									size="lg"
 								>
 									<IconRefreshCw size={13} />
 									Refresh
-								</button>
+								</Button>
 							</div>
 						</div>
 					)}
 				</div>
 
-				<div className="mt-7 flex items-center justify-center gap-3">
-					<button
-						type="button"
-						onClick={onBack}
-						className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[13px] text-inferay-muted-gray transition-all hover:text-inferay-white hover:bg-inferay-white/[0.08] active:scale-[0.97]"
-					>
+				<div {...stylex.props(styles.primaryActions)}>
+					<Button type="button" onClick={onBack} variant="ghost" size="lg">
 						<IconArrowLeft size={16} />
 						Back
-					</button>
-					<button
-						type="button"
-						onClick={onNext}
-						className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-inferay-white px-5 text-[13px] font-medium text-inferay-black transition-all hover:opacity-85 active:scale-[0.97]"
-					>
+					</Button>
+					<Button type="button" onClick={onNext} variant="primary" size="lg">
 						{accounts.length > 0 ? "Continue" : "Skip"}
 						<IconChevronRight size={16} />
-					</button>
+					</Button>
 				</div>
 			</div>
 		</section>
@@ -536,32 +526,29 @@ function ProjectsStep({
 			className={`absolute inset-0 z-10 flex items-center justify-center transition-all duration-1000 ${vis}`}
 			style={{ transitionTimingFunction: EASING }}
 		>
-			<div className="flex w-[540px] max-w-full flex-col px-6">
-				<div className="text-center">
-					<h2 className="text-[24px] font-semibold tracking-tight text-inferay-white">
-						Bring in your projects
-					</h2>
-					<p className="mx-auto mt-3 max-w-md text-[12px] leading-6 text-inferay-muted-gray">
+			<div {...stylex.props(styles.projectPanel)}>
+				<div {...stylex.props(styles.centerText)}>
+					<h2 {...stylex.props(styles.stepTitle)}>Bring in your projects</h2>
+					<p {...stylex.props(styles.stepDescription)}>
 						Start with a local folder or select repositories from GitHub. You
 						can add more anytime.
 					</p>
 				</div>
 
-				{/* Action cards — Helmor style */}
-				<div className="mt-7 grid grid-cols-2 gap-3">
+				<div {...stylex.props(styles.actionCards)}>
 					<button
 						type="button"
 						onClick={onPickFolder}
 						disabled={isAddingFolder}
-						className="flex cursor-pointer flex-col items-start rounded-lg border border-inferay-gray-border bg-inferay-dark-gray p-4 text-left transition-colors hover:bg-inferay-gray disabled:cursor-default disabled:opacity-70"
+						{...stylex.props(styles.projectActionCard)}
 					>
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-black text-inferay-soft-white">
+						<div {...stylex.props(styles.projectActionIcon)}>
 							<IconFolderOpen size={20} />
 						</div>
-						<div className="mt-4 text-[13px] font-medium text-inferay-white">
+						<div {...stylex.props(styles.projectActionTitle)}>
 							Choose local project
 						</div>
-						<p className="mt-1 text-[11px] leading-5 text-inferay-muted-gray">
+						<p {...stylex.props(styles.projectActionText)}>
 							Add a folder already on this machine.
 						</p>
 					</button>
@@ -569,15 +556,15 @@ function ProjectsStep({
 						type="button"
 						onClick={hasGithub ? onRefreshRepos : undefined}
 						disabled={!hasGithub || reposLoading}
-						className="flex cursor-pointer flex-col items-start rounded-lg border border-inferay-gray-border bg-inferay-dark-gray p-4 text-left transition-colors hover:bg-inferay-gray disabled:cursor-default disabled:opacity-70"
+						{...stylex.props(styles.projectActionCard)}
 					>
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-black text-inferay-soft-white">
+						<div {...stylex.props(styles.projectActionIcon)}>
 							<IconGlobe size={20} />
 						</div>
-						<div className="mt-4 text-[13px] font-medium text-inferay-white">
+						<div {...stylex.props(styles.projectActionTitle)}>
 							Import from GitHub
 						</div>
-						<p className="mt-1 text-[11px] leading-5 text-inferay-muted-gray">
+						<p {...stylex.props(styles.projectActionText)}>
 							{hasGithub
 								? "Select from your repositories below."
 								: "Connect GitHub first to browse repos."}
@@ -586,8 +573,8 @@ function ProjectsStep({
 				</div>
 
 				{/* Added projects list */}
-				<div className="mt-6 min-h-0 flex-1">
-					<div className="mb-2 flex items-center justify-between text-[11px] text-inferay-muted-gray">
+				<div {...stylex.props(styles.projectListSection)}>
+					<div {...stylex.props(styles.listMeta)}>
 						<span>
 							{hasGithub && repos.length > 0
 								? "Your repositories"
@@ -597,36 +584,30 @@ function ProjectsStep({
 						</span>
 						{totalProjects > 0 && <span>{totalProjects}</span>}
 					</div>
-					<div className="max-h-[240px] overflow-y-auto rounded-lg border border-inferay-gray-border bg-inferay-dark-gray scrollbar-none">
-						{/* Local folders */}
+					<div {...stylex.props(styles.projectList)}>
 						{localFolders.map((folder) => (
-							<div
-								key={folder}
-								className="flex h-10 items-center gap-2 border-b border-inferay-gray-border px-3 last:border-b-0"
-							>
+							<div key={folder} {...stylex.props(styles.localFolderRow)}>
 								<IconFolder
 									size={14}
-									className="shrink-0 text-inferay-muted-gray"
+									{...stylex.props(styles.mutedIcon, styles.shrink)}
 								/>
-								<div className="min-w-0 flex-1">
-									<p className="truncate text-[11px] font-medium text-inferay-white">
-										{folder}
-									</p>
+								<div {...stylex.props(styles.rowText)}>
+									<p {...stylex.props(styles.repoName)}>{folder}</p>
 								</div>
-								<button
+								<IconButton
 									type="button"
 									onClick={() => onRemoveFolder(folder)}
-									className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-inferay-muted-gray transition-colors hover:bg-inferay-error/10 hover:text-inferay-error"
+									variant="danger"
+									size="xs"
 								>
 									<IconX size={14} />
-								</button>
+								</IconButton>
 							</div>
 						))}
 
-						{/* GitHub repos */}
 						{hasGithub && reposLoading ? (
-							<div className="flex h-20 items-center justify-center text-[11px] text-inferay-muted-gray">
-								<IconRefreshCw size={13} className="mr-2 animate-spin" />
+							<div {...stylex.props(styles.loadingState)}>
+								<IconRefreshCw size={13} {...stylex.props(styles.spinIcon)} />
 								Loading repositories...
 							</div>
 						) : hasGithub && repos.length > 0 ? (
@@ -637,39 +618,35 @@ function ProjectsStep({
 										type="button"
 										key={repo.full_name}
 										onClick={() => onToggle(repo.full_name)}
-										className={`flex w-full items-center gap-2.5 border-b border-inferay-gray-border px-3 py-2 text-left transition-colors last:border-b-0 ${
-											isSelected
-												? "bg-inferay-white/[0.05]"
-												: "hover:bg-inferay-gray/50"
-										}`}
+										{...stylex.props(
+											styles.repoRow,
+											isSelected && styles.repoRowSelected
+										)}
 									>
 										<div
-											className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-												isSelected
-													? "border-inferay-white bg-inferay-white text-inferay-black"
-													: "border-inferay-gray-border bg-inferay-black"
-											}`}
+											{...stylex.props(
+												styles.repoCheck,
+												isSelected && styles.repoCheckSelected
+											)}
 										>
 											{isSelected && <IconCheck size={10} />}
 										</div>
-										<div className="min-w-0 flex-1">
-											<p className="truncate text-[11px] font-medium text-inferay-white">
-												{repo.full_name}
-											</p>
+										<div {...stylex.props(styles.rowText)}>
+											<p {...stylex.props(styles.repoName)}>{repo.full_name}</p>
 											{repo.description && (
-												<p className="truncate text-[10px] text-inferay-muted-gray">
+												<p {...stylex.props(styles.repoDescription)}>
 													{repo.description}
 												</p>
 											)}
 										</div>
-										<div className="flex shrink-0 items-center gap-2">
+										<div {...stylex.props(styles.repoMeta)}>
 											{repo.language && (
-												<span className="text-[10px] text-inferay-muted-gray">
+												<span {...stylex.props(styles.repoLanguage)}>
 													{repo.language}
 												</span>
 											)}
 											{repo.private && (
-												<span className="rounded bg-inferay-gray px-1 py-0.5 text-[9px] text-inferay-muted-gray">
+												<span {...stylex.props(styles.privatePill)}>
 													private
 												</span>
 											)}
@@ -678,7 +655,7 @@ function ProjectsStep({
 								);
 							})
 						) : localFolders.length === 0 ? (
-							<div className="flex h-28 items-center justify-center text-center text-[11px] leading-5 text-inferay-muted-gray">
+							<div {...stylex.props(styles.projectEmpty)}>
 								Choose a local folder or select GitHub repos
 								<br />
 								to get started.
@@ -687,25 +664,429 @@ function ProjectsStep({
 					</div>
 				</div>
 
-				<div className="mt-7 flex items-center justify-center gap-3">
-					<button
-						type="button"
-						onClick={onBack}
-						className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[13px] text-inferay-muted-gray transition-all hover:text-inferay-white hover:bg-inferay-white/[0.08] active:scale-[0.97]"
-					>
+				<div {...stylex.props(styles.primaryActions)}>
+					<Button type="button" onClick={onBack} variant="ghost" size="lg">
 						<IconArrowLeft size={16} />
 						Back
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
 						onClick={onComplete}
-						className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-inferay-white px-5 text-[13px] font-medium text-inferay-black transition-all hover:opacity-85 active:scale-[0.97]"
+						variant="primary"
+						size="lg"
 					>
 						{totalProjects > 0 ? "Let's build" : "Skip & enter"}
 						<IconChevronRight size={16} />
-					</button>
+					</Button>
 				</div>
 			</div>
 		</section>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		position: "relative",
+		height: "100%",
+		overflow: "hidden",
+		backgroundColor: color.background,
+		color: color.textMain,
+		fontFamily:
+			"ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+		WebkitFontSmoothing: "antialiased",
+	},
+	bottomFade: {
+		position: "absolute",
+		insetInline: 0,
+		bottom: 0,
+		height: "50%",
+		pointerEvents: "none",
+	},
+	introStack: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+		textAlign: "center",
+	},
+	logoFrame: {
+		display: "flex",
+		width: "72px",
+		height: "72px",
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+		marginBottom: "1.75rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._4,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
+	},
+	logo: {
+		width: "72px",
+		height: "72px",
+		borderRadius: controlSize._4,
+		objectFit: "cover",
+	},
+	heroTitle: {
+		color: color.textMain,
+		fontSize: "1.75rem",
+		fontWeight: 600,
+		letterSpacing: 0,
+		lineHeight: 1.15,
+	},
+	heroText: {
+		maxWidth: "28rem",
+		marginTop: controlSize._4,
+		color: color.textMuted,
+		fontSize: "0.8125rem",
+		fontWeight: font.weight_5,
+		lineHeight: 1.85,
+	},
+	primaryActions: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: controlSize._3,
+		marginTop: controlSize._7,
+	},
+	skipButton: {
+		marginTop: controlSize._5,
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		fontSize: "0.6875rem",
+		transitionProperty: "color",
+		transitionDuration: "120ms",
+	},
+	stepPanel: {
+		display: "flex",
+		width: "520px",
+		maxWidth: "100%",
+		flexDirection: "column",
+		paddingInline: controlSize._6,
+	},
+	projectPanel: {
+		display: "flex",
+		width: "540px",
+		maxWidth: "100%",
+		flexDirection: "column",
+		paddingInline: controlSize._6,
+	},
+	centerText: {
+		textAlign: "center",
+	},
+	stepTitle: {
+		color: color.textMain,
+		fontSize: "1.5rem",
+		fontWeight: 600,
+		letterSpacing: 0,
+	},
+	stepDescription: {
+		maxWidth: "28rem",
+		marginInline: "auto",
+		marginTop: controlSize._3,
+		color: color.textMuted,
+		fontSize: font.size_3,
+		lineHeight: 1.85,
+	},
+	inlineCodeText: {
+		color: color.textSoft,
+		fontFamily: "var(--font-diff)",
+	},
+	stepContent: {
+		marginTop: controlSize._7,
+	},
+	loadingState: {
+		display: "flex",
+		height: "5rem",
+		alignItems: "center",
+		justifyContent: "center",
+		color: color.textMuted,
+		fontSize: font.size_3,
+	},
+	spinIcon: {
+		marginRight: "0.625rem",
+		animationName: stylex.keyframes({
+			to: {
+				transform: "rotate(360deg)",
+			},
+		}),
+		animationDuration: "900ms",
+		animationIterationCount: "infinite",
+		animationTimingFunction: "linear",
+	},
+	accountList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._2,
+	},
+	accountRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._3,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.backgroundRaised,
+		padding: controlSize._3,
+	},
+	avatarFrame: {
+		display: "flex",
+		width: "2.5rem",
+		height: "2.5rem",
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "999px",
+		backgroundColor: color.controlActive,
+	},
+	avatar: {
+		width: "100%",
+		height: "100%",
+		objectFit: "cover",
+	},
+	mutedIcon: {
+		color: color.textMuted,
+	},
+	shrink: {
+		flexShrink: 0,
+	},
+	rowText: {
+		minWidth: 0,
+		flex: 1,
+	},
+	accountName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: "0.8125rem",
+		fontWeight: font.weight_5,
+	},
+	accountMeta: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	noticeCard: {
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.backgroundRaised,
+		padding: controlSize._5,
+		textAlign: "center",
+	},
+	noticeIconBox: {
+		display: "flex",
+		width: "2.5rem",
+		height: "2.5rem",
+		alignItems: "center",
+		justifyContent: "center",
+		marginInline: "auto",
+		marginBottom: controlSize._4,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.background,
+		color: color.textMuted,
+	},
+	noticeTitle: {
+		color: color.textMain,
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
+	},
+	noticeText: {
+		marginTop: controlSize._1,
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	noticeActions: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: controlSize._2,
+		marginTop: controlSize._4,
+	},
+	actionCards: {
+		display: "grid",
+		gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+		gap: controlSize._3,
+		marginTop: controlSize._7,
+	},
+	projectActionCard: {
+		display: "flex",
+		cursor: "pointer",
+		flexDirection: "column",
+		alignItems: "flex-start",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlActive,
+		},
+		padding: controlSize._4,
+		textAlign: "left",
+		transitionProperty: "background-color, opacity",
+		transitionDuration: "120ms",
+		":disabled": {
+			cursor: "default",
+			opacity: 0.7,
+		},
+	},
+	projectActionIcon: {
+		display: "flex",
+		width: "2.5rem",
+		height: "2.5rem",
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.background,
+		color: color.textSoft,
+	},
+	projectActionTitle: {
+		marginTop: controlSize._4,
+		color: color.textMain,
+		fontSize: "0.8125rem",
+		fontWeight: font.weight_5,
+	},
+	projectActionText: {
+		marginTop: controlSize._1,
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+		lineHeight: 1.6,
+	},
+	projectListSection: {
+		minHeight: 0,
+		flex: 1,
+		marginTop: controlSize._6,
+	},
+	listMeta: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		marginBottom: controlSize._2,
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	projectList: {
+		maxHeight: "240px",
+		overflowY: "auto",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._2,
+		backgroundColor: color.backgroundRaised,
+		scrollbarWidth: "none",
+	},
+	localFolderRow: {
+		display: "flex",
+		height: "2.5rem",
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingInline: controlSize._3,
+	},
+	repoRow: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: "0.625rem",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.04)",
+		},
+	},
+	repoRowSelected: {
+		backgroundColor: "rgba(255, 255, 255, 0.05)",
+	},
+	repoCheck: {
+		display: "flex",
+		width: controlSize._4,
+		height: controlSize._4,
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.25rem",
+		backgroundColor: color.background,
+		transitionProperty: "background-color, border-color, color",
+		transitionDuration: "120ms",
+	},
+	repoCheckSelected: {
+		borderColor: color.textMain,
+		backgroundColor: color.textMain,
+		color: color.background,
+	},
+	repoName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	repoDescription: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	repoMeta: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	repoLanguage: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	privatePill: {
+		borderRadius: "0.25rem",
+		backgroundColor: color.controlActive,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		paddingBlock: "0.125rem",
+		paddingInline: controlSize._1,
+	},
+	projectEmpty: {
+		display: "flex",
+		height: "7rem",
+		alignItems: "center",
+		justifyContent: "center",
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+		lineHeight: 1.6,
+		textAlign: "center",
+	},
+});

@@ -436,6 +436,7 @@ export const codexAdapter: AgentAdapter<CodexRunState> = {
 							createdAt: new Date().toISOString(),
 							paneId: ctx.paneId,
 							cwd: ctx.cwd,
+							referencePaths: ctx.referencePaths ?? [],
 							model: ctx.model ?? null,
 							reasoningLevel: ctx.reasoningLevel ?? null,
 							exitCode,

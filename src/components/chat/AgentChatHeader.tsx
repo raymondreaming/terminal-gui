@@ -1,5 +1,7 @@
+import * as stylex from "@stylexjs/stylex";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
 import { getAgentDefinition } from "../../lib/agents.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
 import { IconGitBranch, IconX } from "../ui/Icons.tsx";
 import type { AgentChatSession } from "./agent-chat-shared.ts";
@@ -39,6 +41,7 @@ export function AgentChatHeader({
 				icon: getAgentIcon(session.agentKind, 12),
 			}))
 		: [];
+	const closeButtonProps = stylex.props(styles.closeButton);
 
 	return (
 		<div
@@ -60,24 +63,18 @@ export function AgentChatHeader({
 						/>
 					</span>
 				) : (
-					<span
-						className="text-[9px] font-medium text-inferay-white truncate"
-						title={cwd}
-					>
+					<span {...stylex.props(styles.title)} title={cwd}>
 						{dirName}
 					</span>
 				))}
 			{gitBranch && (
 				<>
-					<span className="text-[9px] text-inferay-muted-gray">›</span>
+					<span {...stylex.props(styles.mutedText)}>›</span>
 					<IconGitBranch
 						size={9}
 						className="shrink-0 text-inferay-muted-gray"
 					/>
-					<span
-						className="max-w-[80px] truncate text-[9px] font-medium text-inferay-muted-gray"
-						title={gitBranch}
-					>
+					<span {...stylex.props(styles.branch)} title={gitBranch}>
 						{gitBranch}
 					</span>
 				</>
@@ -90,7 +87,8 @@ export function AgentChatHeader({
 						e.stopPropagation();
 						onClose(paneId);
 					}}
-					className="electrobun-webkit-app-region-no-drag flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-red-400 hover:bg-red-500/15"
+					{...closeButtonProps}
+					className={`electrobun-webkit-app-region-no-drag ${closeButtonProps.className ?? ""}`}
 					title="Close"
 				>
 					<IconX size={8} />
@@ -99,3 +97,46 @@ export function AgentChatHeader({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	title: {
+		color: color.textMain,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	mutedText: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	branch: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		maxWidth: 80,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	closeButton: {
+		alignItems: "center",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.dangerWash,
+		},
+		borderRadius: 4,
+		color: {
+			default: color.textMuted,
+			":hover": color.danger,
+		},
+		display: "flex",
+		height: controlSize._4,
+		justifyContent: "center",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: "ease",
+		width: controlSize._4,
+	},
+});

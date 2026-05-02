@@ -1,7 +1,9 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo } from "react";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import { IconCircle, IconRobot, IconX } from "../../components/ui/Icons.tsx";
 import type { ClaudeProcess } from "../../hooks/useClaudeProcesses.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
 
 function formatRss(rssKb: number): string {
@@ -55,8 +57,8 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 			emptyMessage="No Claude processes running"
 		>
 			{processes.length > 0 && (
-				<div className="flex items-center justify-between px-2 py-1 mb-1 rounded-md bg-inferay-dark-gray/50">
-					<span className="text-[9px] text-inferay-muted-gray">
+				<div {...stylex.props(styles.summary)}>
+					<span {...stylex.props(styles.metaText)}>
 						{processes.length} process{processes.length !== 1 ? "es" : ""} ·{" "}
 						{formatRss(totalRss)}
 					</span>
@@ -64,7 +66,7 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 						<button
 							type="button"
 							onClick={onKillAll}
-							className="text-[9px] font-medium text-red-400 hover:text-red-300 transition-colors"
+							{...stylex.props(styles.killAll)}
 						>
 							Kill All
 						</button>
@@ -72,24 +74,25 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 				</div>
 			)}
 			{processes.map((p) => (
-				<div
-					key={p.pid}
-					className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors mb-0.5 hover:bg-inferay-dark-gray group"
-				>
-					<div className="shrink-0">
+				<div key={p.pid} {...stylex.props(styles.row)}>
+					<div {...stylex.props(styles.statusSlot)}>
 						<IconCircle
 							size={8}
-							className={`fill-current ${p.cpu > 10 ? "text-red-400" : p.cpu > 2 ? "text-amber-400" : "text-inferay-accent"}`}
+							{...stylex.props(
+								styles.statusDot,
+								p.cpu > 10
+									? styles.statusHigh
+									: p.cpu > 2
+										? styles.statusMedium
+										: styles.statusLow
+							)}
 						/>
 					</div>
-					<div className="min-w-0 flex-1">
-						<p
-							className="truncate text-[11px] font-medium text-inferay-white"
-							title={p.cwd || `PID ${p.pid}`}
-						>
+					<div {...stylex.props(styles.content)}>
+						<p {...stylex.props(styles.title)} title={p.cwd || `PID ${p.pid}`}>
 							{cwdLabel(p.cwd) || `PID ${p.pid}`}
 						</p>
-						<p className="truncate text-[9px] text-inferay-muted-gray">
+						<p {...stylex.props(styles.metaText, styles.truncate)}>
 							{p.cpu}% CPU · {formatRss(p.rss)} · {formatElapsed(p.elapsed)}
 						</p>
 					</div>
@@ -98,7 +101,7 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 						size="xs"
 						onClick={() => onKillProcess(p.pid)}
 						title={`Kill PID ${p.pid}`}
-						className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+						className={stylex.props(styles.killButton).className}
 					>
 						<IconX size={10} />
 					</IconButton>
@@ -106,4 +109,83 @@ export const ClaudeProcessesSidebar = memo(function ClaudeProcessesSidebar({
 			))}
 		</CollapsibleSidebarSection>
 	);
+});
+
+const styles = stylex.create({
+	summary: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		marginBottom: controlSize._1,
+		borderRadius: "0.375rem",
+		backgroundColor: "rgba(255, 255, 255, 0.04)",
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+	},
+	metaText: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	killAll: {
+		color: {
+			default: color.danger,
+			":hover": "#fca5a5",
+		},
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+		transitionProperty: "color",
+		transitionDuration: "120ms",
+	},
+	row: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		marginBottom: "0.125rem",
+		borderRadius: "0.375rem",
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+	},
+	statusSlot: {
+		flexShrink: 0,
+	},
+	statusDot: {
+		fill: "currentColor",
+	},
+	statusHigh: {
+		color: color.danger,
+	},
+	statusMedium: {
+		color: "#fbbf24",
+	},
+	statusLow: {
+		color: "var(--color-inferay-accent)",
+	},
+	content: {
+		minWidth: 0,
+		flex: 1,
+	},
+	title: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	truncate: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	killButton: {
+		flexShrink: 0,
+	},
 });

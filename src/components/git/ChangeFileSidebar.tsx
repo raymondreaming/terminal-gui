@@ -1,5 +1,8 @@
+import * as stylex from "@stylexjs/stylex";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GitFileEntry } from "../../hooks/useGitStatus.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
+import { Button } from "../ui/Button.tsx";
 import {
 	IconChevronRight,
 	IconFolderFill,
@@ -88,14 +91,14 @@ export function ChangeFileSidebar({
 	showCommitSection?: boolean;
 }) {
 	return (
-		<div className="flex flex-1 flex-col min-w-0">
+		<div {...stylex.props(styles.root)}>
 			<ChangeFileSidebarHeader
 				fileViewMode={fileViewMode}
 				onFileViewModeChange={onFileViewModeChange}
 			/>
 
 			{mainViewMode !== "graph" && (
-				<div className="flex-1 min-h-0 overflow-y-auto">
+				<div {...stylex.props(styles.scrollArea)}>
 					<FileGroup
 						title="Unstaged"
 						files={[...modified, ...untracked]}
@@ -122,13 +125,13 @@ export function ChangeFileSidebar({
 					/>
 
 					{hasProject && !files.length && (
-						<div className="flex items-center justify-center py-6">
-							<p className="text-[10px] text-inferay-muted-gray/50">Clean</p>
+						<div {...stylex.props(styles.emptyState)}>
+							<p {...stylex.props(styles.emptyText)}>Clean</p>
 						</div>
 					)}
 					{!hasProject && (
-						<div className="flex items-center justify-center py-6">
-							<p className="px-3 text-center text-[10px] text-inferay-muted-gray/50">
+						<div {...stylex.props(styles.emptyState)}>
+							<p {...stylex.props(styles.emptyText, styles.centerText)}>
 								No repository
 							</p>
 						</div>
@@ -137,58 +140,47 @@ export function ChangeFileSidebar({
 			)}
 
 			{mainViewMode === "graph" && (
-				<div className="flex-1 min-h-0 overflow-y-auto">
+				<div {...stylex.props(styles.scrollArea)}>
 					{selectedCommitHash === "wip" ? (
 						<>
-							<div className="sticky top-0 z-10 flex items-center gap-2 px-3 py-2 border-b border-inferay-gray-border bg-inferay-black">
-								<div className="w-3 h-3 rounded-full border-2 border-dashed border-inferay-accent" />
-								<span className="text-[11px] font-medium text-inferay-white">
+							<div {...stylex.props(styles.wipHeader)}>
+								<div {...stylex.props(styles.wipDot)} />
+								<span {...stylex.props(styles.wipTitle)}>
 									WIP on {branch ?? "branch"}
 								</span>
-								<span className="ml-auto text-[9px] text-inferay-muted-gray">
+								<span {...stylex.props(styles.wipCount)}>
 									{files.length} files
 								</span>
 							</div>
-							<div className="py-1">
+							<div {...stylex.props(styles.listPad)}>
 								{files.map((f, i) => (
-									<div
-										key={i}
-										className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-inferay-white/5"
-									>
+									<div key={i} {...stylex.props(styles.commitFileRow)}>
 										<FileStatusIcon status={f.status} />
-										<span className="flex-1 truncate text-[10px] font-medium text-inferay-soft-white">
-											{f.path}
-										</span>
+										<span {...stylex.props(styles.fileName)}>{f.path}</span>
 									</div>
 								))}
 								{files.length === 0 && (
-									<div className="flex items-center justify-center py-6">
-										<p className="text-[10px] text-inferay-muted-gray/50">
-											No changes
-										</p>
+									<div {...stylex.props(styles.emptyState)}>
+										<p {...stylex.props(styles.emptyText)}>No changes</p>
 									</div>
 								)}
 							</div>
 						</>
 					) : selectedCommitHash ? (
 						commitDetailsLoading ? (
-							<div className="flex items-center justify-center py-8">
-								<p className="text-[10px] text-inferay-muted-gray">
-									Loading...
-								</p>
+							<div {...stylex.props(styles.emptyStateLarge)}>
+								<p {...stylex.props(styles.mutedText)}>Loading...</p>
 							</div>
 						) : commitDetails ? (
 							<CommitDetailsPanel details={commitDetails} />
 						) : (
-							<div className="flex items-center justify-center py-8">
-								<p className="text-[10px] text-inferay-muted-gray">
-									No details
-								</p>
+							<div {...stylex.props(styles.emptyStateLarge)}>
+								<p {...stylex.props(styles.mutedText)}>No details</p>
 							</div>
 						)
 					) : (
-						<div className="flex items-center justify-center py-8">
-							<p className="text-[10px] text-inferay-muted-gray px-4 text-center">
+						<div {...stylex.props(styles.emptyStateLarge)}>
+							<p {...stylex.props(styles.mutedText, styles.centerText)}>
 								Select a commit to view details
 							</p>
 						</div>
@@ -212,6 +204,576 @@ export function ChangeFileSidebar({
 	);
 }
 
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		flex: 1,
+		flexDirection: "column",
+		minWidth: 0,
+	},
+	scrollArea: {
+		flex: 1,
+		minHeight: 0,
+		overflowY: "auto",
+	},
+	emptyState: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		paddingBlock: controlSize._6,
+	},
+	emptyStateLarge: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		paddingBlock: controlSize._8,
+	},
+	emptyText: {
+		color: "rgba(255, 255, 255, 0.25)",
+		fontSize: font.size_2,
+	},
+	centerText: {
+		paddingInline: controlSize._3,
+		textAlign: "center",
+	},
+	mutedText: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	mutedTextSmall: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	sidebarHeader: {
+		position: "sticky",
+		top: 0,
+		zIndex: 20,
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		backgroundColor: color.background,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._2,
+	},
+	headerLabel: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+	},
+	spacer: {
+		flex: 1,
+	},
+	segmented: {
+		display: "flex",
+		height: controlSize._5,
+		alignItems: "center",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+	},
+	segmentButton: {
+		height: "100%",
+		paddingInline: "0.375rem",
+		color: color.textMuted,
+		fontSize: "0.5rem",
+		fontWeight: font.weight_5,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+	},
+	segmentButtonActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	wipHeader: {
+		position: "sticky",
+		top: 0,
+		zIndex: 10,
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	wipDot: {
+		width: font.size_3,
+		height: font.size_3,
+		borderRadius: "999px",
+		borderWidth: 2,
+		borderStyle: "dashed",
+		borderColor: "var(--color-inferay-accent)",
+	},
+	wipTitle: {
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	wipCount: {
+		marginLeft: "auto",
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	listPad: {
+		paddingBlock: controlSize._1,
+	},
+	commitSection: {
+		flexShrink: 0,
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: color.border,
+	},
+	commitHeader: {
+		display: "flex",
+		height: controlSize._8,
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		paddingInline: "0.625rem",
+	},
+	inlineGroup: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+	},
+	inlineGroupWide: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	mutedIcon: {
+		color: color.textMuted,
+	},
+	sectionTitle: {
+		color: color.textSoft,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+	},
+	generateButton: {
+		height: "1.375rem",
+		gap: controlSize._1,
+		paddingInline: "0.375rem",
+		fontSize: "0.5rem",
+	},
+	checkRow: {
+		display: "flex",
+		cursor: "pointer",
+		alignItems: "center",
+		gap: "0.375rem",
+		paddingBlock: "0.375rem",
+		paddingInline: "0.625rem",
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.03)",
+		},
+	},
+	checkbox: {
+		width: font.size_3,
+		height: font.size_3,
+		accentColor: "var(--color-inferay-accent)",
+	},
+	commitForm: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._2,
+		paddingInline: "0.625rem",
+		paddingBottom: "0.625rem",
+	},
+	commitEditor: {
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: {
+			default: color.border,
+			":focus-within": "rgba(29, 185, 84, 0.5)",
+		},
+		borderRadius: "0.5rem",
+		backgroundColor: color.backgroundRaised,
+	},
+	summaryRow: {
+		display: "flex",
+		alignItems: "center",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.04)",
+	},
+	summaryInput: {
+		minWidth: 0,
+		flex: 1,
+		backgroundColor: "transparent",
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		outline: "none",
+		paddingBlock: controlSize._2,
+		paddingInline: "0.625rem",
+		"::placeholder": {
+			color: "rgba(255, 255, 255, 0.3)",
+		},
+	},
+	summaryCount: {
+		flexShrink: 0,
+		paddingRight: "0.625rem",
+		color: "rgba(255, 255, 255, 0.4)",
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+	},
+	warningText: {
+		color: "#fbbf24",
+	},
+	descriptionInput: {
+		width: "100%",
+		resize: "none",
+		backgroundColor: "transparent",
+		color: color.textMain,
+		fontSize: font.size_2,
+		outline: "none",
+		paddingBlock: controlSize._2,
+		paddingInline: "0.625rem",
+		"::placeholder": {
+			color: "rgba(255, 255, 255, 0.3)",
+		},
+	},
+	commitButton: {
+		width: "100%",
+		justifyContent: "center",
+		gap: "0.375rem",
+	},
+	detailsRoot: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+	},
+	detailsHeader: {
+		flexShrink: 0,
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		padding: controlSize._3,
+	},
+	hashText: {
+		color: "var(--color-inferay-accent)",
+		fontFamily:
+			"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+	},
+	commitMessage: {
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		lineHeight: 1.55,
+	},
+	authorText: {
+		color: color.textSoft,
+		fontSize: font.size_2,
+	},
+	detailsSubheader: {
+		flexShrink: 0,
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		backgroundColor: "rgba(255, 255, 255, 0.02)",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	detailsFooter: {
+		flexShrink: 0,
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: controlSize._3,
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: color.border,
+		fontSize: font.size_2,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	commitFileRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.05)",
+		},
+	},
+	fileName: {
+		minWidth: 0,
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+	},
+	fileStats: {
+		flexShrink: 0,
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1,
+		fontSize: font.size_1,
+		fontVariantNumeric: "tabular-nums",
+	},
+	addedText: {
+		color: "var(--color-git-added)",
+	},
+	deletedText: {
+		color: "var(--color-git-deleted)",
+	},
+	statusIcon: {
+		flexShrink: 0,
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		width: "18px",
+		height: "18px",
+		borderRadius: "0.125rem",
+		fontSize: font.size_1,
+		fontWeight: 700,
+		lineHeight: 1,
+	},
+	modified: {
+		color: "#fbbf24",
+	},
+	addedStatus: {
+		color: "var(--color-git-added)",
+		backgroundColor: "rgba(35, 134, 54, 0.15)",
+	},
+	deletedStatus: {
+		color: "var(--color-git-deleted)",
+		backgroundColor: "rgba(248, 81, 73, 0.15)",
+	},
+	renamedStatus: {
+		color: "#60a5fa",
+		backgroundColor: "rgba(96, 165, 250, 0.15)",
+	},
+	defaultStatus: {
+		color: color.textMuted,
+		backgroundColor: "rgba(255, 255, 255, 0.08)",
+	},
+	fileGroup: {
+		display: "flex",
+		flexDirection: "column",
+	},
+	groupHeader: {
+		position: "sticky",
+		top: 0,
+		zIndex: 10,
+		display: "flex",
+		height: controlSize._8,
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		backgroundColor: color.background,
+		paddingInline: "0.625rem",
+	},
+	groupToggle: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		backgroundColor: "transparent",
+	},
+	cursorPointer: {
+		cursor: "pointer",
+	},
+	cursorDefault: {
+		cursor: "default",
+	},
+	chevron: {
+		flexShrink: 0,
+		color: color.textMuted,
+		transitionProperty: "transform",
+		transitionDuration: "120ms",
+	},
+	chevronOpen: {
+		transform: "rotate(90deg)",
+	},
+	countPill: {
+		display: "flex",
+		minWidth: controlSize._4,
+		height: controlSize._4,
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: "999px",
+		backgroundColor: "rgba(255, 255, 255, 0.08)",
+		color: color.textMuted,
+		fontSize: "0.5rem",
+		fontVariantNumeric: "tabular-nums",
+		paddingInline: controlSize._1,
+	},
+	actionAllButton: {
+		height: "1.375rem",
+		paddingInline: controlSize._2,
+		fontSize: "0.5rem",
+	},
+	groupList: {
+		flex: 1,
+		overflowY: "auto",
+	},
+	pathRow: {
+		position: "relative",
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		borderLeftWidth: 2,
+		borderLeftStyle: "solid",
+		borderLeftColor: "transparent",
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, border-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.04)",
+		},
+	},
+	treeRow: {
+		position: "relative",
+		display: "flex",
+		height: controlSize._6,
+		cursor: "pointer",
+		alignItems: "center",
+		gap: controlSize._1,
+		borderLeftWidth: 2,
+		borderLeftStyle: "solid",
+		borderLeftColor: "transparent",
+		transitionProperty: "background-color, border-color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.04)",
+		},
+	},
+	fileRowActive: {
+		borderLeftColor: "var(--color-inferay-accent)",
+		backgroundColor: "rgba(29, 185, 84, 0.08)",
+	},
+	fileButton: {
+		minWidth: 0,
+		flex: 1,
+		display: "flex",
+		flexDirection: "column",
+		textAlign: "left",
+		backgroundColor: "transparent",
+	},
+	pathFileName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		lineHeight: 1.25,
+		transitionProperty: "color",
+		transitionDuration: "120ms",
+	},
+	activeText: {
+		color: color.textMain,
+	},
+	pathDir: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: "rgba(255, 255, 255, 0.34)",
+		fontSize: "0.5rem",
+		lineHeight: 1.25,
+	},
+	rowAction: {
+		position: "absolute",
+		right: controlSize._2,
+		top: "50%",
+		zIndex: 10,
+		transform: "translateY(-50%)",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: "rgba(255, 255, 255, 0.08)",
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+		color: color.textMuted,
+		fontSize: "0.5rem",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+		opacity: 1,
+		pointerEvents: "auto",
+	},
+	rowActionSubtle: {
+		position: "absolute",
+		right: controlSize._2,
+		top: "50%",
+		zIndex: 10,
+		transform: "translateY(-50%)",
+		borderRadius: "0.25rem",
+		color: color.textMuted,
+		fontSize: "0.5rem",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+		opacity: 1,
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlActive,
+		},
+	},
+	folderIcon: {
+		flexShrink: 0,
+		color: "rgba(255, 255, 255, 0.3)",
+		transitionProperty: "color",
+		transitionDuration: "120ms",
+	},
+	folderIconOpen: {
+		color: "rgba(29, 185, 84, 0.6)",
+	},
+	treeName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: "0.59375rem",
+		fontWeight: font.weight_5,
+	},
+	treeIndentSpacer: {
+		width: "0.625rem",
+		flexShrink: 0,
+	},
+	treeFileName: {
+		minWidth: 0,
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+		fontSize: "0.59375rem",
+		fontWeight: font.weight_5,
+		transitionProperty: "color",
+		transitionDuration: "120ms",
+	},
+});
+
 /* ── Sub-components ───────────────────────────────────── */
 
 export function ChangeFileSidebarHeader({
@@ -222,21 +784,18 @@ export function ChangeFileSidebarHeader({
 	onFileViewModeChange: (mode: "path" | "tree") => void;
 }) {
 	return (
-		<div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-inferay-gray-border/40 bg-inferay-black px-2 py-1.5">
-			<span className="text-[9px] font-medium text-inferay-muted-gray">
-				Files
-			</span>
-			<span className="flex-1" />
-			<div className="flex h-5 items-center overflow-hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray">
+		<div {...stylex.props(styles.sidebarHeader)}>
+			<span {...stylex.props(styles.headerLabel)}>Files</span>
+			<span {...stylex.props(styles.spacer)} />
+			<div {...stylex.props(styles.segmented)}>
 				<button
 					type="button"
 					onClick={() => onFileViewModeChange("path")}
 					title="Path view"
-					className={`h-full px-1.5 text-[8px] font-medium transition-colors ${
-						fileViewMode === "path"
-							? "bg-inferay-white/10 text-inferay-white"
-							: "text-inferay-muted-gray hover:text-inferay-soft-white"
-					}`}
+					{...stylex.props(
+						styles.segmentButton,
+						fileViewMode === "path" && styles.segmentButtonActive
+					)}
 				>
 					Path
 				</button>
@@ -244,11 +803,10 @@ export function ChangeFileSidebarHeader({
 					type="button"
 					onClick={() => onFileViewModeChange("tree")}
 					title="Tree view"
-					className={`h-full px-1.5 text-[8px] font-medium transition-colors ${
-						fileViewMode === "tree"
-							? "bg-inferay-white/10 text-inferay-white"
-							: "text-inferay-muted-gray hover:text-inferay-soft-white"
-					}`}
+					{...stylex.props(
+						styles.segmentButton,
+						fileViewMode === "tree" && styles.segmentButtonActive
+					)}
 				>
 					Tree
 				</button>
@@ -302,47 +860,44 @@ function CommitSection({
 	};
 
 	return (
-		<div className="shrink-0 border-t border-inferay-gray-border">
-			{/* Commit header */}
-			<div className="flex items-center justify-between px-2.5 h-8 border-b border-inferay-gray-border/40">
-				<div className="flex items-center gap-1.5">
-					<IconGitCommit size={12} className="text-inferay-muted-gray" />
-					<span className="text-[9px] font-medium text-inferay-soft-white">
-						Commit
-					</span>
+		<div {...stylex.props(styles.commitSection)}>
+			<div {...stylex.props(styles.commitHeader)}>
+				<div {...stylex.props(styles.inlineGroup)}>
+					<IconGitCommit size={12} {...stylex.props(styles.mutedIcon)} />
+					<span {...stylex.props(styles.sectionTitle)}>Commit</span>
 				</div>
-				<button
+				<Button
 					type="button"
 					onClick={generateMessage}
 					disabled={!stagedCount || generating || !cwd}
 					title="Generate commit message from staged changes"
-					className="flex items-center gap-1 rounded-md border border-inferay-gray-border/50 bg-inferay-dark-gray px-1.5 py-0.5 text-[8px] font-medium text-inferay-muted-gray hover:text-inferay-soft-white hover:border-inferay-gray-border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+					variant="secondary"
+					size="sm"
+					className={stylex.props(styles.generateButton).className}
 				>
 					<IconSparkles
 						size={10}
 						className={generating ? "animate-pulse" : ""}
 					/>
 					{generating ? "Generating..." : "Generate"}
-				</button>
+				</Button>
 			</div>
 
-			{/* Amend toggle */}
-			<label className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-pointer hover:bg-inferay-white/[0.03] transition-colors">
+			<label {...stylex.props(styles.checkRow)}>
 				<input
 					type="checkbox"
 					checked={amendMode}
 					onChange={(e) => onAmendModeChange(e.target.checked)}
-					className="w-3 h-3 rounded border-inferay-gray-border accent-inferay-accent"
+					{...stylex.props(styles.checkbox)}
 				/>
-				<span className="text-[9px] text-inferay-muted-gray">
+				<span {...stylex.props(styles.mutedTextSmall)}>
 					Amend previous commit
 				</span>
 			</label>
 
-			{/* Commit form */}
-			<div className="px-2.5 pb-2.5 space-y-2">
-				<div className="rounded-lg border border-inferay-gray-border bg-inferay-dark-gray overflow-hidden focus-within:border-inferay-accent/50 transition-colors">
-					<div className="flex items-center border-b border-inferay-gray-border/20">
+			<div {...stylex.props(styles.commitForm)}>
+				<div {...stylex.props(styles.commitEditor)}>
+					<div {...stylex.props(styles.summaryRow)}>
 						<input
 							type="text"
 							value={summary}
@@ -352,7 +907,7 @@ function CommitSection({
 								onCommitMessageChange(lines.join("\n"));
 							}}
 							placeholder="Commit summary"
-							className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-[11px] text-inferay-white placeholder:text-inferay-muted-gray/30 outline-none"
+							{...stylex.props(styles.summaryInput)}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
 									e.preventDefault();
@@ -362,11 +917,10 @@ function CommitSection({
 						/>
 						{summary.length > 0 && (
 							<span
-								className={`shrink-0 pr-2.5 text-[9px] tabular-nums ${
-									summary.length > 72
-										? "text-amber-400"
-										: "text-inferay-muted-gray/40"
-								}`}
+								{...stylex.props(
+									styles.summaryCount,
+									summary.length > 72 && styles.warningText
+								)}
 							>
 								{summary.length}
 							</span>
@@ -381,16 +935,18 @@ function CommitSection({
 							);
 						}}
 						placeholder="Description"
-						className="w-full resize-none bg-transparent px-2.5 py-2 text-[10px] text-inferay-white placeholder:text-inferay-muted-gray/30 outline-none"
+						{...stylex.props(styles.descriptionInput)}
 						rows={4}
 					/>
 				</div>
 
-				<button
+				<Button
 					type="button"
 					onClick={onCommit}
 					disabled={!commitMessage.trim() || !stagedCount || isCommitting}
-					className="w-full flex items-center justify-center gap-1.5 rounded-md bg-inferay-accent hover:bg-inferay-accent/90 px-3 py-2 text-[10px] font-medium text-[var(--color-inferay-accent-foreground)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+					variant="primary"
+					size="md"
+					className={stylex.props(styles.commitButton).className}
 				>
 					<IconGitCommit size={12} />
 					{isCommitting
@@ -398,7 +954,7 @@ function CommitSection({
 						: stagedCount
 							? `Commit changes to ${stagedCount} file${stagedCount !== 1 ? "s" : ""}`
 							: "Nothing to commit"}
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
@@ -421,58 +977,56 @@ function CommitDetailsPanel({
 	};
 }) {
 	return (
-		<div className="flex flex-col h-full">
-			<div className="shrink-0 border-b border-inferay-gray-border p-3 space-y-2">
-				<div className="flex items-center gap-2">
-					<span className="font-mono text-[11px] text-inferay-accent font-medium">
+		<div {...stylex.props(styles.detailsRoot)}>
+			<div {...stylex.props(styles.detailsHeader)}>
+				<div {...stylex.props(styles.inlineGroupWide)}>
+					<span {...stylex.props(styles.hashText)}>
 						{details.hash.slice(0, 7)}
 					</span>
-					<span className="text-[10px] text-inferay-muted-gray">
-						{details.date}
-					</span>
+					<span {...stylex.props(styles.mutedText)}>{details.date}</span>
 				</div>
-				<p className="text-[11px] text-inferay-white leading-relaxed">
-					{details.message}
-				</p>
-				<p className="text-[10px] text-inferay-soft-white">{details.author}</p>
+				<p {...stylex.props(styles.commitMessage)}>{details.message}</p>
+				<p {...stylex.props(styles.authorText)}>{details.author}</p>
 			</div>
 
-			<div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-inferay-gray-border/50 bg-inferay-white/[0.02]">
-				<span className="text-[9px] font-medium text-inferay-soft-white">
-					Files Changed
-				</span>
-				<span className="text-[9px] text-inferay-muted-gray">
+			<div {...stylex.props(styles.detailsSubheader)}>
+				<span {...stylex.props(styles.sectionTitle)}>Files Changed</span>
+				<span {...stylex.props(styles.mutedTextSmall)}>
 					{details.files.length}
 				</span>
 			</div>
 
-			<div className="flex-1 min-h-0 overflow-y-auto">
+			<div {...stylex.props(styles.scrollArea)}>
 				{details.files.map((file, i) => (
 					<div
 						key={i}
-						className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-inferay-white/5 cursor-pointer"
+						{...stylex.props(styles.commitFileRow, styles.cursorPointer)}
 					>
 						<FileStatusIcon status={file.status} />
-						<span className="flex-1 truncate text-[10px] font-medium text-inferay-soft-white">
+						<span {...stylex.props(styles.fileName)}>
 							{file.path.split("/").pop()}
 						</span>
-						<div className="shrink-0 flex items-center gap-1 text-[9px] tabular-nums">
+						<div {...stylex.props(styles.fileStats)}>
 							{file.additions > 0 && (
-								<span className="text-git-added">+{file.additions}</span>
+								<span {...stylex.props(styles.addedText)}>
+									+{file.additions}
+								</span>
 							)}
 							{file.deletions > 0 && (
-								<span className="text-git-deleted">-{file.deletions}</span>
+								<span {...stylex.props(styles.deletedText)}>
+									-{file.deletions}
+								</span>
 							)}
 						</div>
 					</div>
 				))}
 			</div>
 
-			<div className="shrink-0 flex items-center justify-center gap-3 px-3 py-2 border-t border-inferay-gray-border text-[10px]">
-				<span className="text-git-added">
+			<div {...stylex.props(styles.detailsFooter)}>
+				<span {...stylex.props(styles.addedText)}>
 					+{details.files.reduce((sum, f) => sum + f.additions, 0)}
 				</span>
-				<span className="text-git-deleted">
+				<span {...stylex.props(styles.deletedText)}>
 					-{details.files.reduce((sum, f) => sum + f.deletions, 0)}
 				</span>
 			</div>
@@ -481,19 +1035,20 @@ function CommitDetailsPanel({
 }
 
 export function FileStatusIcon({ status }: { status: string }) {
-	const base =
-		"shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-sm text-[9px] font-bold leading-none";
 	switch (status) {
 		case "M":
 			return (
-				<span className={`${base} text-amber-400`} title="Modified">
+				<span
+					{...stylex.props(styles.statusIcon, styles.modified)}
+					title="Modified"
+				>
 					<IconPencil size={10} />
 				</span>
 			);
 		case "A":
 			return (
 				<span
-					className={`${base} text-git-added bg-git-added/15`}
+					{...stylex.props(styles.statusIcon, styles.addedStatus)}
 					title="Added"
 				>
 					A
@@ -502,7 +1057,7 @@ export function FileStatusIcon({ status }: { status: string }) {
 		case "D":
 			return (
 				<span
-					className={`${base} text-git-deleted bg-git-deleted/15`}
+					{...stylex.props(styles.statusIcon, styles.deletedStatus)}
 					title="Deleted"
 				>
 					D
@@ -511,7 +1066,7 @@ export function FileStatusIcon({ status }: { status: string }) {
 		case "R":
 			return (
 				<span
-					className={`${base} text-blue-400 bg-blue-400/15`}
+					{...stylex.props(styles.statusIcon, styles.renamedStatus)}
 					title="Renamed"
 				>
 					R
@@ -519,14 +1074,17 @@ export function FileStatusIcon({ status }: { status: string }) {
 			);
 		case "?":
 			return (
-				<span className={`${base} text-git-added`} title="Untracked">
+				<span
+					{...stylex.props(styles.statusIcon, styles.addedText)}
+					title="Untracked"
+				>
 					<IconPlus size={10} />
 				</span>
 			);
 		default:
 			return (
 				<span
-					className={`${base} text-inferay-muted-gray bg-inferay-white/8`}
+					{...stylex.props(styles.statusIcon, styles.defaultStatus)}
 					title={status}
 				>
 					{status.charAt(0) || "•"}
@@ -622,11 +1180,7 @@ function TreeNodeRow({
 	return (
 		<>
 			<div
-				className={`group relative flex h-6 items-center gap-1 cursor-pointer transition-colors border-l-2 ${
-					active
-						? "border-inferay-accent bg-inferay-accent/8"
-						: "border-transparent hover:bg-inferay-white/[0.04]"
-				}`}
+				{...stylex.props(styles.treeRow, active && styles.fileRowActive)}
 				style={{ paddingLeft: `${5 + depth * 11}px`, paddingRight: 8 }}
 				onClick={() => {
 					if (isDir) {
@@ -640,26 +1194,29 @@ function TreeNodeRow({
 					<>
 						<IconChevronRight
 							size={10}
-							className={`shrink-0 text-inferay-muted-gray transition-transform ${isExpanded ? "rotate-90" : ""}`}
+							{...stylex.props(
+								styles.chevron,
+								isExpanded && styles.chevronOpen
+							)}
 						/>
 						<IconFolderFill
 							size={12}
-							className={`shrink-0 transition-colors ${isExpanded ? "text-inferay-accent/60" : "text-inferay-muted-gray/70"}`}
+							{...stylex.props(
+								styles.folderIcon,
+								isExpanded && styles.folderIconOpen
+							)}
 						/>
-						<span className="truncate text-[9.5px] font-medium text-inferay-soft-white">
-							{node.name}
-						</span>
+						<span {...stylex.props(styles.treeName)}>{node.name}</span>
 					</>
 				) : file ? (
 					<>
-						<span className="w-2.5 shrink-0" />
+						<span {...stylex.props(styles.treeIndentSpacer)} />
 						<FileStatusIcon status={file.status} />
 						<span
-							className={`min-w-0 flex-1 truncate text-[9.5px] font-medium transition-colors ${
-								active
-									? "text-inferay-white"
-									: "text-inferay-soft-white group-hover:text-inferay-white"
-							}`}
+							{...stylex.props(
+								styles.treeFileName,
+								active && styles.activeText
+							)}
 						>
 							{node.name}
 						</span>
@@ -670,7 +1227,7 @@ function TreeNodeRow({
 									e.stopPropagation();
 									onAction(file.path);
 								}}
-								className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md border border-inferay-gray-border/50 bg-inferay-dark-gray px-1.5 py-0.5 text-[8px] text-inferay-muted-gray opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:text-inferay-soft-white hover:border-inferay-gray-border transition-all"
+								{...stylex.props(styles.rowAction)}
 							>
 								{actionLabel}
 							</button>
@@ -751,45 +1308,47 @@ export function FileGroup({
 	if (!files.length) return null;
 	return (
 		<div
-			className="flex flex-col"
+			{...stylex.props(styles.fileGroup)}
 			style={{
 				minHeight: minHeight && !isCollapsed ? minHeight : undefined,
 			}}
 		>
-			{/* Section header */}
-			<div className="sticky top-0 z-10 flex h-8 shrink-0 items-center justify-between border-b border-inferay-gray-border/40 bg-inferay-black px-2.5">
+			<div {...stylex.props(styles.groupHeader)}>
 				<button
 					type="button"
 					onClick={() => isCollapsible && setIsCollapsed(!isCollapsed)}
-					className={`flex items-center gap-1.5 ${isCollapsible ? "cursor-pointer" : "cursor-default"}`}
+					{...stylex.props(
+						styles.groupToggle,
+						isCollapsible ? styles.cursorPointer : styles.cursorDefault
+					)}
 				>
 					{isCollapsible && (
 						<IconChevronRight
 							size={10}
-							className={`text-inferay-muted-gray transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+							{...stylex.props(
+								styles.chevron,
+								!isCollapsed && styles.chevronOpen
+							)}
 						/>
 					)}
-					<span className="text-[9px] font-medium text-inferay-soft-white">
-						{title} Files
-					</span>
-					<span className="min-w-[16px] h-4 flex items-center justify-center rounded-full bg-inferay-white/[0.08] text-[8px] tabular-nums text-inferay-muted-gray px-1">
-						{files.length}
-					</span>
+					<span {...stylex.props(styles.sectionTitle)}>{title} Files</span>
+					<span {...stylex.props(styles.countPill)}>{files.length}</span>
 				</button>
 				{onActionAll && !isCollapsed && (
-					<button
+					<Button
 						type="button"
 						onClick={onActionAll}
-						className="flex items-center gap-1 rounded-md border border-inferay-gray-border/50 bg-inferay-dark-gray px-2 py-0.5 text-[8px] font-medium text-inferay-muted-gray hover:text-inferay-soft-white hover:border-inferay-gray-border hover:bg-inferay-gray transition-colors"
+						variant="secondary"
+						size="sm"
+						className={stylex.props(styles.actionAllButton).className}
 					>
 						{actionLabel} All
-					</button>
+					</Button>
 				)}
 			</div>
-			{/* File rows */}
 			{!isCollapsed && (
 				<div
-					className="flex-1 overflow-y-auto"
+					{...stylex.props(styles.groupList)}
 					style={{ maxHeight: maxHeight ?? undefined }}
 				>
 					{viewMode === "path" &&
@@ -803,28 +1362,28 @@ export function FileGroup({
 							return (
 								<div
 									key={`${f.staged ? "s" : "u"}-${f.path}`}
-									className={`group relative flex items-center gap-1.5 px-2 py-1 border-l-2 transition-colors ${
-										active
-											? "border-inferay-accent bg-inferay-accent/8"
-											: "border-transparent hover:bg-inferay-white/[0.04]"
-									}`}
+									{...stylex.props(
+										styles.pathRow,
+										active && styles.fileRowActive
+									)}
 								>
 									<FileStatusIcon status={f.status} />
 									<button
 										type="button"
 										onClick={() => onSelect(f)}
-										className="flex-1 min-w-0 flex flex-col text-left"
+										{...stylex.props(styles.fileButton)}
 										title={f.path}
 									>
 										<span
-											className={`truncate text-[10px] font-medium leading-tight transition-colors ${active ? "text-inferay-white" : "text-inferay-soft-white group-hover:text-inferay-white"}`}
+											{...stylex.props(
+												styles.pathFileName,
+												active && styles.activeText
+											)}
 										>
 											{name}
 										</span>
 										{dir && (
-											<span className="truncate text-[8px] leading-tight text-inferay-muted-gray/60">
-												{dir}
-											</span>
+											<span {...stylex.props(styles.pathDir)}>{dir}</span>
 										)}
 									</button>
 									{onAction && (
@@ -834,7 +1393,7 @@ export function FileGroup({
 												e.stopPropagation();
 												onAction(f.path);
 											}}
-											className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded px-1.5 py-0.5 text-[8px] text-inferay-muted-gray opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto hover:bg-inferay-white/10 hover:text-inferay-white transition-all"
+											{...stylex.props(styles.rowActionSubtle)}
 											title={`${actionLabel} ${f.path}`}
 										>
 											{actionLabel}

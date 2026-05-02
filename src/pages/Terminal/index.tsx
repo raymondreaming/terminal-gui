@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
 	useCallback,
 	useEffect,
@@ -38,13 +39,14 @@ import { TerminalSettingsPanel } from "./TerminalSettingsPanel.tsx";
 
 import "@xterm/xterm/css/xterm.css";
 
-import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	loadAppThemeId,
 	mapAppThemeToTerminalTheme,
 } from "../../lib/app-theme.ts";
+import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	type AgentKind,
+	cacheTerminalState,
 	createGroupId,
 	createPendingAgentChatPane,
 	createTerminalPane,
@@ -54,7 +56,6 @@ import {
 	DEFAULT_FONT_SIZE,
 	DEFAULT_OPACITY,
 	DEFAULT_ROWS,
-	cacheTerminalState,
 	getInitialGroups,
 	getPaneTitle,
 	getThemeById,
@@ -65,6 +66,7 @@ import {
 	type TerminalGroupModel,
 	type ThemeId,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 type MainViewMode = "editor" | "chat" | "graph" | "changes";
 
@@ -89,16 +91,239 @@ function markPopoutRestored() {
 
 function GraphEmptyState({ message }: { message: string }) {
 	return (
-		<div className="flex h-full items-center justify-center p-6">
-			<div className="max-w-sm text-center">
-				<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray">
+		<div {...stylex.props(styles.centerState, styles.centerPad)}>
+			<div {...stylex.props(styles.centerTextBox)}>
+				<div {...stylex.props(styles.iconBox)}>
 					<IconGitBranch size={18} />
 				</div>
-				<p className="text-sm text-inferay-white">{message}</p>
+				<p {...stylex.props(styles.centerMessage)}>{message}</p>
 			</div>
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	panelRoot: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	standaloneRoot: {
+		display: "flex",
+		height: "100vh",
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	popoutBody: {
+		flex: 1,
+		overflowY: "auto",
+	},
+	appRoot: {
+		display: "flex",
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	standaloneHeight: {
+		height: "100vh",
+	},
+	fullHeight: {
+		height: "100%",
+	},
+	appFrame: {
+		position: "relative",
+		display: "flex",
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	appColumn: {
+		display: "flex",
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	appBody: {
+		display: "flex",
+		flex: 1,
+		overflow: "hidden",
+	},
+	mainPane: {
+		position: "relative",
+		display: "flex",
+		flex: 1,
+		flexDirection: "column",
+	},
+	mainPaneHidden: {
+		overflow: "hidden",
+	},
+	mainPaneScroll: {
+		overflowY: "auto",
+		overscrollBehavior: "none",
+	},
+	sideColumn: {
+		order: 9999,
+		display: "flex",
+		flexShrink: 0,
+		flexDirection: "column",
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		backgroundColor: color.background,
+	},
+	portRow: {
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: controlSize._2,
+		marginBottom: "0.125rem",
+		borderRadius: 6,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+	},
+	noShrink: {
+		flexShrink: 0,
+	},
+	accentCircle: {
+		fill: "var(--color-inferay-accent)",
+		color: "var(--color-inferay-accent)",
+	},
+	portText: {
+		minWidth: 0,
+		flex: 1,
+	},
+	portNumber: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+	},
+	portName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	portActions: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.125rem",
+		opacity: 0.75,
+		transitionProperty: "opacity",
+		transitionDuration: "120ms",
+	},
+	centerState: {
+		display: "flex",
+		height: "100%",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	centerPad: {
+		padding: controlSize._6,
+	},
+	centerTextBox: {
+		maxWidth: "24rem",
+		textAlign: "center",
+	},
+	iconBox: {
+		display: "flex",
+		width: controlSize._12,
+		height: controlSize._12,
+		alignItems: "center",
+		justifyContent: "center",
+		marginInline: "auto",
+		marginBottom: controlSize._4,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: color.backgroundRaised,
+		color: color.textMuted,
+	},
+	centerMessage: {
+		color: color.textMain,
+		fontSize: "0.875rem",
+	},
+	startHeader: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	startTitle: {
+		color: color.textSoft,
+		fontSize: font.size_1,
+		fontWeight: font.weight_5,
+	},
+	spacer: {
+		flex: 1,
+	},
+	startDock: {
+		flexShrink: 0,
+		paddingInline: controlSize._3,
+		paddingBottom: controlSize._2,
+	},
+	startButtons: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.375rem",
+		overflowX: "auto",
+		marginBottom: controlSize._1,
+		paddingInline: controlSize._1,
+	},
+	popoutSpacer: {
+		position: "relative",
+		height: "3rem",
+		flexShrink: 0,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		backgroundColor: color.background,
+	},
+	popoutIconWrap: {
+		display: "flex",
+		justifyContent: "center",
+		marginBottom: controlSize._4,
+	},
+	popoutIconBox: {
+		borderRadius: "999px",
+		backgroundColor: color.backgroundRaised,
+		padding: controlSize._4,
+	},
+	accentIcon: {
+		color: "var(--color-inferay-accent)",
+	},
+	popoutTitle: {
+		marginBottom: controlSize._2,
+		color: color.textMain,
+		fontSize: "1.125rem",
+		fontWeight: font.weight_5,
+	},
+	popoutText: {
+		marginBottom: controlSize._4,
+		color: color.textMuted,
+		fontSize: "0.875rem",
+	},
+	buttonIcon: {
+		marginRight: "0.375rem",
+	},
+});
 
 function AgentStartPane({
 	onStart,
@@ -115,26 +340,28 @@ function AgentStartPane({
 		DEFAULT_CHAT_AGENT_KIND
 	);
 	return (
-		<div className="flex h-full flex-col bg-inferay-black">
-			<div className="electrobun-webkit-app-region-no-drag flex shrink-0 items-center gap-2 border-b border-inferay-gray-border px-3 py-1.5">
-				<span className="text-[9px] font-medium text-inferay-soft-white">
-					New Session
-				</span>
-				<span className="flex-1" />
+		<div {...stylex.props(styles.panelRoot)}>
+			<div
+				className={`electrobun-webkit-app-region-no-drag ${stylex.props(styles.startHeader).className ?? ""}`}
+			>
+				<span {...stylex.props(styles.startTitle)}>New Session</span>
+				<span {...stylex.props(styles.spacer)} />
 				{onClose && (
-					<button
+					<IconButton
 						type="button"
 						onClick={onClose}
-						className="electrobun-webkit-app-region-no-drag flex h-4 w-4 items-center justify-center rounded text-inferay-muted-gray transition-colors hover:bg-red-500/15 hover:text-red-400"
+						className="electrobun-webkit-app-region-no-drag"
+						variant="danger"
+						size="xs"
 						title="Close"
 					>
 						<IconX size={8} />
-					</button>
+					</IconButton>
 				)}
 			</div>
-			<div className="flex-1" />
-			<div className="shrink-0 px-3 pb-2">
-				<div className="mb-1 flex items-center gap-1.5 overflow-x-auto px-1">
+			<div {...stylex.props(styles.spacer)} />
+			<div {...stylex.props(styles.startDock)}>
+				<div {...stylex.props(styles.startButtons)}>
 					<NewSessionButtons
 						selectedKind={agentKind}
 						onAddPane={(kind) => setAgentKind(kind)}
@@ -217,6 +444,10 @@ function groupsReducer(
 			return state.map((g) => {
 				if (g.id !== action.groupId) return g;
 				const panes = g.panes.filter((p) => p.id !== action.paneId);
+				if (panes.length === 0) {
+					const pane = createPendingAgentChatPane();
+					return { ...g, panes: [pane], selectedPaneId: pane.id };
+				}
 				return {
 					...g,
 					panes,
@@ -691,7 +922,12 @@ export function TerminalPage({
 	const handleSetPaneAgentKind = useCallback(
 		(paneId: string, agentKind: AgentKind) =>
 			withSelectedGroup((groupId) =>
-				groupsDispatch({ type: "setPaneAgentKind", groupId, paneId, agentKind })
+				groupsDispatch({
+					type: "setPaneAgentKind",
+					groupId,
+					paneId,
+					agentKind,
+				})
 			),
 		[withSelectedGroup]
 	);
@@ -774,7 +1010,7 @@ export function TerminalPage({
 	}, [currentGroup]);
 	if (isPopout || (isStandalone && compactMode)) {
 		return (
-			<div className="flex h-screen flex-col bg-inferay-black">
+			<div {...stylex.props(styles.standaloneRoot)}>
 				<PopoutHeader
 					groups={groups}
 					currentGroup={currentGroup}
@@ -794,7 +1030,7 @@ export function TerminalPage({
 					onKillPort={killPort}
 					onOpenInBrowser={openInBrowser}
 				/>
-				<div className="flex-1 overflow-y-auto">
+				<div {...stylex.props(styles.popoutBody)}>
 					{!currentGroup || currentGroup.panes.length === 0 ? (
 						<AgentStartPane
 							onStart={handleStartAgentPane}
@@ -831,23 +1067,26 @@ export function TerminalPage({
 	}
 	if (isPoppedOut) {
 		return (
-			<div className="flex h-full flex-col bg-inferay-black">
-				<div className="relative h-12 shrink-0 border-b border-inferay-gray-border bg-inferay-black"></div>
-				<div className="flex flex-1 items-center justify-center">
-					<div className="text-center">
-						<div className="mb-4 flex items-center justify-center">
-							<div className="rounded-full bg-inferay-dark-gray p-4">
-								<IconExternalLink size={32} className="text-inferay-accent" />
+			<div {...stylex.props(styles.panelRoot)}>
+				<div {...stylex.props(styles.popoutSpacer)} />
+				<div {...stylex.props(styles.centerState)}>
+					<div {...stylex.props(styles.centerTextBox)}>
+						<div {...stylex.props(styles.popoutIconWrap)}>
+							<div {...stylex.props(styles.popoutIconBox)}>
+								<IconExternalLink
+									size={32}
+									{...stylex.props(styles.accentIcon)}
+								/>
 							</div>
 						</div>
-						<h2 className="text-lg font-medium text-inferay-white mb-2">
+						<h2 {...stylex.props(styles.popoutTitle)}>
 							Terminal in Separate Window
 						</h2>
-						<p className="text-sm text-inferay-muted-gray mb-4">
+						<p {...stylex.props(styles.popoutText)}>
 							The terminal is currently open in a pop-out window.
 						</p>
 						<Button variant="primary" onClick={handleRestore}>
-							<IconArrowLeft size={14} className="mr-1.5" />
+							<IconArrowLeft size={14} {...stylex.props(styles.buttonIcon)} />
 							Restore Here
 						</Button>
 					</div>
@@ -857,10 +1096,13 @@ export function TerminalPage({
 	}
 	return (
 		<div
-			className={`flex flex-col bg-inferay-black ${isStandalone ? "h-screen" : "h-full"}`}
+			{...stylex.props(
+				styles.appRoot,
+				isStandalone ? styles.standaloneHeight : styles.fullHeight
+			)}
 		>
-			<div className="relative flex flex-1 flex-col overflow-hidden">
-				<div className="flex flex-1 flex-col overflow-hidden">
+			<div {...stylex.props(styles.appFrame)}>
+				<div {...stylex.props(styles.appColumn)}>
 					{false &&
 						mainView === "editor" &&
 						!sidebarOpen &&
@@ -874,9 +1116,14 @@ export function TerminalPage({
 								onExpand={() => setSidebarOpen((v) => !v)}
 							/>
 						)}
-					<div className="flex flex-1 overflow-hidden">
+					<div {...stylex.props(styles.appBody)}>
 						<div
-							className={`relative flex-1 flex flex-col ${mainView === "editor" && layoutMode === "rows" ? "overflow-hidden" : "overflow-y-auto overscroll-none"}`}
+							{...stylex.props(
+								styles.mainPane,
+								mainView === "editor" && layoutMode === "rows"
+									? styles.mainPaneHidden
+									: styles.mainPaneScroll
+							)}
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
 								<AgentStartPane
@@ -969,7 +1216,7 @@ export function TerminalPage({
 							sidebarOpen &&
 							currentGroup &&
 							currentGroup.panes.length > 0 && (
-								<div className="flex flex-col shrink-0 border-l border-inferay-gray-border bg-inferay-black order-last">
+								<div {...stylex.props(styles.sideColumn)}>
 									<AgentSidebar
 										panes={currentGroup.panes}
 										selectedPaneId={currentGroup.selectedPaneId}
@@ -990,29 +1237,29 @@ export function TerminalPage({
 										{runningPorts.map((p) => (
 											<div
 												key={`${p.port}-${p.pid}`}
-												className="group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-inferay-dark-gray"
+												{...stylex.props(styles.portRow)}
 											>
-												<div className="shrink-0">
+												<div {...stylex.props(styles.noShrink)}>
 													<IconCircle
 														size={8}
-														className="fill-inferay-accent text-inferay-accent"
+														{...stylex.props(styles.accentCircle)}
 													/>
 												</div>
-												<div className="min-w-0 flex-1">
+												<div {...stylex.props(styles.portText)}>
 													<p
-														className="truncate text-[11px] font-medium text-inferay-white"
+														{...stylex.props(styles.portNumber)}
 														title={p.command}
 													>
 														:{p.port}
 													</p>
 													<p
-														className="truncate text-[9px] text-inferay-muted-gray"
+														{...stylex.props(styles.portName)}
 														title={p.command}
 													>
 														{p.name}
 													</p>
 												</div>
-												<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+												<div {...stylex.props(styles.portActions)}>
 													<IconButton
 														variant="ghost"
 														size="xs"

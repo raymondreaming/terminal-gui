@@ -1,4 +1,5 @@
 import type React from "react";
+import { colorValues, effectValues } from "../../tokens.stylex.ts";
 
 type TokenRange = {
 	start: number;
@@ -11,16 +12,19 @@ function findDecoratedTokenRanges(text: string): TokenRange[] {
 	const ranges: TokenRange[] = [];
 	const slashRegex = /(^|\s)(\/[a-zA-Z][\w-]*)/g;
 	const fileRegex = /(^|\s)(@[^\s]+)/g;
-	let match: RegExpExecArray | null;
 
-	while ((match = slashRegex.exec(text)) !== null) {
+	for (
+		let match = slashRegex.exec(text);
+		match;
+		match = slashRegex.exec(text)
+	) {
 		const prefix = match[1]!;
 		const token = match[2]!;
 		const start = match.index + prefix.length;
 		ranges.push({ start, end: start + token.length });
 	}
 
-	while ((match = fileRegex.exec(text)) !== null) {
+	for (let match = fileRegex.exec(text); match; match = fileRegex.exec(text)) {
 		const prefix = match[1]!;
 		const token = match[2]!;
 		const start = match.index + prefix.length;
@@ -36,7 +40,7 @@ export function renderInputHighlights(text: string): React.ReactNode {
 
 	const tokens = findDecoratedTokenRanges(text);
 	if (tokens.length === 0) {
-		return <span style={{ color: "var(--color-inferay-white)" }}>{text}</span>;
+		return <span style={{ color: colorValues.textMain }}>{text}</span>;
 	}
 
 	const segments: React.ReactNode[] = [];
@@ -47,10 +51,7 @@ export function renderInputHighlights(text: string): React.ReactNode {
 
 		if (token.start > lastEnd) {
 			segments.push(
-				<span
-					key={`t-${lastEnd}`}
-					style={{ color: "var(--color-inferay-white)" }}
-				>
+				<span key={`t-${lastEnd}`} style={{ color: colorValues.textMain }}>
 					{text.slice(lastEnd, token.start)}
 				</span>
 			);
@@ -62,9 +63,8 @@ export function renderInputHighlights(text: string): React.ReactNode {
 				key={`h-${token.start}`}
 				className="rounded-sm"
 				style={{
-					color: "var(--color-inferay-accent)",
-					backgroundColor:
-						"var(--color-inferay-accent-15, rgba(0, 122, 255, 0.15))",
+					color: colorValues.accent,
+					backgroundColor: effectValues.tokenHighlightBackground,
 				}}
 			>
 				{tokenText}
@@ -75,10 +75,7 @@ export function renderInputHighlights(text: string): React.ReactNode {
 
 	if (lastEnd < text.length) {
 		segments.push(
-			<span
-				key={`t-${lastEnd}`}
-				style={{ color: "var(--color-inferay-white)" }}
-			>
+			<span key={`t-${lastEnd}`} style={{ color: colorValues.textMain }}>
 				{text.slice(lastEnd)}
 			</span>
 		);
@@ -104,15 +101,13 @@ export function renderTextPills(text: string): React.ReactNode[] {
 		}
 
 		const tokenText = text.slice(token.start, token.end);
-		const pillColor = "var(--color-inferay-accent)";
 		parts.push(
 			<span
 				key={`${token.start}-${tokenText}`}
 				className="inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium align-middle"
 				style={{
-					backgroundColor:
-						"var(--color-inferay-accent-15, rgba(0, 122, 255, 0.15))",
-					color: pillColor,
+					backgroundColor: effectValues.tokenHighlightBackground,
+					color: colorValues.accent,
 				}}
 			>
 				{tokenText}

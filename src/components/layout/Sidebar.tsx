@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { getAgentIcon } from "../../lib/agent-ui.tsx";
@@ -14,11 +15,13 @@ import {
 	saveTerminalState,
 	type TerminalPaneModel,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import {
 	loadStoredMessages,
 	loadStoredSummary,
 	saveStoredSummary,
 } from "../chat/chat-session-store.ts";
+import { IconButton } from "../ui/IconButton.tsx";
 import {
 	IconCamera,
 	IconChevronRight,
@@ -26,7 +29,6 @@ import {
 	IconSettings,
 	IconSlash,
 	IconTerminal,
-	IconTrash,
 	IconUser,
 	IconX,
 } from "../ui/Icons.tsx";
@@ -109,34 +111,26 @@ function PaneSummaryItem({
 	const primaryLabel = isChat
 		? (summary ?? pane.title)
 		: (dirName ?? pane.title);
-	const secondaryLabel = isChat ? (dirName ?? pane.title) : null;
 
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			className={`group/pane mx-1.5 mb-0.5 flex w-[calc(100%-12px)] items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors ${
-				isActive
-					? "bg-inferay-gray/60 text-inferay-white"
-					: "text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-			}`}
+			{...stylex.props(
+				styles.paneSummary,
+				styles.paneSummaryIdle,
+				isActive && styles.paneSummarySelected
+			)}
 		>
-			<span className="mt-0.5 shrink-0">
+			<span {...stylex.props(styles.paneSummaryIcon)}>
 				{isChat ? (
 					getAgentIcon(pane.agentKind, 12, "opacity-60")
 				) : (
 					<IconTerminal size={12} className="opacity-60" />
 				)}
 			</span>
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-[10px] font-medium leading-tight">
-					{primaryLabel}
-				</p>
-				{secondaryLabel && secondaryLabel !== primaryLabel && (
-					<p className="mt-0.5 truncate text-[9px] leading-tight text-inferay-muted-gray">
-						{secondaryLabel}
-					</p>
-				)}
+			<div {...stylex.props(styles.paneSummaryText)}>
+				<p {...stylex.props(styles.paneSummaryTitle)}>{primaryLabel}</p>
 			</div>
 		</button>
 	);
@@ -171,6 +165,7 @@ function WorkspaceItem({
 	const [expanded, setExpanded] = useState(isActive);
 	const [editing, setEditing] = useState(false);
 	const [editValue, setEditValue] = useState(group.name);
+	const [hovered, setHovered] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const paneGroups = useMemo(() => {
 		const byFolder = new Map<string, TerminalPaneModel[]>();
@@ -223,33 +218,36 @@ function WorkspaceItem({
 	if (collapsed) {
 		return (
 			<div
-				className={`group mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-lg border transition-colors relative ${
+				{...stylex.props(
+					styles.collapsedWorkspace,
 					isActive
-						? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
-						: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-				}`}
+						? styles.collapsedWorkspaceActive
+						: styles.collapsedWorkspaceIdle
+				)}
+				onMouseEnter={() => setHovered(true)}
+				onMouseLeave={() => setHovered(false)}
 			>
 				<button
 					type="button"
 					onClick={onSelect}
-					className="flex items-center justify-center w-full h-full rounded-lg"
+					{...stylex.props(styles.collapsedWorkspaceButton)}
 					title={group.name}
 				>
 					<IconTerminal size={14} className="shrink-0" />
 				</button>
 				{group.panes.length > 0 && (
-					<span className="absolute -bottom-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-inferay-gray border border-inferay-gray-border text-[8px] font-medium text-inferay-muted-gray leading-none px-0.5">
+					<span {...stylex.props(styles.collapsedWorkspaceCount)}>
 						{group.panes.length}
 					</span>
 				)}
-				{canDelete && (
+				{canDelete && hovered && (
 					<button
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onDelete();
 						}}
-						className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-inferay-black border border-inferay-gray-border text-inferay-muted-gray opacity-0 transition-opacity hover:text-red-400 hover:border-red-400/40 group-hover:opacity-100"
+						{...stylex.props(styles.collapsedWorkspaceDelete)}
 						title="Delete workspace"
 					>
 						<IconX size={7} />
@@ -260,20 +258,23 @@ function WorkspaceItem({
 	}
 
 	return (
-		<div className="mb-1">
+		<div
+			{...stylex.props(styles.workspaceWrap)}
+			onMouseEnter={() => setHovered(true)}
+			onMouseLeave={() => setHovered(false)}
+		>
 			<div
-				className={`group mx-1.5 flex h-8 items-center gap-2 rounded-lg border px-2 text-[11px] font-medium cursor-pointer transition-colors ${
-					isActive
-						? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
-						: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-				}`}
+				{...stylex.props(
+					styles.workspaceHeader,
+					isActive ? styles.workspaceHeaderActive : styles.workspaceHeaderIdle
+				)}
 				onClick={handleClick}
 			>
 				<IconChevronRight
 					size={10}
 					className={`shrink-0 transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
 				/>
-				<div className="flex-1 min-w-0">
+				<div {...stylex.props(styles.workspaceNameWrap)}>
 					{editing ? (
 						<input
 							ref={inputRef}
@@ -285,11 +286,11 @@ function WorkspaceItem({
 								if (e.key === "Enter") commitRename();
 								if (e.key === "Escape") setEditing(false);
 							}}
-							className="w-full bg-transparent text-[11px] text-inferay-white outline-none border-b border-inferay-accent"
+							{...stylex.props(styles.workspaceInput)}
 						/>
 					) : (
 						<div
-							className="truncate"
+							{...stylex.props(styles.workspaceName)}
 							onDoubleClick={(e) => {
 								e.stopPropagation();
 								setEditValue(group.name);
@@ -300,36 +301,36 @@ function WorkspaceItem({
 						</div>
 					)}
 				</div>
-				<span className="ml-1 text-[9px] text-inferay-muted-gray shrink-0">
+				<span {...stylex.props(styles.workspaceCount)}>
 					{group.panes.length}
 				</span>
-				{canDelete && !editing && (
+				{canDelete && hovered && !editing && (
 					<button
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onDelete();
 						}}
-						className="ml-1 rounded p-0.5 text-inferay-muted-gray opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 shrink-0"
+						{...stylex.props(styles.workspaceDelete)}
 						title="Delete workspace"
 					>
-						<IconTrash size={10} />
+						<IconX size={9} />
 					</button>
 				)}
 			</div>
 			{/* Expanded pane list */}
 			{expanded && group.panes.length > 0 && (
-				<div className="mt-0.5 pb-1">
+				<div {...stylex.props(styles.workspacePaneList)}>
 					{paneGroups.map(({ folder, panes }) => (
-						<div key={folder} className="mb-0.5 last:mb-0">
-							<div className="mx-2 mb-0.5 flex items-center gap-1 pl-1 text-[8px] font-medium uppercase tracking-[0.12em] text-inferay-muted-gray/60">
-								<span className="h-px w-1.5 bg-inferay-gray-border/70" />
-								<span className="min-w-0 truncate">{folder}</span>
-								<span className="rounded-sm bg-inferay-white/[0.04] px-1 text-[7px] tabular-nums text-inferay-muted-gray/50">
+						<div key={folder} {...stylex.props(styles.folderGroup)}>
+							<div {...stylex.props(styles.folderHeader)}>
+								<span {...stylex.props(styles.folderRule)} />
+								<span {...stylex.props(styles.folderLabel)}>{folder}</span>
+								<span {...stylex.props(styles.folderCount)}>
 									{panes.length}
 								</span>
 							</div>
-							<div className="ml-2 border-l border-inferay-gray-border/35 pl-0.5">
+							<div {...stylex.props(styles.folderPaneList)}>
 								{panes.map((pane) => (
 									<PaneSummaryItem
 										key={pane.id}
@@ -501,32 +502,41 @@ export function Sidebar() {
 		};
 	}, []);
 
-	const githubLabel =
-		githubAccount?.login || githubAccount?.name || "GitHub Account";
+	const githubLabel = githubAccount?.login || githubAccount?.name || "";
+	const shellProps = stylex.props(
+		styles.shell,
+		collapsed ? styles.shellCollapsed : styles.shellOpen
+	);
+	const logoBarProps = stylex.props(styles.logoBar);
+	const logoButtonProps = stylex.props(styles.logoButton);
+	const workspaceSectionProps = stylex.props(styles.workspaceSection);
+	const footerProps = stylex.props(styles.footer);
 
 	return (
 		<aside
-			className={`electrobun-webkit-app-region-drag relative flex flex-col border-r border-inferay-gray-border bg-inferay-black transition-all duration-200 ${
-				collapsed ? "w-12" : "w-48"
-			}`}
+			{...shellProps}
+			className={`electrobun-webkit-app-region-drag ${shellProps.className ?? ""}`}
 		>
-			<div className="electrobun-webkit-app-region-drag flex h-12 items-center px-3 border-b border-inferay-gray-border">
+			<div
+				className={`electrobun-webkit-app-region-drag ${logoBarProps.className ?? ""}`}
+			>
 				<button
 					type="button"
 					onClick={() => setCollapsed(!collapsed)}
-					className="electrobun-webkit-app-region-no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+					{...logoButtonProps}
+					className={`electrobun-webkit-app-region-no-drag ${logoButtonProps.className ?? ""}`}
 				>
-					<span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-md">
+					<span {...stylex.props(styles.logoFrame)}>
 						<img
 							src={logoUrl}
 							alt=""
-							className="h-7 w-7 rounded-md object-cover"
+							{...stylex.props(styles.logo)}
 							style={logoImageStyle}
 						/>
 					</span>
 				</button>
 			</div>
-			<nav className="flex-1 overflow-y-auto py-1.5 scrollbar-none">
+			<nav {...stylex.props(styles.nav)}>
 				{navItems.map((item) => {
 					const Icon = item.icon;
 					return (
@@ -534,11 +544,13 @@ export function Sidebar() {
 							key={item.path}
 							to={item.path}
 							className={({ isActive }) =>
-								`electrobun-webkit-app-region-no-drag mx-1.5 mb-1 flex items-center gap-2 rounded-lg border px-2 text-[11px] font-medium transition-colors ${
-									isActive
-										? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
-										: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-								} ${collapsed ? "justify-center h-7 w-7 mx-auto !px-0" : "h-7"}`
+								`electrobun-webkit-app-region-no-drag ${
+									stylex.props(
+										styles.navItem,
+										isActive ? styles.navItemActive : styles.navItemIdle,
+										collapsed ? styles.navItemCollapsed : styles.navItemOpen
+									).className ?? ""
+								}`
 							}
 							title={collapsed ? item.label : undefined}
 						>
@@ -549,32 +561,42 @@ export function Sidebar() {
 				})}
 
 				{/* Workspaces section */}
-				<div className="electrobun-webkit-app-region-no-drag mt-2 border-t border-inferay-gray-border pt-2">
+				<div
+					className={`electrobun-webkit-app-region-no-drag ${workspaceSectionProps.className ?? ""}`}
+				>
 					<div
-						className={`mx-1.5 mb-1 flex items-center ${collapsed ? "justify-center" : "justify-between px-2"}`}
+						{...stylex.props(
+							styles.workspaceSectionHeader,
+							collapsed
+								? styles.workspaceSectionHeaderCollapsed
+								: styles.workspaceSectionHeaderOpen
+						)}
 					>
 						{collapsed ? (
-							<button
+							<IconButton
 								type="button"
 								onClick={addWorkspace}
-								className="flex h-7 w-7 mx-auto items-center justify-center rounded-lg border border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
+								variant="ghost"
+								size="md"
+								className="mx-auto h-7 w-7"
 								title="Add workspace"
 							>
 								<IconPlus size={14} className="shrink-0" />
-							</button>
+							</IconButton>
 						) : (
 							<>
-								<span className="text-[10px] font-medium uppercase tracking-wider text-inferay-muted-gray">
+								<span {...stylex.props(styles.workspaceSectionLabel)}>
 									Workspaces
 								</span>
-								<button
+								<IconButton
 									type="button"
 									onClick={addWorkspace}
-									className="rounded p-0.5 text-inferay-muted-gray transition-colors hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white"
+									variant="ghost"
+									size="xs"
 									title="New workspace"
 								>
 									<IconPlus size={12} />
-								</button>
+								</IconButton>
 							</>
 						)}
 					</div>
@@ -594,32 +616,43 @@ export function Sidebar() {
 					))}
 				</div>
 			</nav>
-			<div className="electrobun-webkit-app-region-no-drag border-t border-inferay-gray-border p-1.5">
+			<div
+				className={`electrobun-webkit-app-region-no-drag ${footerProps.className ?? ""}`}
+			>
 				<button
 					type="button"
 					onClick={() =>
 						window.dispatchEvent(new Event("terminal-open-theme-panel"))
 					}
-					className={`flex items-center gap-2 rounded-lg border border-transparent text-[11px] font-medium transition-colors text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white ${collapsed ? "justify-center h-7 w-7 mx-auto p-0" : "h-7 w-full px-2"}`}
+					{...stylex.props(
+						styles.footerButton,
+						styles.footerButtonIdle,
+						collapsed ? styles.footerButtonCollapsed : styles.footerButtonOpen
+					)}
 					title={collapsed ? "Settings" : undefined}
 				>
 					<IconSettings size={14} className="shrink-0" />
 					{!collapsed ? <span>Settings</span> : null}
 				</button>
-				<NavLink
-					to="/profile"
-					className={({ isActive }) =>
-						`flex items-center gap-2 rounded-lg border text-[11px] font-medium transition-colors ${
-							isActive
-								? "border-inferay-gray-border bg-inferay-gray text-inferay-white"
-								: "border-transparent text-inferay-muted-gray hover:bg-inferay-dark-gray hover:text-inferay-soft-white"
-						} ${collapsed ? "justify-center h-7 w-7 mx-auto p-0" : "h-7 px-2"}`
-					}
-					title={collapsed ? githubLabel : undefined}
-				>
-					<SidebarAccountAvatar account={githubAccount} />
-					{!collapsed ? <span className="truncate">{githubLabel}</span> : null}
-				</NavLink>
+				{githubAccount ? (
+					<NavLink
+						to="/profile"
+						className={
+							stylex.props(
+								styles.profileButton,
+								collapsed
+									? styles.profileButtonCollapsed
+									: styles.profileButtonOpen
+							).className ?? ""
+						}
+						title={collapsed ? githubLabel : undefined}
+					>
+						<SidebarAccountAvatar account={githubAccount} />
+						{!collapsed ? (
+							<span {...stylex.props(styles.profileLabel)}>{githubLabel}</span>
+						) : null}
+					</NavLink>
+				) : null}
 			</div>
 		</aside>
 	);
@@ -631,14 +664,512 @@ function SidebarAccountAvatar({ account }: { account: ForgeAccount | null }) {
 			<img
 				src={account.avatarUrl}
 				alt=""
-				className="h-4 w-4 shrink-0 rounded-full border border-inferay-gray-border object-cover"
+				{...stylex.props(styles.accountAvatar)}
 			/>
 		);
 	}
 
 	return (
-		<span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-inferay-gray-border bg-inferay-gray text-[7px] font-semibold uppercase text-inferay-soft-white">
+		<span {...stylex.props(styles.accountFallback)}>
 			{account?.login ? account.login.slice(0, 2) : <IconUser size={10} />}
 		</span>
 	);
 }
+
+const styles = stylex.create({
+	paneSummary: {
+		alignItems: "center",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: "transparent",
+		borderRadius: 6,
+		display: "flex",
+		gap: controlSize._2,
+		marginBottom: "0.125rem",
+		marginInline: "0.375rem",
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._2,
+		textAlign: "left",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+		width: "calc(100% - 12px)",
+	},
+	paneSummaryIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.accentWash,
+		},
+		borderColor: {
+			default: "transparent",
+			":hover": color.border,
+		},
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+	},
+	paneSummaryActive: {
+		backgroundColor: color.accentWash,
+		borderColor: color.border,
+		color: color.textMain,
+	},
+	paneSummarySelected: {
+		color: color.textMain,
+	},
+	paneSummaryIcon: {
+		flexShrink: 0,
+	},
+	paneSummaryText: {
+		flex: 1,
+		minWidth: 0,
+	},
+	paneSummaryTitle: {
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		lineHeight: 1.2,
+		margin: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	paneSummarySub: {
+		color: color.textSoft,
+		fontSize: font.size_1,
+		lineHeight: 1.2,
+		marginBlockEnd: 0,
+		marginBlockStart: "0.125rem",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	collapsedWorkspace: {
+		alignItems: "center",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		display: "flex",
+		height: controlSize._7,
+		justifyContent: "center",
+		marginBlockEnd: controlSize._1,
+		marginInline: "auto",
+		position: "relative",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+		width: controlSize._7,
+	},
+	collapsedWorkspaceIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.accentWash,
+		},
+		borderColor: {
+			default: "transparent",
+			":hover": color.border,
+		},
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+	},
+	collapsedWorkspaceActive: {
+		backgroundColor: color.accentWash,
+		borderColor: color.border,
+		color: color.textMain,
+	},
+	collapsedWorkspaceButton: {
+		alignItems: "center",
+		borderRadius: 8,
+		display: "flex",
+		height: "100%",
+		justifyContent: "center",
+		width: "100%",
+	},
+	collapsedWorkspaceCount: {
+		alignItems: "center",
+		backgroundColor: color.accentWash,
+		borderColor: color.border,
+		borderRadius: 999,
+		borderStyle: "solid",
+		borderWidth: 1,
+		bottom: -4,
+		color: color.textSoft,
+		display: "flex",
+		fontSize: "0.5rem",
+		fontWeight: font.weight_5,
+		justifyContent: "center",
+		lineHeight: 1,
+		minWidth: 14,
+		paddingInline: "0.125rem",
+		position: "absolute",
+		right: -4,
+	},
+	collapsedWorkspaceDelete: {
+		alignItems: "center",
+		backgroundColor: color.accentWash,
+		borderColor: color.border,
+		borderRadius: 999,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		display: "flex",
+		height: 14,
+		justifyContent: "center",
+		position: "absolute",
+		right: -4,
+		top: -4,
+		transitionDuration: "150ms",
+		width: 14,
+	},
+	workspaceWrap: {
+		marginBottom: controlSize._1,
+	},
+	workspaceHeader: {
+		alignItems: "center",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		cursor: "pointer",
+		display: "flex",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+		gap: controlSize._2,
+		height: controlSize._8,
+		marginInline: "0.375rem",
+		paddingInline: controlSize._2,
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+	},
+	workspaceHeaderIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.accentWash,
+		},
+		borderColor: {
+			default: "transparent",
+			":hover": color.border,
+		},
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+	},
+	workspaceHeaderActive: {
+		backgroundColor: color.accentWash,
+		borderColor: color.border,
+		color: color.textMain,
+	},
+	workspaceNameWrap: {
+		flex: 1,
+		minWidth: 0,
+	},
+	workspaceInput: {
+		backgroundColor: "transparent",
+		borderWidth: 0,
+		color: color.textMain,
+		fontSize: "0.6875rem",
+		outline: "none",
+		width: "100%",
+	},
+	workspaceName: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	workspaceCount: {
+		color: color.textSoft,
+		flexShrink: 0,
+		fontSize: font.size_1,
+		marginLeft: controlSize._1,
+	},
+	workspaceDelete: {
+		borderRadius: 4,
+		color: color.textSoft,
+		flexShrink: 0,
+		marginLeft: controlSize._1,
+		padding: "0.125rem",
+	},
+	workspacePaneList: {
+		marginTop: "0.125rem",
+		paddingBottom: controlSize._1,
+	},
+	folderGroup: {
+		marginBottom: "0.125rem",
+	},
+	folderHeader: {
+		alignItems: "center",
+		color: color.textSoft,
+		display: "flex",
+		fontSize: "0.5rem",
+		fontWeight: font.weight_5,
+		gap: controlSize._1,
+		letterSpacing: 0,
+		marginBottom: "0.125rem",
+		marginInline: controlSize._2,
+		paddingLeft: controlSize._1,
+		textTransform: "uppercase",
+	},
+	folderRule: {
+		backgroundColor: "rgba(255, 255, 255, 0.06)",
+		height: 1,
+		width: "0.375rem",
+	},
+	folderLabel: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	folderCount: {
+		backgroundColor: "rgba(255, 255, 255, 0.04)",
+		borderRadius: 2,
+		color: color.textSoft,
+		fontSize: "0.4375rem",
+		fontVariantNumeric: "tabular-nums",
+		paddingInline: controlSize._1,
+	},
+	folderPaneList: {
+		borderLeftColor: "rgba(255, 255, 255, 0.035)",
+		borderLeftStyle: "solid",
+		borderLeftWidth: 1,
+		marginLeft: controlSize._2,
+		paddingLeft: "0.125rem",
+	},
+	shell: {
+		backgroundColor: color.background,
+		borderRightColor: color.border,
+		borderRightStyle: "solid",
+		borderRightWidth: 1,
+		display: "flex",
+		flexDirection: "column",
+		position: "relative",
+		transitionDuration: "200ms",
+		transitionProperty: "width",
+		transitionTimingFunction: "ease",
+	},
+	shellCollapsed: {
+		width: controlSize._12,
+	},
+	shellOpen: {
+		width: 192,
+	},
+	logoBar: {
+		alignItems: "center",
+		borderBottomColor: color.border,
+		borderBottomStyle: "solid",
+		borderBottomWidth: 1,
+		display: "flex",
+		height: controlSize._12,
+		paddingInline: controlSize._3,
+	},
+	logoButton: {
+		alignItems: "center",
+		borderRadius: 6,
+		display: "flex",
+		flexShrink: 0,
+		height: controlSize._7,
+		justifyContent: "center",
+		width: controlSize._7,
+	},
+	logoFrame: {
+		alignItems: "center",
+		borderRadius: 6,
+		display: "flex",
+		height: controlSize._7,
+		justifyContent: "center",
+		overflow: "hidden",
+		position: "relative",
+		width: controlSize._7,
+	},
+	logo: {
+		borderRadius: 6,
+		height: controlSize._7,
+		objectFit: "cover",
+		width: controlSize._7,
+	},
+	nav: {
+		flex: 1,
+		overflowY: "auto",
+		paddingBlock: "0.375rem",
+	},
+	navItem: {
+		alignItems: "center",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		display: "flex",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+		gap: controlSize._2,
+		marginBlockEnd: controlSize._1,
+		marginInline: "0.375rem",
+		paddingInline: controlSize._2,
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+	},
+	navItemOpen: {
+		height: controlSize._7,
+	},
+	navItemCollapsed: {
+		height: controlSize._7,
+		justifyContent: "center",
+		marginInline: "auto",
+		paddingInline: 0,
+		width: controlSize._7,
+	},
+	navItemIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+		borderColor: "transparent",
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+	},
+	navItemActive: {
+		backgroundColor: color.controlActive,
+		borderColor: color.border,
+		color: color.textMain,
+	},
+	workspaceSection: {
+		borderTopColor: color.border,
+		borderTopStyle: "solid",
+		borderTopWidth: 1,
+		marginTop: controlSize._2,
+		paddingTop: controlSize._2,
+	},
+	workspaceSectionHeader: {
+		alignItems: "center",
+		display: "flex",
+		marginBlockEnd: controlSize._1,
+		marginInline: "0.375rem",
+	},
+	workspaceSectionHeaderCollapsed: {
+		justifyContent: "center",
+	},
+	workspaceSectionHeaderOpen: {
+		justifyContent: "space-between",
+		paddingInline: controlSize._2,
+	},
+	workspaceSectionLabel: {
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		letterSpacing: 0,
+		textTransform: "uppercase",
+	},
+	footer: {
+		borderTopColor: color.border,
+		borderTopStyle: "solid",
+		borderTopWidth: 1,
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._1,
+		padding: "0.375rem",
+	},
+	footerButton: {
+		alignItems: "center",
+		borderColor: "transparent",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+		gap: controlSize._2,
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color, color",
+		transitionTimingFunction: "ease",
+	},
+	footerButtonOpen: {
+		height: controlSize._7,
+		paddingInline: controlSize._2,
+		width: "100%",
+	},
+	footerButtonCollapsed: {
+		height: controlSize._7,
+		justifyContent: "center",
+		marginInline: "auto",
+		padding: 0,
+		width: controlSize._7,
+	},
+	footerButtonIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.backgroundRaised,
+		},
+		color: {
+			default: color.textSoft,
+			":hover": color.textMain,
+		},
+	},
+	footerButtonActive: {
+		backgroundColor: color.controlActive,
+		borderColor: color.border,
+		color: color.textMain,
+	},
+	profileButton: {
+		alignItems: "center",
+		borderColor: "transparent",
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		display: "flex",
+		fontSize: "0.6875rem",
+		fontWeight: font.weight_5,
+		gap: controlSize._1,
+	},
+	profileButtonOpen: {
+		height: controlSize._7,
+		paddingInline: "0.375rem",
+		width: "100%",
+	},
+	profileButtonCollapsed: {
+		height: controlSize._7,
+		justifyContent: "center",
+		marginInline: "auto",
+		padding: 0,
+		width: controlSize._7,
+	},
+	profileLabel: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	},
+	accountAvatar: {
+		borderColor: color.border,
+		borderRadius: 999,
+		borderStyle: "solid",
+		borderWidth: 1,
+		flexShrink: 0,
+		height: controlSize._5,
+		objectFit: "cover",
+		width: controlSize._5,
+	},
+	accountFallback: {
+		alignItems: "center",
+		backgroundColor: color.controlActive,
+		borderColor: color.border,
+		borderRadius: 999,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.textSoft,
+		display: "flex",
+		flexShrink: 0,
+		fontSize: font.size_2,
+		fontWeight: "600",
+		height: controlSize._5,
+		justifyContent: "center",
+		textTransform: "uppercase",
+		width: controlSize._5,
+	},
+});

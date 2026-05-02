@@ -186,6 +186,7 @@ interface ChatSession {
 	clients: Set<ServerWebSocket<any>>;
 	currentHandle: AgentHandle | null;
 	cwd: string;
+	referencePaths: string[];
 	messageBuffer: ChatMessageBuffer;
 	cleanupTimer: ReturnType<typeof setTimeout> | null;
 	goal: GoalState | null;
@@ -203,6 +204,7 @@ interface AgentSessionInfo {
 	paneId: string;
 	agentKind: ChatAgentKind;
 	cwd: string;
+	referencePaths: string[];
 	sessionId: string | null;
 	isRunning: boolean;
 	clientCount: number;
@@ -277,6 +279,20 @@ function resolveChatModel(
 		return requestedModel;
 	}
 	return definition.defaultModel || definition.models[0]?.id;
+}
+
+function normalizeReferencePaths(paths?: string[]): string[] {
+	if (!Array.isArray(paths)) return [];
+	const seen = new Set<string>();
+	const normalized: string[] = [];
+	for (const path of paths) {
+		if (typeof path !== "string") continue;
+		const trimmed = path.trim();
+		if (!trimmed || seen.has(trimmed)) continue;
+		seen.add(trimmed);
+		normalized.push(trimmed);
+	}
+	return normalized;
 }
 
 async function drainStreamToString(
@@ -362,6 +378,7 @@ async function runAgent(
 	const ctx: AgentRunContext = {
 		paneId,
 		cwd: session.cwd,
+		referencePaths: session.referencePaths,
 		model: session.model,
 		reasoningLevel: session.reasoningLevel,
 		getSessionId: () => session.sessionId,
@@ -510,11 +527,13 @@ export const ChatService = {
 		text: string,
 		ws: ServerWebSocket<any>,
 		cwd?: string,
+		referencePaths?: string[],
 		clientSessionId?: string | null,
 		agentKind: ChatAgentKind = "claude",
 		model?: string,
 		reasoningLevel?: string
 	) {
+		const nextReferencePaths = normalizeReferencePaths(referencePaths);
 		let session = sessions.get(paneId);
 		if (!session) {
 			session = {
@@ -526,6 +545,7 @@ export const ChatService = {
 				clients: new Set([ws]),
 				currentHandle: null,
 				cwd: cwd || process.cwd(),
+				referencePaths: nextReferencePaths,
 				messageBuffer: new ChatMessageBuffer(),
 				cleanupTimer: null,
 				goal: null,
@@ -533,6 +553,7 @@ export const ChatService = {
 			};
 			sessions.set(paneId, session);
 		}
+		session.referencePaths ??= [];
 		clearCleanupTimer(session);
 		if (session.agentKind !== agentKind) {
 			session.sessionId = null; // clear when switching agent kinds
@@ -542,6 +563,7 @@ export const ChatService = {
 		if (reasoningLevel !== undefined) session.reasoningLevel = reasoningLevel;
 		session.clients.add(ws);
 		if (cwd) session.cwd = cwd;
+		if (referencePaths) session.referencePaths = nextReferencePaths;
 		if (!session.sessionId && clientSessionId)
 			updateSessionId(session, paneId, clientSessionId);
 
@@ -780,6 +802,7 @@ export const ChatService = {
 				paneId: s.paneId,
 				agentKind: s.agentKind,
 				cwd: s.cwd,
+				referencePaths: s.referencePaths,
 				sessionId: s.sessionId,
 				isRunning: !!s.currentHandle,
 				clientCount: s.clients.size,

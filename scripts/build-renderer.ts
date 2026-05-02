@@ -1,8 +1,10 @@
 #!/usr/bin/env bun
 
 import { mkdir, rm } from "node:fs/promises";
+import { createStylexBunPlugin } from "@stylexjs/unplugin/bun";
 
 const distDir = "dist";
+const stylexCssPath = `${distDir}/stylex.css`;
 
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
@@ -29,6 +31,13 @@ const jsBuild = await Bun.build({
 	splitting: true,
 	sourcemap: "external",
 	minify: false,
+	plugins: [
+		createStylexBunPlugin({
+			bunDevCssOutput: stylexCssPath,
+			importSources: ["@stylexjs/stylex"],
+			useCSSLayers: true,
+		}),
+	],
 });
 
 if (!jsBuild.success) {
@@ -45,8 +54,14 @@ if (cssExitCode !== 0) {
 
 const template = await Bun.file("src/renderer/index.template.html").text();
 const css = await Bun.file(`${distDir}/index.css`).text();
+const stylexCssFile = Bun.file(stylexCssPath);
+const stylexCss = (await stylexCssFile.exists())
+	? await stylexCssFile.text()
+	: "";
 
 await Bun.write(
 	`${distDir}/index.html`,
-	template.replace("__INLINE_APP_CSS__", css).replace("./index.js", "./main.js")
+	template
+		.replace("__INLINE_APP_CSS__", `${css}\n${stylexCss}`)
+		.replace("./index.js", "./main.js")
 );

@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { memo, useEffect, useRef, useState } from "react";
 import {
 	type MdBlock,
@@ -6,6 +7,7 @@ import {
 	parseBlocks,
 	parseInline,
 } from "../../lib/markdown.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 let mermaidPromise: Promise<unknown> | null = null;
 function loadMermaid(): Promise<unknown> {
@@ -70,18 +72,13 @@ function MermaidBlock({ code }: { code: string }) {
 
 	if (error)
 		return (
-			<div className="rounded-md border border-inferay-gray-border bg-inferay-dark-gray p-3">
-				<pre className="text-[10px] text-red-400 whitespace-pre-wrap">
-					{error}
-				</pre>
+			<div {...stylex.props(styles.mermaidBox)}>
+				<pre {...stylex.props(styles.errorPre)}>{error}</pre>
 			</div>
 		);
 
 	return (
-		<div
-			ref={ref}
-			className="flex items-center justify-center rounded-md border border-inferay-gray-border bg-inferay-dark-gray p-4 overflow-x-auto"
-		/>
+		<div ref={ref} {...stylex.props(styles.mermaidBox, styles.mermaidRender)} />
 	);
 }
 
@@ -105,7 +102,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 				<img
 					src={token.href}
 					alt={token.alt ?? ""}
-					className="max-w-full rounded-md my-1 inline-block"
+					{...stylex.props(styles.image)}
 				/>
 			);
 
@@ -113,7 +110,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 			return (
 				<a
 					href={token.href}
-					className="text-inferay-accent underline underline-offset-2 decoration-inferay-accent/40 hover:decoration-inferay-accent"
+					{...stylex.props(styles.link)}
 					target="_blank"
 					rel="noopener noreferrer"
 				>
@@ -126,16 +123,12 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 			);
 
 		case "code":
-			return (
-				<code className="rounded bg-inferay-dark-gray border border-inferay-gray-border px-1.5 py-0.5 text-[10px] font-diff text-inferay-white">
-					{token.text}
-				</code>
-			);
+			return <code {...stylex.props(styles.inlineCode)}>{token.text}</code>;
 
 		case "bold-italic":
 			return (
-				<strong className="font-bold text-inferay-white">
-					<em className="italic">
+				<strong {...stylex.props(styles.strongBold)}>
+					<em {...stylex.props(styles.italic)}>
 						{token.children ? (
 							<InlineTokens tokens={token.children} />
 						) : (
@@ -147,7 +140,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "bold":
 			return (
-				<strong className="font-semibold text-inferay-white">
+				<strong {...stylex.props(styles.strong)}>
 					{token.children ? (
 						<InlineTokens tokens={token.children} />
 					) : (
@@ -158,7 +151,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "italic":
 			return (
-				<em className="italic text-inferay-soft-white">
+				<em {...stylex.props(styles.italic)}>
 					{token.children ? (
 						<InlineTokens tokens={token.children} />
 					) : (
@@ -169,7 +162,7 @@ function InlineToken({ token }: { token: MdInlineToken }) {
 
 		case "strikethrough":
 			return (
-				<del className="line-through text-inferay-muted-gray">
+				<del {...stylex.props(styles.deleted)}>
 					{token.children ? (
 						<InlineTokens tokens={token.children} />
 					) : (
@@ -187,32 +180,21 @@ function Inline({ text }: { text: string }) {
 	return <InlineTokens tokens={tokens} />;
 }
 
-const HEADING_CLASSES: Record<number, string> = {
-	1: "text-[18px] font-bold text-inferay-white pb-2 mt-6 first:mt-0 border-b border-inferay-gray-border",
-	2: "text-[15px] font-semibold text-inferay-white pb-1.5 mt-5 first:mt-0 border-b border-inferay-gray-border",
-	3: "text-[13px] font-semibold text-inferay-white mt-4 first:mt-0",
-	4: "text-[12px] font-semibold text-inferay-white mt-3 first:mt-0",
-	5: "text-[11px] font-semibold text-inferay-white mt-2 first:mt-0",
-	6: "text-[10px] font-semibold text-inferay-soft-white uppercase tracking-wide mt-2 first:mt-0",
-};
-
 function ListItemRenderer({ item }: { item: MdListItem }) {
 	return (
-		<li className="text-[11px] text-inferay-soft-white leading-relaxed">
+		<li {...stylex.props(styles.listItem)}>
 			{item.checked !== undefined && (
-				<span className="mr-1.5 inline-flex">
+				<span {...stylex.props(styles.checkSlot)}>
 					{item.checked ? (
-						<span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded border border-inferay-accent/50 bg-inferay-accent/15 text-[8px] text-inferay-accent">
-							✓
-						</span>
+						<span {...stylex.props(styles.checkOn)}>✓</span>
 					) : (
-						<span className="inline-flex h-3.5 w-3.5 rounded border border-inferay-gray-border" />
+						<span {...stylex.props(styles.checkOff)} />
 					)}
 				</span>
 			)}
 			<Inline text={item.content} />
 			{item.children.length > 0 && (
-				<ul className="mt-1 list-disc pl-5 space-y-0.5">
+				<ul {...stylex.props(styles.nestedList)}>
 					{item.children.map((child, j) => (
 						<ListItemRenderer key={j} item={child} />
 					))}
@@ -226,7 +208,17 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 	switch (block.type) {
 		case "heading":
 			return (
-				<div className={HEADING_CLASSES[block.level ?? 1]}>
+				<div
+					{...stylex.props(
+						styles.heading,
+						block.level === 1 && styles.heading1,
+						block.level === 2 && styles.heading2,
+						block.level === 3 && styles.heading3,
+						block.level === 4 && styles.heading4,
+						block.level === 5 && styles.heading5,
+						block.level === 6 && styles.heading6
+					)}
+				>
 					<Inline text={block.content} />
 				</div>
 			);
@@ -236,16 +228,12 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 
 		case "code":
 			return (
-				<div className="relative group">
+				<div {...stylex.props(styles.codeBlock)}>
 					{block.lang && (
-						<span className="absolute top-1.5 right-2 text-[8px] font-diff uppercase tracking-wider text-inferay-muted-gray/40">
-							{block.lang}
-						</span>
+						<span {...stylex.props(styles.codeLang)}>{block.lang}</span>
 					)}
-					<pre className="overflow-x-auto rounded-md border border-inferay-gray-border bg-inferay-dark-gray p-3">
-						<code className="text-[10px] font-diff text-inferay-soft-white leading-[18px] whitespace-pre">
-							{block.content}
-						</code>
+					<pre {...stylex.props(styles.pre)}>
+						<code {...stylex.props(styles.codeText)}>{block.content}</code>
 					</pre>
 				</div>
 			);
@@ -253,7 +241,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 		case "blockquote": {
 			const innerBlocks = parseBlocks(block.content);
 			return (
-				<div className="border-l-2 border-inferay-accent/30 pl-4 py-0.5">
+				<div {...stylex.props(styles.blockquote)}>
 					{innerBlocks.map((inner, j) => (
 						<BlockRenderer key={j} block={inner} />
 					))}
@@ -262,20 +250,17 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 		}
 
 		case "hr":
-			return <hr className="border-inferay-gray-border my-4" />;
+			return <hr {...stylex.props(styles.hr)} />;
 
 		case "table":
 			if (!block.rows?.length) return null;
 			return (
-				<div className="overflow-x-auto rounded-md border border-inferay-gray-border">
-					<table className="w-full text-[10px]">
+				<div {...stylex.props(styles.tableWrap)}>
+					<table {...stylex.props(styles.table)}>
 						<thead>
-							<tr className="border-b border-inferay-gray-border bg-inferay-dark-gray">
+							<tr {...stylex.props(styles.tableHeadRow)}>
 								{block.rows[0]?.map((cell, j) => (
-									<th
-										key={j}
-										className="px-3 py-2 text-left font-medium text-inferay-white whitespace-nowrap"
-									>
+									<th key={j} {...stylex.props(styles.tableHeadCell)}>
 										<Inline text={cell} />
 									</th>
 								))}
@@ -283,12 +268,9 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 						</thead>
 						<tbody>
 							{block.rows.slice(1).map((row, k) => (
-								<tr
-									key={k}
-									className="border-b border-inferay-gray-border/50 last:border-0"
-								>
+								<tr key={k} {...stylex.props(styles.tableRow)}>
 									{row.map((cell, j) => (
-										<td key={j} className="px-3 py-1.5 text-inferay-soft-white">
+										<td key={j} {...stylex.props(styles.tableCell)}>
 											<Inline text={cell} />
 										</td>
 									))}
@@ -301,7 +283,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 
 		case "checklist":
 			return (
-				<ul className="space-y-1 pl-1">
+				<ul {...stylex.props(styles.checklist)}>
 					{(block.items ?? []).map((item, k) => (
 						<ListItemRenderer key={k} item={item} />
 					))}
@@ -310,7 +292,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 
 		case "ul":
 			return (
-				<ul className="list-disc pl-5 space-y-0.5">
+				<ul {...stylex.props(styles.unorderedList)}>
 					{(block.items ?? []).map((item, k) => (
 						<ListItemRenderer key={k} item={item} />
 					))}
@@ -319,7 +301,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 
 		case "ol":
 			return (
-				<ol className="list-decimal pl-5 space-y-0.5">
+				<ol {...stylex.props(styles.orderedList)}>
 					{(block.items ?? []).map((item, k) => (
 						<ListItemRenderer key={k} item={item} />
 					))}
@@ -328,7 +310,7 @@ function BlockRenderer({ block }: { block: MdBlock }) {
 
 		case "paragraph":
 			return (
-				<p className="text-[11px] text-inferay-soft-white leading-relaxed">
+				<p {...stylex.props(styles.paragraph)}>
 					<Inline text={block.content} />
 				</p>
 			);
@@ -342,10 +324,261 @@ export const MarkdownPreview = memo(function MarkdownPreview({
 }) {
 	const blocks = parseBlocks(content);
 	return (
-		<div className="space-y-3">
+		<div {...stylex.props(styles.root)}>
 			{blocks.map((block, i) => (
 				<BlockRenderer key={i} block={block} />
 			))}
 		</div>
 	);
+});
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._3,
+	},
+	mermaidBox: {
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+		padding: controlSize._3,
+	},
+	mermaidRender: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		overflowX: "auto",
+		padding: controlSize._4,
+	},
+	errorPre: {
+		color: color.danger,
+		fontSize: font.size_2,
+		whiteSpace: "pre-wrap",
+	},
+	image: {
+		display: "inline-block",
+		maxWidth: "100%",
+		borderRadius: "0.375rem",
+		marginBlock: controlSize._1,
+	},
+	link: {
+		color: color.accent,
+		textDecorationLine: "underline",
+		textDecorationColor: color.accentBorder,
+		textUnderlineOffset: "2px",
+		":hover": {
+			textDecorationColor: color.accent,
+		},
+	},
+	inlineCode: {
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.accentBorder,
+		borderRadius: "0.25rem",
+		backgroundColor: color.accentWash,
+		color: color.accent,
+		fontFamily: "var(--font-diff)",
+		fontSize: font.size_2,
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+	},
+	strongBold: {
+		color: color.textMain,
+		fontWeight: 700,
+	},
+	strong: {
+		color: color.textMain,
+		fontWeight: 600,
+	},
+	italic: {
+		color: color.textSoft,
+		fontStyle: "italic",
+	},
+	deleted: {
+		color: color.textMuted,
+		textDecorationLine: "line-through",
+	},
+	heading: {
+		color: color.textMain,
+		fontWeight: 600,
+	},
+	heading1: {
+		marginTop: controlSize._6,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		fontSize: "1.125rem",
+		fontWeight: 700,
+		paddingBottom: controlSize._2,
+	},
+	heading2: {
+		marginTop: controlSize._5,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		fontSize: "0.9375rem",
+		paddingBottom: "0.375rem",
+	},
+	heading3: {
+		marginTop: controlSize._4,
+		fontSize: "0.8125rem",
+	},
+	heading4: {
+		marginTop: controlSize._3,
+		fontSize: font.size_3,
+	},
+	heading5: {
+		marginTop: controlSize._2,
+		fontSize: "0.6875rem",
+	},
+	heading6: {
+		marginTop: controlSize._2,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		letterSpacing: "0.04em",
+		textTransform: "uppercase",
+	},
+	listItem: {
+		color: color.textSoft,
+		fontSize: "0.6875rem",
+		lineHeight: 1.6,
+	},
+	checkSlot: {
+		display: "inline-flex",
+		marginRight: "0.375rem",
+	},
+	checkOn: {
+		display: "inline-flex",
+		width: "0.875rem",
+		height: "0.875rem",
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.accentBorder,
+		borderRadius: "0.25rem",
+		backgroundColor: color.accentWash,
+		color: color.accent,
+		fontSize: "0.5rem",
+	},
+	checkOff: {
+		display: "inline-flex",
+		width: "0.875rem",
+		height: "0.875rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.25rem",
+	},
+	nestedList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: "0.125rem",
+		listStyleType: "disc",
+		marginTop: controlSize._1,
+		paddingLeft: controlSize._5,
+	},
+	codeBlock: {
+		position: "relative",
+	},
+	codeLang: {
+		position: "absolute",
+		top: "0.375rem",
+		right: controlSize._2,
+		color: "rgba(255, 255, 255, 0.4)",
+		fontFamily: "var(--font-diff)",
+		fontSize: "0.5rem",
+		letterSpacing: "0.08em",
+		textTransform: "uppercase",
+	},
+	pre: {
+		overflowX: "auto",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.accentBorder,
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+		padding: controlSize._3,
+	},
+	codeText: {
+		color: color.textSoft,
+		fontFamily: "var(--font-diff)",
+		fontSize: font.size_2,
+		lineHeight: "18px",
+		whiteSpace: "pre",
+	},
+	blockquote: {
+		borderLeftWidth: 2,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.accentBorder,
+		paddingBlock: "0.125rem",
+		paddingLeft: controlSize._4,
+	},
+	hr: {
+		borderColor: color.border,
+		marginBlock: controlSize._4,
+	},
+	tableWrap: {
+		overflowX: "auto",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.accentBorder,
+		borderRadius: "0.375rem",
+	},
+	table: {
+		width: "100%",
+		fontSize: font.size_2,
+	},
+	tableHeadRow: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.accentBorder,
+		backgroundColor: color.accentWash,
+	},
+	tableHeadCell: {
+		color: color.textMain,
+		fontWeight: font.weight_5,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+		textAlign: "left",
+		whiteSpace: "nowrap",
+	},
+	tableRow: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.04)",
+	},
+	tableCell: {
+		color: color.textSoft,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	checklist: {
+		display: "flex",
+		flexDirection: "column",
+		gap: controlSize._1,
+		paddingLeft: controlSize._1,
+	},
+	unorderedList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: "0.125rem",
+		listStyleType: "disc",
+		paddingLeft: controlSize._5,
+	},
+	orderedList: {
+		display: "flex",
+		flexDirection: "column",
+		gap: "0.125rem",
+		listStyleType: "decimal",
+		paddingLeft: controlSize._5,
+	},
+	paragraph: {
+		color: color.textSoft,
+		fontSize: "0.6875rem",
+		lineHeight: 1.6,
+	},
 });

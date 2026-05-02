@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
 	lazy,
 	Suspense,
@@ -17,6 +18,8 @@ import {
 	ChangeFileSidebar,
 	type SelectedFile,
 } from "../../components/git/ChangeFileSidebar.tsx";
+import { Button } from "../../components/ui/Button.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconGitBranch,
 	IconOpenAI,
@@ -56,6 +59,7 @@ import {
 	loadTerminalState,
 	saveTerminalState,
 } from "../../lib/terminal-utils.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { InlineDirectoryPicker } from "../Terminal/InlineDirectoryPicker.tsx";
 
 const GitDiffView = lazy(() =>
@@ -590,22 +594,23 @@ export function GitPage() {
 
 	if (dirs.length === 0 && !pickerOpen) {
 		return (
-			<div className="flex h-full items-center justify-center bg-inferay-black">
-				<div className="text-center">
-					<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-inferay-dark-gray border border-inferay-gray-border">
-						<IconGitBranch size={24} className="text-inferay-muted-gray" />
+			<div {...stylex.props(styles.centerPage)}>
+				<div {...stylex.props(styles.centerStack)}>
+					<div {...stylex.props(styles.emptyIconBox)}>
+						<IconGitBranch size={24} {...stylex.props(styles.mutedIcon)} />
 					</div>
-					<p className="text-[12px] text-inferay-white mb-1">No repositories</p>
-					<p className="text-[10px] text-inferay-muted-gray mb-4">
+					<p {...stylex.props(styles.emptyTitle)}>No repositories</p>
+					<p {...stylex.props(styles.emptyText)}>
 						Add a local git repo to get started
 					</p>
-					<button
+					<Button
 						type="button"
 						onClick={() => setPickerOpen(true)}
-						className="rounded-lg bg-inferay-dark-gray border border-inferay-gray-border px-3 py-1.5 text-[10px] text-inferay-soft-white hover:bg-inferay-gray transition-colors"
+						variant="secondary"
+						size="sm"
 					>
 						Add Repository
-					</button>
+					</Button>
 				</div>
 			</div>
 		);
@@ -613,12 +618,10 @@ export function GitPage() {
 
 	if (dirs.length === 0 && pickerOpen) {
 		return (
-			<div className="flex h-full items-center justify-center bg-inferay-black">
+			<div {...stylex.props(styles.centerPage)}>
 				<div>
 					{pickerError && (
-						<div className="mb-2 rounded-lg px-3 py-1.5 text-[10px] text-git-deleted bg-git-deleted/5 border border-git-deleted/20">
-							{pickerError}
-						</div>
+						<div {...stylex.props(styles.errorNotice)}>{pickerError}</div>
 					)}
 					<InlineDirectoryPicker
 						onSelect={(p) => (p ? void addRepo(p) : closePicker())}
@@ -630,10 +633,9 @@ export function GitPage() {
 	}
 
 	return (
-		<div className="flex h-full flex-col bg-inferay-black">
-			{/* ── Top bar ── */}
-			<div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-inferay-gray-border">
-				<div className="flex min-w-0 items-center gap-2">
+		<div {...stylex.props(styles.root)}>
+			<div {...stylex.props(styles.topBar)}>
+				<div {...stylex.props(styles.repoControls)}>
 					<label className="sr-only" htmlFor="git-repo-select">
 						Repository
 					</label>
@@ -641,7 +643,7 @@ export function GitPage() {
 						id="git-repo-select"
 						value={project?.cwd ?? ""}
 						onChange={(event) => switchRepo(event.target.value)}
-						className="h-6 min-w-[160px] max-w-[240px] rounded-md border border-inferay-gray-border bg-inferay-dark-gray px-2 text-[10px] font-medium text-inferay-soft-white outline-none transition-colors hover:bg-inferay-white/[0.06] focus:border-inferay-muted-gray"
+						{...stylex.props(styles.repoSelect)}
 					>
 						{projects.map((repo) => {
 							const count =
@@ -655,54 +657,51 @@ export function GitPage() {
 						})}
 					</select>
 					{project && dirs.length > 1 && (
-						<button
+						<IconButton
 							type="button"
 							title="Remove repository"
 							onClick={() => removeRepo(project.cwd)}
-							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
+							variant="ghost"
+							size="xs"
 						>
 							<IconX size={10} />
-						</button>
+						</IconButton>
 					)}
 				</div>
-				<button
+				<IconButton
 					type="button"
 					onClick={() => setPickerOpen(true)}
-					className="flex items-center justify-center h-5 w-5 rounded-md border border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white transition-colors"
+					variant="subtle"
+					size="xs"
+					className={stylex.props(styles.addRepoButton).className}
 					title="Add repository"
 				>
 					<IconPlus size={9} />
-				</button>
+				</IconButton>
 				{project && (
 					<>
-						<div className="w-px h-3 bg-inferay-gray-border/40" />
+						<div {...stylex.props(styles.divider)} />
 						<IconGitBranch
 							size={10}
-							className="text-inferay-muted-gray shrink-0"
+							{...stylex.props(styles.mutedIcon, styles.shrink)}
 						/>
-						<span className="text-[9px] text-inferay-muted-gray">
-							{project.branch}
-						</span>
+						<span {...stylex.props(styles.branchText)}>{project.branch}</span>
 						{project.ahead > 0 && (
-							<span className="text-[8px] text-git-added">
-								+{project.ahead}
-							</span>
+							<span {...stylex.props(styles.addedText)}>+{project.ahead}</span>
 						)}
 						{project.behind > 0 && (
-							<span className="text-[8px] text-git-deleted">
+							<span {...stylex.props(styles.deletedText)}>
 								-{project.behind}
 							</span>
 						)}
 						{dirtySinceCheckpoint && (
-							<span className="rounded border border-git-modified/30 bg-git-modified/10 px-1 py-0.5 text-[8px] text-git-modified">
-								dirty
-							</span>
+							<span {...stylex.props(styles.dirtyPill)}>dirty</span>
 						)}
 					</>
 				)}
-				<span className="flex-1" />
+				<span {...stylex.props(styles.spacer)} />
 				{project && (
-					<div className="flex items-center gap-1">
+					<div {...stylex.props(styles.actionGroup)}>
 						<ActionButton
 							label="Review"
 							variant="primary"
@@ -716,31 +715,34 @@ export function GitPage() {
 							disabled={project.files.length === 0 || actionBusy === "summary"}
 							onClick={() => void summarizeChanges()}
 						/>
-						<div className="mx-0.5 h-3 w-px bg-inferay-gray-border/40" />
-						<button
+						<div {...stylex.props(styles.divider)} />
+						<IconButton
 							type="button"
 							title="Open terminal here"
 							onClick={() => openPane("terminal")}
-							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
+							variant="ghost"
+							size="xs"
 						>
 							<IconTerminal size={10} />
-						</button>
-						<button
+						</IconButton>
+						<IconButton
 							type="button"
 							title="Open Claude here"
 							onClick={() => openPane("claude")}
-							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
+							variant="ghost"
+							size="xs"
 						>
 							<IconRobot size={10} />
-						</button>
-						<button
+						</IconButton>
+						<IconButton
 							type="button"
 							title="Open Codex here"
 							onClick={() => openPane("codex")}
-							className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
+							variant="ghost"
+							size="xs"
 						>
 							<IconOpenAI size={10} />
-						</button>
+						</IconButton>
 						<ActionMenu
 							label="More"
 							open={openActionMenu === "repo"}
@@ -791,15 +793,13 @@ export function GitPage() {
 				)}
 			</div>
 
-			<div className="flex flex-1 min-h-0 overflow-hidden">
-				<div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+			<div {...stylex.props(styles.content)}>
+				<div {...stylex.props(styles.mainPane)}>
 					{pickerOpen ? (
-						<div className="flex h-full items-center justify-center">
+						<div {...stylex.props(styles.centerPage)}>
 							<div>
 								{pickerError && (
-									<div className="mb-2 rounded-lg px-3 py-1.5 text-[10px] text-git-deleted bg-git-deleted/5 border border-git-deleted/20">
-										{pickerError}
-									</div>
+									<div {...stylex.props(styles.errorNotice)}>{pickerError}</div>
 								)}
 								<InlineDirectoryPicker
 									onSelect={(p) => (p ? void addRepo(p) : closePicker())}
@@ -808,21 +808,19 @@ export function GitPage() {
 							</div>
 						</div>
 					) : diffLoading ? (
-						<div className="flex h-full items-center justify-center">
-							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 border border-inferay-muted-gray border-t-transparent rounded-full animate-spin" />
-								<span className="text-[11px] text-inferay-muted-gray">
-									Loading...
-								</span>
+						<div {...stylex.props(styles.centerPage)}>
+							<div {...stylex.props(styles.loadingRow)}>
+								<div {...stylex.props(styles.spinner)} />
+								<span {...stylex.props(styles.loadingText)}>Loading...</span>
 							</div>
 						</div>
 					) : diff && diffReq ? (
 						<Suspense
 							fallback={
-								<div className="flex h-full items-center justify-center">
-									<div className="flex items-center gap-2">
-										<div className="w-3 h-3 border border-inferay-muted-gray border-t-transparent rounded-full animate-spin" />
-										<span className="text-[11px] text-inferay-muted-gray">
+								<div {...stylex.props(styles.centerPage)}>
+									<div {...stylex.props(styles.loadingRow)}>
+										<div {...stylex.props(styles.spinner)} />
+										<span {...stylex.props(styles.loadingText)}>
 											Loading diff viewer...
 										</span>
 									</div>
@@ -841,9 +839,9 @@ export function GitPage() {
 							/>
 						</Suspense>
 					) : (
-						<div className="flex h-full items-center justify-center px-6">
-							<div className="flex max-w-md flex-col items-center gap-3 text-center">
-								<p className="text-[12px] text-inferay-muted-gray">
+						<div {...stylex.props(styles.centerPage, styles.centerPad)}>
+							<div {...stylex.props(styles.emptyWorktree)}>
+								<p {...stylex.props(styles.emptyMainText)}>
 									{project
 										? project.files.length === 0
 											? "No worktree changes"
@@ -851,7 +849,7 @@ export function GitPage() {
 										: "Add a repository"}
 								</p>
 								{project && (
-									<div className="flex flex-wrap items-center justify-center gap-1.5">
+									<div {...stylex.props(styles.emptyActions)}>
 										<ActionButton
 											label="Open terminal here"
 											onClick={() => openPane("terminal")}
@@ -873,7 +871,7 @@ export function GitPage() {
 				</div>
 
 				{project && (
-					<div className="w-56 shrink-0 border-l border-inferay-gray-border flex flex-col bg-inferay-black">
+					<div {...stylex.props(styles.fileSidebar)}>
 						<ChangeFileSidebar
 							cwd={project.cwd}
 							fileViewMode={fileViewMode}
@@ -920,18 +918,21 @@ function ActionButton({
 	variant?: "primary" | "secondary";
 }) {
 	return (
-		<button
+		<Button
 			type="button"
 			disabled={disabled}
 			onClick={onClick}
-			className={`inline-flex h-5 items-center rounded-md border px-1.5 text-[8px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-30 ${
-				variant === "primary"
-					? "border-inferay-accent/35 bg-inferay-accent/12 text-inferay-soft-white hover:bg-inferay-accent/18"
-					: "border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white"
-			}`}
+			variant={variant === "primary" ? "primary" : "secondary"}
+			size="sm"
+			className={
+				stylex.props(
+					styles.actionButton,
+					variant === "primary" && styles.primaryActionButton
+				).className
+			}
 		>
 			{label}
-		</button>
+		</Button>
 	);
 }
 
@@ -951,10 +952,10 @@ function ActionMenu({
 	}[];
 }) {
 	return (
-		<div className="relative">
+		<div {...stylex.props(styles.menuRoot)}>
 			<ActionButton label={label} onClick={onToggle} />
 			{open && (
-				<div className="absolute right-0 top-6 z-30 min-w-36 overflow-hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray shadow-2xl">
+				<div {...stylex.props(styles.menu)}>
 					{items.map((item) => (
 						<button
 							key={item.label}
@@ -964,7 +965,7 @@ function ActionMenu({
 								onToggle();
 								item.onSelect();
 							}}
-							className="flex h-7 w-full items-center px-2.5 text-left text-[9px] text-inferay-muted-gray transition-colors hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white disabled:pointer-events-none disabled:opacity-30"
+							{...stylex.props(styles.menuItem)}
 						>
 							{item.label}
 						</button>
@@ -974,3 +975,273 @@ function ActionMenu({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		height: "100%",
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	centerPage: {
+		display: "flex",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: color.background,
+	},
+	centerPad: {
+		paddingInline: controlSize._6,
+	},
+	centerStack: {
+		textAlign: "center",
+	},
+	emptyIconBox: {
+		display: "flex",
+		width: "3.5rem",
+		height: "3.5rem",
+		alignItems: "center",
+		justifyContent: "center",
+		marginInline: "auto",
+		marginBottom: controlSize._4,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: controlSize._3,
+		backgroundColor: color.backgroundRaised,
+	},
+	mutedIcon: {
+		color: color.textMuted,
+	},
+	shrink: {
+		flexShrink: 0,
+	},
+	emptyTitle: {
+		marginBottom: controlSize._1,
+		color: color.textMain,
+		fontSize: font.size_3,
+	},
+	emptyText: {
+		marginBottom: controlSize._4,
+		color: color.textMuted,
+		fontSize: font.size_2,
+	},
+	errorNotice: {
+		marginBottom: controlSize._2,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: "rgba(248, 81, 73, 0.2)",
+		borderRadius: controlSize._2,
+		backgroundColor: "rgba(248, 81, 73, 0.05)",
+		color: "var(--color-git-deleted)",
+		fontSize: font.size_2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	topBar: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	repoControls: {
+		display: "flex",
+		minWidth: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	repoSelect: {
+		height: controlSize._6,
+		minWidth: "160px",
+		maxWidth: "240px",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: {
+			default: color.border,
+			":focus": color.textMuted,
+		},
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+		color: color.textSoft,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+		outline: "none",
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, border-color",
+		transitionDuration: "120ms",
+		":hover": {
+			backgroundColor: color.controlHover,
+		},
+	},
+	addRepoButton: {
+		width: controlSize._5,
+		height: controlSize._5,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		backgroundColor: color.backgroundRaised,
+	},
+	divider: {
+		width: 1,
+		height: font.size_3,
+		backgroundColor: "rgba(255, 255, 255, 0.06)",
+	},
+	branchText: {
+		color: color.textMuted,
+		fontSize: font.size_1,
+	},
+	addedText: {
+		color: "var(--color-git-added)",
+		fontSize: "0.5rem",
+	},
+	deletedText: {
+		color: "var(--color-git-deleted)",
+		fontSize: "0.5rem",
+	},
+	dirtyPill: {
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: "rgba(234, 179, 8, 0.3)",
+		borderRadius: "0.25rem",
+		backgroundColor: "rgba(234, 179, 8, 0.1)",
+		color: "var(--color-git-modified)",
+		fontSize: "0.5rem",
+		paddingBlock: "0.125rem",
+		paddingInline: controlSize._1,
+	},
+	spacer: {
+		flex: 1,
+	},
+	actionGroup: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._1,
+	},
+	content: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+		overflow: "hidden",
+	},
+	mainPane: {
+		display: "flex",
+		minWidth: 0,
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	loadingRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	spinner: {
+		width: font.size_3,
+		height: font.size_3,
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.textMuted,
+		borderTopColor: "transparent",
+		borderRadius: "999px",
+		animationName: stylex.keyframes({
+			to: {
+				transform: "rotate(360deg)",
+			},
+		}),
+		animationDuration: "800ms",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
+	},
+	loadingText: {
+		color: color.textMuted,
+		fontSize: "0.6875rem",
+	},
+	emptyWorktree: {
+		display: "flex",
+		maxWidth: "28rem",
+		flexDirection: "column",
+		alignItems: "center",
+		gap: controlSize._3,
+		textAlign: "center",
+	},
+	emptyMainText: {
+		color: color.textMuted,
+		fontSize: font.size_3,
+	},
+	emptyActions: {
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: "0.375rem",
+	},
+	fileSidebar: {
+		display: "flex",
+		width: "14rem",
+		flexShrink: 0,
+		flexDirection: "column",
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		backgroundColor: color.background,
+	},
+	actionButton: {
+		height: controlSize._5,
+		borderRadius: "0.375rem",
+		fontSize: "0.5rem",
+		paddingInline: "0.375rem",
+	},
+	primaryActionButton: {
+		borderColor: "rgba(29, 185, 84, 0.35)",
+		backgroundColor: "rgba(29, 185, 84, 0.12)",
+		color: color.textSoft,
+		":hover": {
+			backgroundColor: "rgba(29, 185, 84, 0.18)",
+		},
+	},
+	menuRoot: {
+		position: "relative",
+	},
+	menu: {
+		position: "absolute",
+		right: 0,
+		top: controlSize._6,
+		zIndex: 30,
+		minWidth: "9rem",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
+	},
+	menuItem: {
+		display: "flex",
+		width: "100%",
+		height: controlSize._7,
+		alignItems: "center",
+		color: color.textMuted,
+		fontSize: font.size_1,
+		paddingInline: "0.625rem",
+		textAlign: "left",
+		transitionProperty: "background-color, color, opacity",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+		":hover": {
+			color: color.textSoft,
+		},
+		":disabled": {
+			opacity: 0.3,
+			pointerEvents: "none",
+		},
+	},
+});

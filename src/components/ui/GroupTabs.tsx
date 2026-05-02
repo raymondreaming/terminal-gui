@@ -1,5 +1,7 @@
+import * as stylex from "@stylexjs/stylex";
 import type React from "react";
 import { useState } from "react";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { IconPlus, IconX } from "./Icons.tsx";
 
 interface GroupTabItem {
@@ -47,9 +49,12 @@ export function GroupTabs({
 		setNewName("");
 	};
 	return (
-		<div className="flex items-center gap-1.5">
+		<div {...stylex.props(styles.root)}>
 			<div
-				className={`flex items-center rounded-lg border border-inferay-gray-border bg-inferay-dark-gray overflow-hidden ${compact ? "h-6" : "h-7"}`}
+				{...stylex.props(
+					styles.list,
+					compact ? styles.listCompact : styles.listDefault
+				)}
 			>
 				{items.map((item, index) => {
 					const isActive = item.id === activeId;
@@ -57,10 +62,13 @@ export function GroupTabs({
 					const showDivider =
 						index > 0 && !isActive && items[index - 1]?.id !== activeId;
 					return (
-						<div key={item.id} className="flex h-full items-center">
+						<div key={item.id} {...stylex.props(styles.itemWrap)}>
 							{showDivider && (
 								<div
-									className={`w-px bg-inferay-gray-border/40 ${compact ? "h-3" : "h-3.5"}`}
+									{...stylex.props(
+										styles.divider,
+										compact ? styles.dividerCompact : styles.dividerDefault
+									)}
 								/>
 							)}
 							<div
@@ -73,11 +81,11 @@ export function GroupTabs({
 										onSelect(item.id);
 									}
 								}}
-								className={`group relative flex h-full cursor-pointer items-center gap-1 font-medium transition-all ${
-									isActive
-										? "bg-inferay-white/10 text-inferay-white"
-										: "text-inferay-muted-gray hover:text-inferay-soft-white hover:bg-inferay-white/[0.04]"
-								} ${compact ? "px-2 text-[10px]" : "px-2.5 text-xs gap-1.5"}`}
+								{...stylex.props(
+									styles.tab,
+									isActive ? styles.tabActive : styles.tabIdle,
+									compact ? styles.tabCompact : styles.tabDefault
+								)}
 							>
 								{item.activeIcon && item.icon
 									? isActive
@@ -95,7 +103,7 @@ export function GroupTabs({
 											if (e.key === "Escape") setEditingId(null);
 										}}
 										onClick={(e) => e.stopPropagation()}
-										className="w-20 bg-transparent text-xs text-inferay-white outline-none ring-0 border-0 focus:outline-none focus:ring-0"
+										{...stylex.props(styles.inlineInput)}
 									/>
 								) : (
 									<span
@@ -111,11 +119,10 @@ export function GroupTabs({
 								)}
 								{item.count !== undefined && (
 									<span
-										className={`-ml-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
-											isActive
-												? "bg-inferay-white/10 text-inferay-white"
-												: "bg-inferay-white/5 text-inferay-muted-gray"
-										}`}
+										{...stylex.props(
+											styles.count,
+											isActive ? styles.countActive : styles.countIdle
+										)}
 									>
 										{item.count}
 									</span>
@@ -127,7 +134,7 @@ export function GroupTabs({
 											e.stopPropagation();
 											onDelete(item.id);
 										}}
-										className="ml-0.5 rounded p-0.5 text-inferay-muted-gray opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+										{...stylex.props(styles.deleteButton)}
 									>
 										<IconX size={8} />
 									</button>
@@ -141,17 +148,26 @@ export function GroupTabs({
 				<button
 					type="button"
 					onClick={() => setShowNew(true)}
-					className={`flex items-center justify-center rounded-lg border border-inferay-gray-border bg-inferay-dark-gray text-inferay-muted-gray transition-colors hover:bg-inferay-white/[0.06] hover:text-inferay-soft-white ${compact ? "h-6 w-6" : "h-7 w-7"}`}
+					{...stylex.props(
+						styles.addButton,
+						compact ? styles.addButtonCompact : styles.addButtonDefault
+					)}
 				>
 					<IconPlus size={compact ? 8 : 10} />
 				</button>
 			)}
 			{showNew && (
 				<div
-					className={`flex items-center rounded-lg border border-inferay-gray-border bg-inferay-white/10 overflow-hidden ${compact ? "h-6" : "h-7"}`}
+					{...stylex.props(
+						styles.newWrap,
+						compact ? styles.listCompact : styles.listDefault
+					)}
 				>
 					<div
-						className={`flex h-full items-center gap-1.5 ${compact ? "px-1.5" : "px-2"}`}
+						{...stylex.props(
+							styles.newInner,
+							compact ? styles.newInnerCompact : styles.newInnerDefault
+						)}
 					>
 						<input
 							ref={(el) => el?.focus()}
@@ -173,7 +189,7 @@ export function GroupTabs({
 								}
 							}}
 							placeholder={addLabel}
-							className="w-20 appearance-none bg-transparent text-xs text-inferay-white caret-inferay-white placeholder-inferay-muted-gray outline-none border-none shadow-none ring-0 ring-transparent focus:outline-none focus:border-none focus:shadow-none focus:ring-0 focus:ring-transparent"
+							{...stylex.props(styles.inlineInput)}
 						/>
 						<button
 							type="button"
@@ -181,7 +197,7 @@ export function GroupTabs({
 								setShowNew(false);
 								setNewName("");
 							}}
-							className="text-inferay-muted-gray hover:text-inferay-soft-white"
+							{...stylex.props(styles.dismissButton)}
 						>
 							<IconX size={8} />
 						</button>
@@ -191,3 +207,180 @@ export function GroupTabs({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		alignItems: "center",
+		display: "flex",
+		gap: "0.375rem",
+	},
+	list: {
+		alignItems: "center",
+		backgroundColor: color.backgroundRaised,
+		borderColor: color.border,
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		overflow: "hidden",
+	},
+	listCompact: {
+		height: controlSize._6,
+	},
+	listDefault: {
+		height: controlSize._7,
+	},
+	itemWrap: {
+		alignItems: "center",
+		display: "flex",
+		height: "100%",
+	},
+	divider: {
+		backgroundColor: "rgba(255, 255, 255, 0.04)",
+		width: 1,
+	},
+	dividerCompact: {
+		height: controlSize._3,
+	},
+	dividerDefault: {
+		height: "0.875rem",
+	},
+	tab: {
+		alignItems: "center",
+		cursor: "pointer",
+		display: "flex",
+		fontWeight: font.weight_5,
+		height: "100%",
+		position: "relative",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: "ease",
+	},
+	tabCompact: {
+		fontSize: font.size_2,
+		gap: controlSize._1,
+		paddingInline: controlSize._2,
+	},
+	tabDefault: {
+		fontSize: font.size_3,
+		gap: "0.375rem",
+		paddingInline: "0.625rem",
+	},
+	tabIdle: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.04)",
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+	tabActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	inlineInput: {
+		appearance: "none",
+		backgroundColor: "transparent",
+		borderWidth: 0,
+		boxShadow: "none",
+		caretColor: color.textMain,
+		color: color.textMain,
+		fontSize: font.size_3,
+		outline: "none",
+		width: 80,
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	count: {
+		borderRadius: 6,
+		fontSize: font.size_2,
+		fontWeight: "600",
+		fontVariantNumeric: "tabular-nums",
+		marginLeft: "-0.125rem",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+	},
+	countIdle: {
+		backgroundColor: "rgba(255, 255, 255, 0.05)",
+		color: color.textMuted,
+	},
+	countActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	deleteButton: {
+		borderRadius: 4,
+		color: {
+			default: color.textMuted,
+			":hover": color.danger,
+		},
+		marginLeft: "0.125rem",
+		opacity: {
+			default: 0.45,
+			":hover": 1,
+		},
+		padding: "0.125rem",
+		transitionDuration: "150ms",
+		transitionProperty: "color, opacity",
+		transitionTimingFunction: "ease",
+	},
+	addButton: {
+		alignItems: "center",
+		backgroundColor: {
+			default: color.backgroundRaised,
+			":hover": color.controlHover,
+		},
+		borderColor: color.border,
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		display: "flex",
+		justifyContent: "center",
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, color",
+		transitionTimingFunction: "ease",
+	},
+	addButtonCompact: {
+		height: controlSize._6,
+		width: controlSize._6,
+	},
+	addButtonDefault: {
+		height: controlSize._7,
+		width: controlSize._7,
+	},
+	newWrap: {
+		alignItems: "center",
+		backgroundColor: color.controlActive,
+		borderColor: color.border,
+		borderRadius: 8,
+		borderStyle: "solid",
+		borderWidth: 1,
+		display: "flex",
+		overflow: "hidden",
+	},
+	newInner: {
+		alignItems: "center",
+		display: "flex",
+		gap: "0.375rem",
+		height: "100%",
+	},
+	newInnerCompact: {
+		paddingInline: "0.375rem",
+	},
+	newInnerDefault: {
+		paddingInline: controlSize._2,
+	},
+	dismissButton: {
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+	},
+});

@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
 	type ReactNode,
 	useCallback,
@@ -21,6 +22,7 @@ import {
 	type SelectedFile,
 } from "../../components/git/ChangeFileSidebar.tsx";
 import { CommitGraph } from "../../components/git/CommitGraph.tsx";
+import { IconButton } from "../../components/ui/IconButton.tsx";
 import {
 	IconCheck,
 	IconEye,
@@ -60,6 +62,7 @@ import {
 	type TerminalGroupModel,
 } from "../../lib/terminal-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
+import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { type DiffViewMode, GitDiffView } from "../Terminal/GitDiffView.tsx";
 import { TerminalSettingsPanel } from "../Terminal/TerminalSettingsPanel.tsx";
 
@@ -500,37 +503,38 @@ export function EditorPage() {
 	);
 
 	return (
-		<div className="flex h-full min-h-0 flex-col bg-inferay-black">
+		<div {...stylex.props(styles.root)}>
 			{!session ? (
-				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
-					<section className="flex min-h-0 min-w-0 flex-col border-r border-inferay-gray-border">
-						<div className={TOPBAR_CLASS}>
-							<span className="text-[10px] font-medium text-inferay-muted-gray">
+				<div {...stylex.props(styles.pageGrid)}>
+					<section {...stylex.props(styles.leftPane)}>
+						<div {...stylex.props(styles.topBar)}>
+							<span {...stylex.props(styles.topBarLabel)}>
 								No active session
 							</span>
-							<span className="flex-1" />
-							<button
+							<span {...stylex.props(styles.spacer)} />
+							<IconButton
 								type="button"
 								onClick={() => setShowSettings(true)}
-								className="flex items-center justify-center h-4 w-4 rounded transition-colors text-inferay-muted-gray hover:text-inferay-soft-white"
+								variant="ghost"
+								size="xs"
 								title="Settings"
 							>
 								<IconSettings size={10} />
-							</button>
+							</IconButton>
 						</div>
 						<EmptyState />
 					</section>
-					<aside className="min-h-0 min-w-0 bg-inferay-black flex flex-col">
-						<div className="flex min-h-0 flex-1 overflow-hidden">
-							<div className="min-h-0 min-w-0 flex-1 flex flex-col overflow-hidden">
+					<aside {...stylex.props(styles.rightPane)}>
+						<div {...stylex.props(styles.splitBody)}>
+							<div {...stylex.props(styles.viewerPane)}>
 								<Placeholder label="No diff available" />
 							</div>
 							<div
-								className="flex shrink-0 flex-row border-l border-inferay-gray-border bg-inferay-black"
+								{...stylex.props(styles.sidebarShell)}
 								style={{ width: sidebarWidth }}
 							>
 								<div
-									className="w-1 cursor-ew-resize bg-transparent hover:bg-inferay-accent/30 transition-colors shrink-0"
+									{...stylex.props(styles.sidebarResize)}
 									onMouseDown={handleSidebarDragStart}
 								/>
 								<ChangeFileSidebar
@@ -566,8 +570,8 @@ export function EditorPage() {
 				</div>
 			) : zenMode ? (
 				/* ===== ZEN MODE LAYOUT ===== */
-				<div className="relative flex min-h-0 flex-1">
-					<div className="hidden">
+				<div {...stylex.props(styles.zenLayout)}>
+					<div {...stylex.props(styles.hidden)}>
 						<AgentChatView
 							key={session.paneId}
 							ref={chatRef}
@@ -584,7 +588,7 @@ export function EditorPage() {
 						/>
 					</div>
 
-					<div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+					<div {...stylex.props(styles.viewerPane)}>
 						{mainViewMode === "diff" ? (
 							diffLoading ? (
 								<Placeholder label="Loading diff..." />
@@ -609,8 +613,8 @@ export function EditorPage() {
 								/>
 							)
 						) : graphLoading ? (
-							<div className="flex items-center justify-center h-full">
-								<p className="text-[11px] text-inferay-muted-gray">
+							<div {...stylex.props(styles.centerFull)}>
+								<p {...stylex.props(styles.placeholderText)}>
 									Loading graph...
 								</p>
 							</div>
@@ -620,7 +624,7 @@ export function EditorPage() {
 								rows={graphRows}
 								selectedHash={selectedCommitHash ?? undefined}
 								onSelect={setSelectedCommitHash}
-								className="h-full"
+								className={stylex.props(styles.fullHeight).className}
 								wipFiles={files}
 								branch={project?.branch}
 							/>
@@ -628,11 +632,11 @@ export function EditorPage() {
 					</div>
 
 					<div
-						className="flex shrink-0 flex-row border-l border-inferay-gray-border bg-inferay-black"
+						{...stylex.props(styles.sidebarShell)}
 						style={{ width: sidebarWidth }}
 					>
 						<div
-							className="w-1 cursor-ew-resize bg-transparent hover:bg-inferay-accent/30 transition-colors shrink-0"
+							{...stylex.props(styles.sidebarResize)}
 							onMouseDown={handleSidebarDragStart}
 						/>
 						<ChangeFileSidebar
@@ -679,8 +683,8 @@ export function EditorPage() {
 				</div>
 			) : (
 				/* ===== NORMAL MODE LAYOUT ===== */
-				<div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
-					<section className="flex min-h-0 min-w-0 flex-col border-r border-inferay-gray-border">
+				<div {...stylex.props(styles.pageGrid)}>
+					<section {...stylex.props(styles.leftPane)}>
 						<AgentChatView
 							key={session.paneId}
 							ref={chatRef}
@@ -700,9 +704,9 @@ export function EditorPage() {
 						/>
 					</section>
 
-					<aside className="min-h-0 min-w-0 bg-inferay-black flex flex-col">
-						<div className="flex min-h-0 flex-1 overflow-hidden">
-							<div className="min-h-0 min-w-0 flex-1 flex flex-col overflow-hidden">
+					<aside {...stylex.props(styles.rightPane)}>
+						<div {...stylex.props(styles.splitBody)}>
+							<div {...stylex.props(styles.viewerColumn)}>
 								<DiffViewerTopBar
 									mainViewMode={mainViewMode}
 									diffViewMode={diffViewMode}
@@ -710,7 +714,7 @@ export function EditorPage() {
 									onMainViewModeChange={setMainViewMode}
 									onDiffViewModeChange={setDiffViewMode}
 								/>
-								<div className="min-h-0 flex-1 overflow-hidden">
+								<div {...stylex.props(styles.diffHost)}>
 									{mainViewMode === "diff" ? (
 										diffLoading ? (
 											<Placeholder label="Loading diff..." />
@@ -738,8 +742,8 @@ export function EditorPage() {
 										)
 									) : // Graph View - full width, details show in sidebar
 									graphLoading ? (
-										<div className="flex items-center justify-center h-full">
-											<p className="text-[11px] text-inferay-muted-gray">
+										<div {...stylex.props(styles.centerFull)}>
+											<p {...stylex.props(styles.placeholderText)}>
 												Loading graph...
 											</p>
 										</div>
@@ -749,7 +753,7 @@ export function EditorPage() {
 											rows={graphRows}
 											selectedHash={selectedCommitHash ?? undefined}
 											onSelect={setSelectedCommitHash}
-											className="h-full"
+											className={stylex.props(styles.fullHeight).className}
 											wipFiles={files}
 											branch={project?.branch}
 										/>
@@ -758,11 +762,11 @@ export function EditorPage() {
 							</div>
 
 							<div
-								className="flex shrink-0 flex-row border-l border-inferay-gray-border bg-inferay-black"
+								{...stylex.props(styles.sidebarShell)}
 								style={{ width: sidebarWidth }}
 							>
 								<div
-									className="w-1 cursor-ew-resize bg-transparent hover:bg-inferay-accent/30 transition-colors shrink-0"
+									{...stylex.props(styles.sidebarResize)}
 									onMouseDown={handleSidebarDragStart}
 								/>
 								<ChangeFileSidebar
@@ -817,12 +821,10 @@ export function EditorPage() {
 
 function EmptyState() {
 	return (
-		<div className="flex flex-1 items-center justify-center px-6">
-			<div className="max-w-md border border-inferay-gray-border bg-inferay-dark-gray p-6 text-center">
-				<h2 className="text-[15px] font-semibold text-inferay-white">
-					No saved agent sessions
-				</h2>
-				<p className="mt-2 text-[12px] leading-5 text-inferay-muted-gray">
+		<div {...stylex.props(styles.emptyWrap)}>
+			<div {...stylex.props(styles.emptyCard)}>
+				<h2 {...stylex.props(styles.emptyTitle)}>No saved agent sessions</h2>
+				<p {...stylex.props(styles.emptyDescription)}>
 					Open Claude or Codex in the terminal page, pick a project directory,
 					and it will appear here.
 				</p>
@@ -833,38 +835,38 @@ function EmptyState() {
 
 function Placeholder({ label }: { label: string }) {
 	return (
-		<div className="flex h-full items-center justify-center px-6">
-			<p className="max-w-xs text-center text-[12px] leading-5 text-inferay-muted-gray">
-				{label}
-			</p>
+		<div {...stylex.props(styles.centerFull, styles.centerPad)}>
+			<p {...stylex.props(styles.placeholderText)}>{label}</p>
 		</div>
 	);
 }
 
 function getZenToolIcon(toolName: string, isAnimated = false): React.ReactNode {
-	const baseClass = "w-3 h-3 shrink-0";
-	const animateClass = isAnimated ? "animate-pulse" : "";
+	const iconProps = stylex.props(
+		styles.zenToolIcon,
+		isAnimated && styles.zenToolIconActive
+	);
 	const tool = toolName.toLowerCase();
 
 	if (tool === "read") {
-		return <IconEye className={`${baseClass} ${animateClass}`} />;
+		return <IconEye {...iconProps} />;
 	}
 	if (tool === "edit" || tool === "patch") {
-		return <IconPencil className={`${baseClass} ${animateClass}`} />;
+		return <IconPencil {...iconProps} />;
 	}
 	if (tool === "write") {
-		return <IconFilePlus className={`${baseClass} ${animateClass}`} />;
+		return <IconFilePlus {...iconProps} />;
 	}
 	if (tool === "bash" || tool === "exec") {
-		return <IconWrench className={`${baseClass} ${animateClass}`} />;
+		return <IconWrench {...iconProps} />;
 	}
 	if (tool === "grep" || tool === "glob") {
-		return <IconWrench className={`${baseClass} ${animateClass}`} />;
+		return <IconWrench {...iconProps} />;
 	}
 	if (tool === "task") {
-		return <IconUsers className={`${baseClass} ${animateClass}`} />;
+		return <IconUsers {...iconProps} />;
 	}
-	return <IconWrench className={`${baseClass} ${animateClass}`} />;
+	return <IconWrench {...iconProps} />;
 }
 function ZenModeInput({
 	chatRef,
@@ -930,38 +932,41 @@ function ZenModeInput({
 	const activityCount = toolActivities.length;
 
 	return (
-		<div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4">
-			<div className="relative flex flex-col rounded-xl border border-inferay-gray-border bg-inferay-dark-gray/95 backdrop-blur-sm shadow-2xl overflow-visible">
+		<div {...stylex.props(styles.zenComposerWrap)}>
+			<div {...stylex.props(styles.zenComposerShell)}>
 				{isLoading && (
 					<div
-						className="relative flex items-center justify-between gap-3 px-3 py-2 border-b border-inferay-gray-border/50 rounded-t-xl"
+						{...stylex.props(styles.zenStatusBar)}
 						onMouseEnter={() => setIsActivityHovered(true)}
 						onMouseLeave={() => setIsActivityHovered(false)}
 					>
 						{isActivityHovered && activityCount > 0 && (
-							<div className="absolute bottom-full left-0 right-0 mb-1 rounded-lg overflow-hidden bg-inferay-dark-gray shadow-lg border border-inferay-gray-border z-50">
-								<div className="flex items-center justify-between px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-wider border-b border-inferay-gray-border text-inferay-muted-gray">
+							<div {...stylex.props(styles.zenActivityPopover)}>
+								<div {...stylex.props(styles.zenActivityHeader)}>
 									<span>Activity</span>
-									<span className="tabular-nums">{activityCount}</span>
+									<span {...stylex.props(styles.tabularText)}>
+										{activityCount}
+									</span>
 								</div>
-								<div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
+								<div {...stylex.props(styles.zenActivityList)}>
 									{toolActivities.map((activity, idx) => (
 										<div
 											key={activity.id}
-											className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] ${
+											{...stylex.props(
+												styles.zenActivityRow,
 												idx < toolActivities.length - 1
-													? "border-b border-inferay-gray-border/50"
-													: ""
-											}`}
+													? styles.zenActivityRowBorder
+													: null
+											)}
 										>
-											<span className="shrink-0 text-inferay-muted-gray">
+											<span {...stylex.props(styles.mutedNoShrink)}>
 												{getZenToolIcon(activity.toolName, false)}
 											</span>
-											<span className="flex-1 truncate text-inferay-soft-white">
+											<span {...stylex.props(styles.zenActivitySummary)}>
 												{activity.summary}
 											</span>
 											{activity.isStreaming && (
-												<span className="h-1.5 w-1.5 rounded-full shrink-0 bg-inferay-accent animate-pulse" />
+												<span {...stylex.props(styles.liveDot)} />
 											)}
 										</div>
 									))}
@@ -970,68 +975,59 @@ function ZenModeInput({
 						)}
 
 						{latestActivity ? (
-							<div className="flex items-center gap-2 min-w-0 flex-1">
-								<span className="shrink-0 text-inferay-accent">
+							<div {...stylex.props(styles.zenLatestActivity)}>
+								<span {...stylex.props(styles.accentNoShrink)}>
 									{getZenToolIcon(
 										latestActivity.toolName,
 										latestActivity.isStreaming
 									)}
 								</span>
-								<span className="text-[11px] text-inferay-white truncate">
+								<span {...stylex.props(styles.zenLatestSummary)}>
 									{latestActivity.summary}
 								</span>
 								{activityCount > 1 && (
-									<span className="shrink-0 text-[9px] text-inferay-accent bg-inferay-accent/10 px-1.5 py-0.5 rounded-full tabular-nums">
+									<span {...stylex.props(styles.zenActivityCount)}>
 										+{activityCount - 1}
 									</span>
 								)}
 							</div>
 						) : (
-							<div className="flex items-center gap-2">
-								<span className="h-1.5 w-1.5 rounded-full animate-pulse bg-inferay-accent" />
-								<span className="text-[11px] text-inferay-soft-white">
-									Working...
-								</span>
+							<div {...stylex.props(styles.zenWorkingRow)}>
+								<span {...stylex.props(styles.liveDot)} />
+								<span {...stylex.props(styles.zenWorkingText)}>Working...</span>
 							</div>
 						)}
 
 						<button
 							type="button"
 							onClick={handleStop}
-							className="shrink-0 flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] font-medium transition-all bg-inferay-gray text-inferay-soft-white hover:bg-inferay-light-gray border border-inferay-gray-border"
+							{...stylex.props(styles.zenStopButton)}
 						>
-							<IconStop className="w-3 h-3" />
+							<IconStop size={12} {...stylex.props(styles.noShrink)} />
 							Stop
 						</button>
 					</div>
 				)}
 
 				{queuedMessages.length > 0 && (
-					<div
-						className="border-b border-inferay-gray-border/50 overflow-y-auto"
-						style={{ maxHeight: "120px" }}
-					>
-						<div className="px-3 py-1 text-[9px] font-semibold tracking-wide uppercase text-inferay-muted-gray border-b border-inferay-gray-border/30">
-							Queued messages
-						</div>
+					<div {...stylex.props(styles.zenQueue)}>
+						<div {...stylex.props(styles.zenQueueHeader)}>Queued messages</div>
 						{queuedMessages.map((qm, idx) => (
 							<div
 								key={qm.id}
-								className="group flex items-start gap-2 px-3 py-1.5 hover:bg-inferay-white/5 transition-colors"
-								style={{
-									borderBottom:
-										idx < queuedMessages.length - 1
-											? "1px solid rgba(255,255,255,0.04)"
-											: undefined,
-								}}
+								{...stylex.props(
+									styles.zenQueueRow,
+									idx < queuedMessages.length - 1
+										? styles.zenQueueRowBorder
+										: null
+								)}
 							>
-								<span className="shrink-0 mt-0.5 text-[9px] font-mono tabular-nums text-inferay-muted-gray">
-									{idx + 1}
-								</span>
+								<span {...stylex.props(styles.zenQueueIndex)}>{idx + 1}</span>
 								{editingQueueId === qm.id ? (
-									<div className="flex-1 flex items-center gap-1">
+									<div {...stylex.props(styles.zenQueueEditor)}>
 										<input
 											type="text"
+											// biome-ignore lint/a11y/noAutofocus: Queue edit mode should focus the transient inline editor immediately.
 											autoFocus
 											value={editingQueueText}
 											onChange={(e) => setEditingQueueText(e.target.value)}
@@ -1046,7 +1042,7 @@ function ZenModeInput({
 													setEditingQueueId(null);
 												}
 											}}
-											className="flex-1 bg-inferay-gray text-[11px] outline-none border-none px-1 py-0.5 rounded text-inferay-white"
+											{...stylex.props(styles.zenQueueInput)}
 										/>
 										<button
 											type="button"
@@ -1057,7 +1053,10 @@ function ZenModeInput({
 												}
 												setEditingQueueId(null);
 											}}
-											className="shrink-0 p-0.5 rounded text-inferay-accent"
+											{...stylex.props(
+												styles.zenTinyButton,
+												styles.zenTinyButtonAccent
+											)}
 											title="Save"
 										>
 											<IconCheck size={12} />
@@ -1065,7 +1064,7 @@ function ZenModeInput({
 										<button
 											type="button"
 											onClick={() => setEditingQueueId(null)}
-											className="shrink-0 p-0.5 rounded text-inferay-muted-gray"
+											{...stylex.props(styles.zenTinyButton)}
 											title="Cancel"
 										>
 											<IconX size={12} />
@@ -1073,17 +1072,17 @@ function ZenModeInput({
 									</div>
 								) : (
 									<>
-										<span className="flex-1 text-[11px] truncate text-inferay-white">
+										<span {...stylex.props(styles.zenQueueText)}>
 											{qm.displayText}
 										</span>
-										<div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+										<div {...stylex.props(styles.zenQueueActions)}>
 											<button
 												type="button"
 												onClick={() => {
 													setEditingQueueId(qm.id);
 													setEditingQueueText(qm.text);
 												}}
-												className="p-0.5 rounded transition-colors hover:bg-white/10 text-inferay-muted-gray"
+												{...stylex.props(styles.zenTinyButton)}
 												title="Edit"
 											>
 												<IconPencil size={12} />
@@ -1093,7 +1092,10 @@ function ZenModeInput({
 												onClick={() =>
 													chatRef.current?.removeQueuedMessage(qm.id)
 												}
-												className="p-0.5 rounded transition-colors hover:bg-red-500/20 text-red-400"
+												{...stylex.props(
+													styles.zenTinyButton,
+													styles.zenTinyButtonDanger
+												)}
 												title="Remove from queue"
 											>
 												<IconTrash size={12} />
@@ -1107,18 +1109,18 @@ function ZenModeInput({
 				)}
 
 				{attachedImages.length > 0 && (
-					<div className="flex items-center gap-2 px-3 py-2 border-b border-inferay-gray-border/50">
+					<div {...stylex.props(styles.zenImages)}>
 						{attachedImages.map((img) => (
-							<div key={img.path} className="relative group">
+							<div key={img.path} {...stylex.props(styles.zenImageThumbWrap)}>
 								<img
 									src={img.previewUrl}
 									alt={img.name}
-									className="h-10 w-10 rounded-md object-cover border border-inferay-gray-border"
+									{...stylex.props(styles.zenImageThumb)}
 								/>
 								<button
 									type="button"
 									onClick={() => chatRef.current?.removeAttachedImage(img.path)}
-									className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+									{...stylex.props(styles.zenImageRemove)}
 								>
 									×
 								</button>
@@ -1132,7 +1134,7 @@ function ZenModeInput({
 					ref={fileInputRef}
 					accept="image/*"
 					multiple
-					className="hidden"
+					{...stylex.props(styles.hidden)}
 					onChange={async (e) => {
 						for (const file of Array.from(e.target.files || [])) {
 							if (file.type.startsWith("image/") && chatRef.current) {
@@ -1143,17 +1145,17 @@ function ZenModeInput({
 					}}
 				/>
 
-				<div className="flex items-center gap-2 px-3 py-2">
+				<div {...stylex.props(styles.zenInputRow)}>
 					<button
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
-						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-inferay-muted-gray hover:text-inferay-soft-white hover:bg-inferay-white/10 transition-colors"
+						{...stylex.props(styles.zenIconButton)}
 						title="Attach image"
 					>
 						<IconPlus size={16} />
 					</button>
 
-					<span className="shrink-0 text-inferay-accent">
+					<span {...stylex.props(styles.accentNoShrink)}>
 						{getAgentIcon(agentKind, 14)}
 					</span>
 
@@ -1168,11 +1170,11 @@ function ZenModeInput({
 								? "Type to queue next message..."
 								: "Message... (Esc to exit)"
 						}
-						className="flex-1 bg-transparent text-[13px] text-inferay-white outline-none placeholder:text-inferay-muted-gray"
+						{...stylex.props(styles.zenInput)}
 					/>
 
 					{queuedMessages.length > 0 && (
-						<span className="shrink-0 text-[10px] text-inferay-accent bg-inferay-accent/10 px-1.5 py-0.5 rounded tabular-nums">
+						<span {...stylex.props(styles.zenQueueCount)}>
 							+{queuedMessages.length}
 						</span>
 					)}
@@ -1181,7 +1183,7 @@ function ZenModeInput({
 						type="button"
 						onClick={handleSubmit}
 						disabled={!input.trim()}
-						className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-inferay-accent/20 text-inferay-accent hover:bg-inferay-accent/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+						{...stylex.props(styles.zenSendButton)}
 					>
 						<IconSend size={16} />
 					</button>
@@ -1206,11 +1208,10 @@ function ToolbarButton({
 			type="button"
 			onClick={onClick}
 			title={title}
-			className={`flex h-full w-6 items-center justify-center transition-all ${
-				active
-					? "bg-inferay-white/10 text-inferay-white"
-					: "text-inferay-muted-gray hover:text-inferay-soft-white"
-			}`}
+			{...stylex.props(
+				styles.toolbarButton,
+				active && styles.toolbarButtonActive
+			)}
 		>
 			{icon}
 		</button>
@@ -1218,9 +1219,6 @@ function ToolbarButton({
 }
 
 /* ── Top-bar components ─────────────────────────────────── */
-
-const TOPBAR_CLASS =
-	"shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-inferay-gray-border";
 
 function DiffViewerTopBar({
 	mainViewMode,
@@ -1236,44 +1234,37 @@ function DiffViewerTopBar({
 	onDiffViewModeChange: (mode: DiffViewMode) => void;
 }) {
 	return (
-		<div className={TOPBAR_CLASS}>
-			{/* Left: Diff / Graph toggle */}
-			<div className="flex h-5 items-center overflow-hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray">
+		<div {...stylex.props(styles.topBar)}>
+			<div {...stylex.props(styles.segmented)}>
 				<button
 					type="button"
 					onClick={() => onMainViewModeChange("diff")}
-					className={`h-full px-2 text-[8px] font-medium transition-colors ${
-						mainViewMode === "diff"
-							? "bg-inferay-white/10 text-inferay-white"
-							: "text-inferay-muted-gray hover:text-inferay-soft-white"
-					}`}
+					{...stylex.props(
+						styles.segmentButton,
+						mainViewMode === "diff" && styles.segmentButtonActive
+					)}
 				>
 					Diff
 				</button>
 				<button
 					type="button"
 					onClick={() => onMainViewModeChange("graph")}
-					className={`h-full px-2 text-[8px] font-medium transition-colors ${
-						mainViewMode === "graph"
-							? "bg-inferay-white/10 text-inferay-white"
-							: "text-inferay-muted-gray hover:text-inferay-soft-white"
-					}`}
+					{...stylex.props(
+						styles.segmentButton,
+						mainViewMode === "graph" && styles.segmentButtonActive
+					)}
 				>
 					Graph
 				</button>
 			</div>
 
-			{/* Center: file path */}
 			{filePath && (
-				<span className="text-[9px] font-mono text-inferay-muted-gray truncate min-w-0">
-					{filePath}
-				</span>
+				<span {...stylex.props(styles.filePathLabel)}>{filePath}</span>
 			)}
 
-			<span className="flex-1" />
+			<span {...stylex.props(styles.spacer)} />
 
-			{/* Right: view mode icons */}
-			<div className="flex h-5 items-center overflow-hidden rounded-md border border-inferay-gray-border bg-inferay-dark-gray">
+			<div {...stylex.props(styles.segmented)}>
 				<ToolbarButton
 					active={diffViewMode === "split"}
 					title="Split diff"
@@ -1296,3 +1287,613 @@ function DiffViewerTopBar({
 		</div>
 	);
 }
+
+const styles = stylex.create({
+	root: {
+		display: "flex",
+		height: "100%",
+		minHeight: 0,
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	pageGrid: {
+		display: "grid",
+		minHeight: 0,
+		flex: 1,
+		gridTemplateColumns: {
+			default: "1fr",
+			"@media (min-width: 1024px)": "400px minmax(0, 1fr)",
+		},
+	},
+	leftPane: {
+		display: "flex",
+		minWidth: 0,
+		minHeight: 0,
+		flexDirection: "column",
+		borderRightWidth: 1,
+		borderRightStyle: "solid",
+		borderRightColor: color.border,
+	},
+	rightPane: {
+		display: "flex",
+		minWidth: 0,
+		minHeight: 0,
+		flexDirection: "column",
+		backgroundColor: color.background,
+	},
+	splitBody: {
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+		overflow: "hidden",
+	},
+	viewerPane: {
+		display: "flex",
+		minWidth: 0,
+		minHeight: 0,
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	viewerColumn: {
+		display: "flex",
+		minWidth: 0,
+		minHeight: 0,
+		flex: 1,
+		flexDirection: "column",
+		overflow: "hidden",
+	},
+	diffHost: {
+		minHeight: 0,
+		flex: 1,
+		overflow: "hidden",
+	},
+	sidebarShell: {
+		display: "flex",
+		flexShrink: 0,
+		flexDirection: "row",
+		borderLeftWidth: 1,
+		borderLeftStyle: "solid",
+		borderLeftColor: color.border,
+		backgroundColor: color.background,
+	},
+	sidebarResize: {
+		width: controlSize._1,
+		flexShrink: 0,
+		cursor: "ew-resize",
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(29, 185, 84, 0.3)",
+		},
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+	},
+	zenLayout: {
+		position: "relative",
+		display: "flex",
+		minHeight: 0,
+		flex: 1,
+	},
+	hidden: {
+		display: "none",
+	},
+	fullHeight: {
+		height: "100%",
+	},
+	centerFull: {
+		display: "flex",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	centerPad: {
+		paddingInline: controlSize._6,
+	},
+	topBar: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+	},
+	topBarLabel: {
+		color: color.textMuted,
+		fontSize: font.size_2,
+		fontWeight: font.weight_5,
+	},
+	spacer: {
+		flex: 1,
+	},
+	emptyWrap: {
+		display: "flex",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingInline: controlSize._6,
+	},
+	emptyCard: {
+		maxWidth: "28rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		backgroundColor: color.backgroundRaised,
+		padding: controlSize._6,
+		textAlign: "center",
+	},
+	emptyTitle: {
+		color: color.textMain,
+		fontSize: "0.9375rem",
+		fontWeight: 600,
+	},
+	emptyDescription: {
+		marginTop: controlSize._2,
+		color: color.textMuted,
+		fontSize: font.size_3,
+		lineHeight: 1.65,
+	},
+	placeholderText: {
+		maxWidth: "20rem",
+		color: color.textMuted,
+		fontSize: font.size_3,
+		lineHeight: 1.65,
+		textAlign: "center",
+	},
+	zenToolIcon: {
+		width: controlSize._3,
+		height: controlSize._3,
+		flexShrink: 0,
+	},
+	zenToolIconActive: {
+		animationName: stylex.keyframes({
+			"50%": {
+				opacity: 0.45,
+			},
+		}),
+		animationDuration: "1s",
+		animationIterationCount: "infinite",
+	},
+	zenComposerWrap: {
+		position: "absolute",
+		zIndex: 50,
+		bottom: controlSize._6,
+		left: "50%",
+		width: "100%",
+		maxWidth: "42rem",
+		paddingInline: controlSize._4,
+		transform: "translateX(-50%)",
+	},
+	zenComposerShell: {
+		position: "relative",
+		display: "flex",
+		flexDirection: "column",
+		overflow: "visible",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.75rem",
+		backgroundColor: "rgba(24, 24, 27, 0.95)",
+		boxShadow: "0 25px 50px rgba(0, 0, 0, 0.45)",
+		backdropFilter: "blur(6px)",
+	},
+	zenStatusBar: {
+		position: "relative",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: controlSize._3,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(63, 63, 70, 0.5)",
+		borderTopLeftRadius: "0.75rem",
+		borderTopRightRadius: "0.75rem",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	zenActivityPopover: {
+		position: "absolute",
+		zIndex: 50,
+		left: 0,
+		right: 0,
+		bottom: "100%",
+		marginBottom: controlSize._1,
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: 8,
+		backgroundColor: color.backgroundRaised,
+		boxShadow: "0 10px 25px rgba(0, 0, 0, 0.45)",
+	},
+	zenActivityHeader: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: color.border,
+		color: color.textMuted,
+		fontSize: "0.5625rem",
+		fontWeight: font.weight_5,
+		letterSpacing: "0.05em",
+		paddingBlock: "0.375rem",
+		paddingInline: "0.625rem",
+		textTransform: "uppercase",
+	},
+	zenActivityList: {
+		maxHeight: "200px",
+		overflowY: "auto",
+	},
+	zenActivityRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		fontSize: "0.625rem",
+		paddingBlock: "0.375rem",
+		paddingInline: "0.625rem",
+	},
+	zenActivityRowBorder: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(63, 63, 70, 0.5)",
+	},
+	mutedNoShrink: {
+		flexShrink: 0,
+		color: color.textMuted,
+	},
+	accentNoShrink: {
+		flexShrink: 0,
+		color: "#8b5cf6",
+	},
+	noShrink: {
+		flexShrink: 0,
+	},
+	zenActivitySummary: {
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textSoft,
+	},
+	liveDot: {
+		width: "0.375rem",
+		height: "0.375rem",
+		flexShrink: 0,
+		borderRadius: "999px",
+		backgroundColor: "#8b5cf6",
+		animationName: stylex.keyframes({
+			"50%": {
+				opacity: 0.45,
+			},
+		}),
+		animationDuration: "1s",
+		animationIterationCount: "infinite",
+	},
+	zenLatestActivity: {
+		display: "flex",
+		minWidth: 0,
+		flex: 1,
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	zenLatestSummary: {
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: font.size_2,
+	},
+	zenActivityCount: {
+		flexShrink: 0,
+		borderRadius: "999px",
+		backgroundColor: "rgba(139, 92, 246, 0.1)",
+		color: "#8b5cf6",
+		fontSize: "0.5625rem",
+		fontVariantNumeric: "tabular-nums",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+	},
+	tabularText: {
+		fontVariantNumeric: "tabular-nums",
+	},
+	zenWorkingRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+	},
+	zenWorkingText: {
+		color: color.textSoft,
+		fontSize: font.size_2,
+	},
+	zenStopButton: {
+		display: "flex",
+		height: controlSize._6,
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.375rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: 6,
+		backgroundColor: {
+			default: color.controlHover,
+			":hover": color.controlActive,
+		},
+		color: color.textSoft,
+		fontSize: "0.625rem",
+		fontWeight: font.weight_5,
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+	},
+	zenQueue: {
+		maxHeight: "120px",
+		overflowY: "auto",
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(63, 63, 70, 0.5)",
+	},
+	zenQueueHeader: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(63, 63, 70, 0.3)",
+		color: color.textMuted,
+		fontSize: "0.5625rem",
+		fontWeight: 600,
+		letterSpacing: "0.05em",
+		paddingBlock: controlSize._1,
+		paddingInline: controlSize._3,
+		textTransform: "uppercase",
+	},
+	zenQueueRow: {
+		display: "flex",
+		alignItems: "flex-start",
+		gap: controlSize._2,
+		paddingBlock: "0.375rem",
+		paddingInline: controlSize._3,
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.05)",
+		},
+		transitionProperty: "background-color",
+		transitionDuration: "120ms",
+	},
+	zenQueueRowBorder: {
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(255, 255, 255, 0.04)",
+	},
+	zenQueueIndex: {
+		flexShrink: 0,
+		marginTop: "0.125rem",
+		color: color.textMuted,
+		fontFamily: font.familyMono,
+		fontSize: "0.5625rem",
+		fontVariantNumeric: "tabular-nums",
+	},
+	zenQueueEditor: {
+		display: "flex",
+		flex: 1,
+		alignItems: "center",
+		gap: controlSize._1,
+	},
+	zenQueueInput: {
+		flex: 1,
+		borderWidth: 0,
+		borderRadius: 4,
+		backgroundColor: color.controlHover,
+		color: color.textMain,
+		fontSize: font.size_2,
+		outline: "none",
+		paddingBlock: "0.125rem",
+		paddingInline: controlSize._1,
+	},
+	zenTinyButton: {
+		flexShrink: 0,
+		borderWidth: 0,
+		borderRadius: 4,
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.1)",
+		},
+		color: color.textMuted,
+		padding: "0.125rem",
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+	},
+	zenTinyButtonAccent: {
+		color: "#8b5cf6",
+	},
+	zenTinyButtonDanger: {
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(239, 68, 68, 0.2)",
+		},
+		color: "#f87171",
+	},
+	zenQueueText: {
+		flex: 1,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMain,
+		fontSize: font.size_2,
+	},
+	zenQueueActions: {
+		display: "flex",
+		flexShrink: 0,
+		alignItems: "center",
+		gap: "0.125rem",
+		opacity: 0.75,
+	},
+	zenImages: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		borderBottomWidth: 1,
+		borderBottomStyle: "solid",
+		borderBottomColor: "rgba(63, 63, 70, 0.5)",
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	zenImageThumbWrap: {
+		position: "relative",
+	},
+	zenImageThumb: {
+		width: "2.5rem",
+		height: "2.5rem",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: 6,
+		objectFit: "cover",
+	},
+	zenImageRemove: {
+		position: "absolute",
+		top: "-0.375rem",
+		right: "-0.375rem",
+		display: "flex",
+		width: controlSize._4,
+		height: controlSize._4,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 0,
+		borderRadius: "999px",
+		backgroundColor: "#ef4444",
+		color: "#ffffff",
+		fontSize: "0.5rem",
+	},
+	zenInputRow: {
+		display: "flex",
+		alignItems: "center",
+		gap: controlSize._2,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
+	},
+	zenIconButton: {
+		display: "flex",
+		width: controlSize._7,
+		height: controlSize._7,
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 0,
+		borderRadius: 6,
+		backgroundColor: {
+			default: "transparent",
+			":hover": "rgba(255, 255, 255, 0.1)",
+		},
+		color: {
+			default: color.textMuted,
+			":hover": color.textSoft,
+		},
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+	},
+	zenInput: {
+		flex: 1,
+		borderWidth: 0,
+		backgroundColor: "transparent",
+		color: color.textMain,
+		fontSize: "0.8125rem",
+		outline: "none",
+		"::placeholder": {
+			color: color.textMuted,
+		},
+	},
+	zenQueueCount: {
+		flexShrink: 0,
+		borderRadius: 4,
+		backgroundColor: "rgba(139, 92, 246, 0.1)",
+		color: "#8b5cf6",
+		fontSize: "0.625rem",
+		fontVariantNumeric: "tabular-nums",
+		paddingBlock: "0.125rem",
+		paddingInline: "0.375rem",
+	},
+	zenSendButton: {
+		display: "flex",
+		width: controlSize._7,
+		height: controlSize._7,
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 0,
+		borderRadius: 8,
+		backgroundColor: {
+			default: "rgba(139, 92, 246, 0.2)",
+			":hover": "rgba(139, 92, 246, 0.3)",
+		},
+		color: "#8b5cf6",
+		transitionProperty: "background-color, opacity",
+		transitionDuration: "120ms",
+		":disabled": {
+			cursor: "not-allowed",
+			opacity: 0.3,
+		},
+	},
+	toolbarButton: {
+		display: "flex",
+		height: "100%",
+		width: controlSize._6,
+		alignItems: "center",
+		justifyContent: "center",
+		color: color.textMuted,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+		":hover": {
+			color: color.textSoft,
+		},
+	},
+	toolbarButtonActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	segmented: {
+		display: "flex",
+		height: controlSize._5,
+		alignItems: "center",
+		overflow: "hidden",
+		borderWidth: 1,
+		borderStyle: "solid",
+		borderColor: color.border,
+		borderRadius: "0.375rem",
+		backgroundColor: color.backgroundRaised,
+	},
+	segmentButton: {
+		height: "100%",
+		color: color.textMuted,
+		fontSize: "0.5rem",
+		fontWeight: font.weight_5,
+		paddingInline: controlSize._2,
+		transitionProperty: "background-color, color",
+		transitionDuration: "120ms",
+		backgroundColor: {
+			default: "transparent",
+			":hover": color.controlHover,
+		},
+		":hover": {
+			color: color.textSoft,
+		},
+	},
+	segmentButtonActive: {
+		backgroundColor: color.controlActive,
+		color: color.textMain,
+	},
+	filePathLabel: {
+		minWidth: 0,
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+		color: color.textMuted,
+		fontFamily: "var(--font-diff)",
+		fontSize: font.size_1,
+	},
+});
