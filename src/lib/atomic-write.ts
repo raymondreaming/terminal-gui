@@ -1,6 +1,6 @@
-import { dirname } from "path";
-import { mkdir } from "fs/promises";
 import { renameSync } from "fs";
+import { mkdir } from "fs/promises";
+import { dirname } from "path";
 
 /**
  * Atomically write JSON data to a file.

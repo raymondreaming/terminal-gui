@@ -1,17 +1,18 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fetchJsonOr } from "../../lib/fetch-json.ts";
 import type { SlashCommand } from "./agent-chat-shared.ts";
 import { findTriggerAtCursor } from "./chat-agent-utils.ts";
 import { applyInlineCompletion } from "./chat-command-utils.ts";
 
-export interface MenuPosition {
+interface MenuPosition {
 	top: number;
 	left: number;
 	width: number;
 	maxHeight: number;
 }
 
-export interface FileMenuState {
+interface FileMenuState {
 	show: boolean;
 	selectedIdx: number;
 	query: string;
@@ -19,14 +20,14 @@ export interface FileMenuState {
 	position: MenuPosition | null;
 }
 
-export interface SlashMenuState {
+interface SlashMenuState {
 	show: boolean;
 	selectedIdx: number;
 	query: string;
 	slashIndex: number;
 }
 
-export interface FileSearchResult {
+interface FileSearchResult {
 	name: string;
 	path: string;
 	isDir: boolean;
@@ -163,18 +164,16 @@ export function useAgentChatMenus({
 
 			if (fileSearchTimerRef.current) clearTimeout(fileSearchTimerRef.current);
 			fileSearchTimerRef.current = setTimeout(async () => {
-				try {
-					const params = new URLSearchParams({
-						q: trigger.query,
-						limit: "15",
-					});
-					if (cwd) params.set("cwd", cwd);
-					const response = await fetch(`/api/files/search?${params}`);
-					const data = await response.json();
-					setFileResults(data.results || []);
-				} catch {
-					setFileResults([]);
-				}
+				const params = new URLSearchParams({
+					q: trigger.query,
+					limit: "15",
+				});
+				if (cwd) params.set("cwd", cwd);
+				const data = await fetchJsonOr<{ results?: FileSearchResult[] }>(
+					`/api/files/search?${params}`,
+					{}
+				);
+				setFileResults(data.results || []);
 			}, 150);
 		},
 		[cwd, fileMenu.position, fileMenu.show, getMenuPosition]

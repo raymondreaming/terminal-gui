@@ -1,8 +1,9 @@
 import { exec } from "node:child_process";
-import { hostname, homedir, platform } from "node:os";
+import { homedir, hostname, platform } from "node:os";
 import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
+
 import { ConfigManager } from "../services/config-manager.ts";
 
 const configManager = new ConfigManager();

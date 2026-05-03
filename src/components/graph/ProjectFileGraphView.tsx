@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useMemo, useState } from "react";
-import type { GitProjectStatus } from "../../hooks/useGitStatus.ts";
+import type { GitProjectStatus } from "../../features/git/useGitStatus.ts";
 import {
 	color,
 	controlSize,

@@ -1,10 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import { isChatAgentKind } from "../../lib/agents.ts";
+import { getAgentIcon } from "../../features/agents/agent-ui.tsx";
+import { isChatAgentKind } from "../../features/agents/agents.ts";
 import { SIDEBAR_NAV_ROUTES } from "../../lib/app-navigation.tsx";
 import { loadAppThemeId } from "../../lib/app-theme.ts";
+import { fetchJsonOr, postJson } from "../../lib/fetch-json.ts";
 import { resolveServerUrl } from "../../lib/server-origin.ts";
 import { readStoredBoolean, writeStoredValue } from "../../lib/stored-json.ts";
 import {
@@ -15,7 +16,7 @@ import {
 	loadTerminalState,
 	saveTerminalState,
 	type TerminalPaneModel,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import {
 	loadStoredMessages,
@@ -63,13 +64,10 @@ function deriveSummary(paneId: string): string | null {
 	// Fire off AI title generation in background
 	if (!pendingTitleRequests.has(paneId)) {
 		pendingTitleRequests.add(paneId);
-		fetch("/api/generate-title", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ message: firstUser.content }),
+		postJson<{ title?: string }>("/api/generate-title", {
+			message: firstUser.content,
 		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data: { title?: string } | null) => {
+			.then((data) => {
 				const title = data?.title?.trim();
 				if (title) {
 					saveStoredSummary(paneId, title);
@@ -467,11 +465,10 @@ export function Sidebar() {
 		let cancelled = false;
 		async function loadGithubAccount() {
 			try {
-				const response = await fetch("/api/forge/accounts");
-				if (!response.ok) return;
-				const payload = (await response.json()) as {
-					accounts?: ForgeAccount[];
-				};
+				const payload = await fetchJsonOr<{ accounts?: ForgeAccount[] }>(
+					"/api/forge/accounts",
+					{}
+				);
 				const accounts = Array.isArray(payload.accounts)
 					? payload.accounts
 					: [];
@@ -697,11 +694,6 @@ const styles = stylex.create({
 			":hover": color.textMain,
 		},
 	},
-	paneSummaryActive: {
-		backgroundColor: color.accentWash,
-		borderColor: color.border,
-		color: color.textMain,
-	},
 	paneSummarySelected: {
 		color: color.textMain,
 	},
@@ -717,16 +709,6 @@ const styles = stylex.create({
 		fontWeight: font.weight_5,
 		lineHeight: 1.2,
 		margin: 0,
-		overflow: "hidden",
-		textOverflow: "ellipsis",
-		whiteSpace: "nowrap",
-	},
-	paneSummarySub: {
-		color: color.textSoft,
-		fontSize: font.size_1,
-		lineHeight: 1.2,
-		marginBlockEnd: 0,
-		marginBlockStart: "0.125rem",
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 		whiteSpace: "nowrap",
@@ -1097,11 +1079,6 @@ const styles = stylex.create({
 			default: color.textSoft,
 			":hover": color.textMain,
 		},
-	},
-	footerButtonActive: {
-		backgroundColor: color.controlActive,
-		borderColor: color.border,
-		color: color.textMain,
 	},
 	profileButton: {
 		alignItems: "center",

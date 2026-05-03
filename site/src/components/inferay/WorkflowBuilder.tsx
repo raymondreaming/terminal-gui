@@ -354,7 +354,7 @@ function WorkflowList({
 	workflows: SavedWorkflow[];
 	activeId: string;
 	onSelect: (id: string) => void;
-	onNew: () => void;
+	onNew?: () => void;
 }) {
 	return (
 		<div className="w-[180px] shrink-0 border-r border-inferay-border flex flex-col bg-inferay-bg">
@@ -436,6 +436,38 @@ function NodePalette({ onAddNode }: { onAddNode: (type: NodeType) => void }) {
 	);
 }
 
+const fieldLabelClass =
+	"text-[8px] font-medium uppercase tracking-wide text-inferay-text-3";
+const inputClass =
+	"mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none";
+
+function ConfigField({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div>
+			<label className={fieldLabelClass}>{label}</label>
+			{children}
+		</div>
+	);
+}
+
+function SelectField({ label, options }: { label: string; options: string[] }) {
+	return (
+		<ConfigField label={label}>
+			<select className={inputClass}>
+				{options.map((option) => (
+					<option key={option}>{option}</option>
+				))}
+			</select>
+		</ConfigField>
+	);
+}
+
 function NodeDetail({
 	node,
 	onClose,
@@ -477,20 +509,11 @@ function NodeDetail({
 
 				{node.type === "prompt" && (
 					<>
-						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Model
-							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
-								<option>Claude Opus</option>
-								<option>Claude Sonnet</option>
-								<option>GPT-4</option>
-							</select>
-						</div>
-						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Prompt Template
-							</label>
+						<SelectField
+							label="Model"
+							options={["Claude Opus", "Claude Sonnet", "GPT-4"]}
+						/>
+						<ConfigField label="Prompt Template">
 							<textarea
 								defaultValue={node.config.template as string}
 								rows={4}
@@ -499,86 +522,55 @@ function NodeDetail({
 							<p className="mt-1 text-[7px] text-inferay-text-3">
 								Use {"{{variable}}"} to reference inputs
 							</p>
-						</div>
+						</ConfigField>
 					</>
 				)}
 
 				{node.type === "image" && (
 					<>
-						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Model
-							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
-								<option>Flux</option>
-								<option>Flux Pro</option>
-								<option>Flux Dev</option>
-							</select>
-						</div>
-						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Style
-							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
-								<option>Professional</option>
-								<option>Artistic</option>
-								<option>Photorealistic</option>
-								<option>Illustration</option>
-							</select>
-						</div>
+						<SelectField
+							label="Model"
+							options={["Flux", "Flux Pro", "Flux Dev"]}
+						/>
+						<SelectField
+							label="Style"
+							options={[
+								"Professional",
+								"Artistic",
+								"Photorealistic",
+								"Illustration",
+							]}
+						/>
 					</>
 				)}
 
 				{node.type === "research" && (
 					<>
-						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Depth
-							</label>
-							<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
-								<option>Quick</option>
-								<option>Thorough</option>
-								<option>Deep</option>
-							</select>
-						</div>
-						<div>
-							<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-								Max Sources
-							</label>
-							<input
-								type="number"
-								defaultValue={5}
-								className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none"
-							/>
-						</div>
+						<SelectField
+							label="Depth"
+							options={["Quick", "Thorough", "Deep"]}
+						/>
+						<ConfigField label="Max Sources">
+							<input type="number" defaultValue={5} className={inputClass} />
+						</ConfigField>
 					</>
 				)}
 
 				{node.type === "input" && (
-					<div>
-						<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-							Default Value
-						</label>
+					<ConfigField label="Default Value">
 						<input
 							type="text"
 							defaultValue={node.config.value as string}
-							className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none"
+							className={inputClass}
 						/>
-					</div>
+					</ConfigField>
 				)}
 
 				{node.type === "output" && (
-					<div>
-						<label className="text-[8px] font-medium uppercase tracking-wide text-inferay-text-3">
-							Output Format
-						</label>
-						<select className="mt-1 w-full h-7 rounded-md bg-inferay-surface border border-inferay-border px-2 text-[9px] text-inferay-text outline-none">
-							<option>Markdown</option>
-							<option>HTML</option>
-							<option>Plain Text</option>
-							<option>JSON</option>
-						</select>
-					</div>
+					<SelectField
+						label="Output Format"
+						options={["Markdown", "HTML", "Plain Text", "JSON"]}
+					/>
 				)}
 
 				{/* Inputs/Outputs info */}
@@ -676,11 +668,6 @@ export function WorkflowBuilder() {
 		setTimeout(() => setIsRunning(false), 3000);
 	};
 
-	const handleNewWorkflow = () => {
-		// Would create a new workflow
-		console.log("Create new workflow");
-	};
-
 	return (
 		<div className="flex h-full w-full bg-inferay-bg">
 			{/* Workflow List */}
@@ -688,7 +675,6 @@ export function WorkflowBuilder() {
 				workflows={workflows}
 				activeId={activeWorkflowId}
 				onSelect={setActiveWorkflowId}
-				onNew={handleNewWorkflow}
 			/>
 
 			{/* Main content */}

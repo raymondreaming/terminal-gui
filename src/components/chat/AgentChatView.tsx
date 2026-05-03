@@ -10,19 +10,20 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { useGitStatus } from "../../hooks/useGitStatus.ts";
-import { usePrompts } from "../../hooks/usePrompts.ts";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
+import { getAgentIcon } from "../../features/agents/agent-ui.tsx";
 import {
 	CODEX_REASONING_LEVELS,
 	getAgentDefinition,
 	loadDefaultChatSettings,
-} from "../../lib/agents.ts";
-import { measureTextareaHeight } from "../../lib/pretext-utils.ts";
+} from "../../features/agents/agents.ts";
+import { useGitStatus } from "../../features/git/useGitStatus.ts";
+import { usePrompts } from "../../features/prompts/usePrompts.ts";
 import {
 	type AgentKind,
 	changePaneAgentKind,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
+import { postJson } from "../../lib/fetch-json.ts";
+import { measureTextareaHeight } from "../../lib/pretext-utils.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { InlineDirectoryPicker } from "../../pages/Terminal/InlineDirectoryPicker.tsx";
 import { color, controlSize, effectValues } from "../../tokens.stylex.ts";
@@ -97,6 +98,8 @@ interface AgentChatViewProps {
 	onDragEnd?: () => void;
 	sessions?: AgentChatSession[];
 	onSelectSession?: (paneId: string) => void;
+	composerOnly?: boolean;
+	onExitComposerOnly?: () => void;
 	/** Called when user picks directories from empty state picker */
 	onDirectoryChange?: (
 		paneId: string,
@@ -156,6 +159,8 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			onDragEnd,
 			sessions,
 			onSelectSession,
+			composerOnly = false,
+			onExitComposerOnly,
 			onDirectoryChange,
 		},
 		ref
@@ -218,13 +223,10 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					const firstUser = nextMessages.find((m) => m.role === "user");
 					if (firstUser?.content) {
 						titleRequestedRef.current = true;
-						fetch("/api/generate-title", {
-							method: "POST",
-							headers: { "content-type": "application/json" },
-							body: JSON.stringify({ message: firstUser.content }),
+						postJson<{ title?: string }>("/api/generate-title", {
+							message: firstUser.content,
 						})
-							.then((res) => (res.ok ? res.json() : null))
-							.then((data: { title?: string } | null) => {
+							.then((data) => {
 								const title = data?.title?.trim();
 								if (title) {
 									summaryRef.current = title;
@@ -325,7 +327,8 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		});
 		const chatUiStateRef = useRef(chatUiState);
 		chatUiStateRef.current = chatUiState;
-		const { isLoading, status, expandedTools, liveActivities } = chatUiState;
+		const { isLoading, status, startTime, expandedTools, liveActivities } =
+			chatUiState;
 		const setLoadingState = useCallback(
 			(
 				v:
@@ -558,11 +561,11 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				});
 				currentAssistantRef.current = null;
 
-				let prompt = text;
 				const sessionId = loadStoredSessionId(paneId);
 				const effectiveCwd = workspaceOverride?.cwd ?? cwd;
 				const effectiveReferencePaths =
 					workspaceOverride?.referencePaths ?? referencePaths;
+				const prefixParts: string[] = [];
 				if (
 					!sessionId &&
 					(effectiveCwd || (effectiveReferencePaths?.length ?? 0) > 0)
@@ -581,7 +584,9 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					]
 						.filter(Boolean)
 						.join("\n\n");
-					prompt = `<workspace-context>\n${workspaceLines}\n</workspace-context>\n\n${prompt}`;
+					prefixParts.push(
+						`<workspace-context>\n${workspaceLines}\n</workspace-context>`
+					);
 				}
 				// On first message after switching agent kind, prepend prior conversation context
 				if (agentKindJustChanged.current) {
@@ -599,15 +604,21 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 							}
 						}
 						if (contextLines.length > 0) {
-							prompt = `<prior-conversation-context>\nThe following is a summary of the prior conversation in this chat session (from a different model). Use it as context for the request below.\n\n${contextLines.join("\n\n")}\n</prior-conversation-context>\n\n${prompt}`;
+							prefixParts.push(
+								`<prior-conversation-context>\nThe following is a summary of the prior conversation in this chat session (from a different model). Use it as context for the request below.\n\n${contextLines.join("\n\n")}\n</prior-conversation-context>`
+							);
 						}
 					}
 				}
+				const systemPrefix = prefixParts.length
+					? prefixParts.join("\n\n")
+					: undefined;
 
 				wsClient.send({
 					type: "chat:send",
 					paneId,
-					text: prompt,
+					text,
+					systemPrefix,
 					cwd: effectiveCwd,
 					referencePaths: effectiveReferencePaths,
 					sessionId,
@@ -632,6 +643,18 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			(): ToolActivity[] => extractToolActivities(messagesRef.current),
 			[]
 		);
+		const sendNextQueuedMessage = useCallback(() => {
+			const next = shiftQueuedMessage();
+			if (!next) return;
+			appendLocalMessages([
+				{
+					role: "user",
+					content: next.displayText,
+					images: next.images,
+				},
+			]);
+			sendToServer(next.text);
+		}, [appendLocalMessages, sendToServer, shiftQueuedMessage]);
 
 		useEffect(() => {
 			if (pendingSendConsumedRef.current || isLoading) return;
@@ -763,17 +786,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 					currentToolRef.current = null;
 					hasStreamedRef.current = false;
 					wsClient.send({ type: "chat:reconnect", paneId });
-					const next = shiftQueuedMessage();
-					if (next) {
-						appendLocalMessages([
-							{
-								role: "user",
-								content: next.displayText,
-								images: next.images,
-							},
-						]);
-						sendToServer(next.text);
-					}
+					sendNextQueuedMessage();
 				} else if (msg.type === "chat:user_message") {
 					setChatUiState((prev) => ({ ...prev, liveActivities: [] }));
 					setLoadingState({
@@ -796,17 +809,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						status: "error",
 						startTime: null,
 					});
-					const next = shiftQueuedMessage();
-					if (next) {
-						appendLocalMessages([
-							{
-								role: "user",
-								content: next.displayText,
-								images: next.images,
-							},
-						]);
-						sendToServer(next.text);
-					}
+					sendNextQueuedMessage();
 				} else if (msg.type === "chat:system") {
 					setMessages((prev) => {
 						const updated = trimMessages([
@@ -986,14 +989,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				cleanupReconnect();
 				cleanup();
 			};
-		}, [
-			paneId,
-			appendLocalMessages,
-			sendToServer,
-			setLoadingState,
-			setMessages,
-			shiftQueuedMessage,
-		]);
+		}, [paneId, sendNextQueuedMessage, setLoadingState, setMessages]);
 
 		function handleChatEvent(event: any) {
 			if (!event?.type) return;
@@ -1291,6 +1287,32 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			]
 		);
 
+		const consumePendingWorkspace = useCallback(() => {
+			const pendingWorkspacePaths = getPendingWorkspacePaths();
+			const selectedWorkspace =
+				!cwd && pendingWorkspacePaths.length > 0
+					? {
+							cwd: pendingWorkspacePaths[0],
+							referencePaths: pendingWorkspacePaths.slice(1),
+						}
+					: undefined;
+			if (selectedWorkspace?.cwd) {
+				onDirectoryChange?.(
+					paneId,
+					selectedWorkspace.cwd,
+					selectedWorkspace.referencePaths
+				);
+				clearPendingWorkspacePaths();
+			}
+			return selectedWorkspace;
+		}, [
+			clearPendingWorkspacePaths,
+			cwd,
+			getPendingWorkspacePaths,
+			onDirectoryChange,
+			paneId,
+		]);
+
 		const sendMessage = useCallback(() => {
 			const text = input.trim();
 			if (!text && attachedImages.length === 0) return;
@@ -1328,22 +1350,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			if (isLoading) {
 				queueMessage(fullText, displayText, imagePaths);
 			} else {
-				const pendingWorkspacePaths = getPendingWorkspacePaths();
-				const selectedWorkspace =
-					!cwd && pendingWorkspacePaths.length > 0
-						? {
-								cwd: pendingWorkspacePaths[0],
-								referencePaths: pendingWorkspacePaths.slice(1),
-							}
-						: undefined;
-				if (selectedWorkspace?.cwd) {
-					onDirectoryChange?.(
-						paneId,
-						selectedWorkspace.cwd,
-						selectedWorkspace.referencePaths
-					);
-					clearPendingWorkspacePaths();
-				}
+				const selectedWorkspace = consumePendingWorkspace();
 				appendLocalMessages([
 					{
 						role: "user",
@@ -1359,11 +1366,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			executeCommand,
 			attachedImages,
 			appendLocalMessages,
-			clearPendingWorkspacePaths,
-			cwd,
-			getPendingWorkspacePaths,
-			onDirectoryChange,
-			paneId,
+			consumePendingWorkspace,
 			queueMessage,
 			allCommands,
 			incrementLocalUsage,
@@ -1374,76 +1377,81 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			setSlashMenu,
 		]);
 
+		function handleMenuKey<S extends { show: boolean; selectedIdx: number }>(
+			e: React.KeyboardEvent,
+			count: number,
+			setMenu: React.Dispatch<React.SetStateAction<S>>,
+			selectIdx: number,
+			onSelect: (idx: number) => void
+		): boolean {
+			if (e.key === "ArrowDown") {
+				e.preventDefault();
+				setMenu((prev) => ({
+					...prev,
+					selectedIdx: (prev.selectedIdx + 1) % count,
+				}));
+				return true;
+			}
+			if (e.key === "ArrowUp") {
+				e.preventDefault();
+				setMenu((prev) => ({
+					...prev,
+					selectedIdx: (prev.selectedIdx - 1 + count) % count,
+				}));
+				return true;
+			}
+			if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
+				e.preventDefault();
+				onSelect(selectIdx);
+				return true;
+			}
+			if (e.key === "Escape") {
+				e.preventDefault();
+				setMenu((prev) => ({ ...prev, show: false }));
+				return true;
+			}
+			return false;
+		}
+
 		const handleKeyDown = useCallback(
 			(e: React.KeyboardEvent) => {
-				if (fileMenu.show && fileResults.length > 0) {
-					if (e.key === "ArrowDown") {
-						e.preventDefault();
-						setFileMenu((prev) => ({
-							...prev,
-							selectedIdx: (prev.selectedIdx + 1) % fileResults.length,
-						}));
-						return;
-					}
-					if (e.key === "ArrowUp") {
-						e.preventDefault();
-						setFileMenu((prev) => ({
-							...prev,
-							selectedIdx:
-								(prev.selectedIdx - 1 + fileResults.length) %
-								fileResults.length,
-						}));
-						return;
-					}
-					if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
-						e.preventDefault();
-						selectFile(fileMenu.selectedIdx);
-						return;
-					}
-					if (e.key === "Escape") {
-						e.preventDefault();
-						setFileMenu((prev) => ({ ...prev, show: false }));
-						return;
-					}
-				}
-				if (showCommands && filteredCommands.length > 0) {
-					if (e.key === "ArrowDown") {
-						e.preventDefault();
-						setSlashMenu((prev) => ({
-							...prev,
-							selectedIdx: (prev.selectedIdx + 1) % filteredCommands.length,
-						}));
-						return;
-					}
-					if (e.key === "ArrowUp") {
-						e.preventDefault();
-						setSlashMenu((prev) => ({
-							...prev,
-							selectedIdx:
-								(prev.selectedIdx - 1 + filteredCommands.length) %
-								filteredCommands.length,
-						}));
-						return;
-					}
-					if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
-						e.preventDefault();
-						selectCommand(slashMenu.selectedIdx);
-						return;
-					}
-					if (e.key === "Escape") {
-						e.preventDefault();
-						setSlashMenu((prev) => ({ ...prev, show: false }));
-						return;
-					}
-				}
+				if (
+					fileMenu.show &&
+					fileResults.length > 0 &&
+					handleMenuKey(
+						e,
+						fileResults.length,
+						setFileMenu,
+						fileMenu.selectedIdx,
+						selectFile
+					)
+				)
+					return;
+				if (
+					showCommands &&
+					filteredCommands.length > 0 &&
+					handleMenuKey(
+						e,
+						filteredCommands.length,
+						setSlashMenu,
+						slashMenu.selectedIdx,
+						selectCommand
+					)
+				)
+					return;
 
 				if (e.key === "Enter" && !e.shiftKey) {
 					e.preventDefault();
 					sendMessage();
+				} else if (composerOnly && e.key === "Escape") {
+					e.preventDefault();
+					onExitComposerOnly?.();
 				}
 			},
 			[
+				composerOnly,
 				sendMessage,
+				onExitComposerOnly,
 				showCommands,
 				filteredCommands,
 				slashMenu.selectedIdx,
@@ -1474,34 +1482,15 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				if (isLoading) {
 					queueMessage(text.trim(), text.trim());
 				} else {
-					const pendingWorkspacePaths = getPendingWorkspacePaths();
-					const selectedWorkspace =
-						!cwd && pendingWorkspacePaths.length > 0
-							? {
-									cwd: pendingWorkspacePaths[0],
-									referencePaths: pendingWorkspacePaths.slice(1),
-								}
-							: undefined;
-					if (selectedWorkspace?.cwd) {
-						onDirectoryChange?.(
-							paneId,
-							selectedWorkspace.cwd,
-							selectedWorkspace.referencePaths
-						);
-						clearPendingWorkspacePaths();
-					}
+					const selectedWorkspace = consumePendingWorkspace();
 					appendLocalMessages([{ role: "user", content: text.trim() }]);
 					sendToServer(text.trim(), selectedWorkspace);
 				}
 			},
 			[
 				appendLocalMessages,
-				clearPendingWorkspacePaths,
-				cwd,
-				getPendingWorkspacePaths,
+				consumePendingWorkspace,
 				isLoading,
-				onDirectoryChange,
-				paneId,
 				queueMessage,
 				sendToServer,
 			]
@@ -1541,7 +1530,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 		return (
 			<div
 				ref={containerRef}
-				{...stylex.props(styles.root)}
+				{...stylex.props(styles.root, composerOnly && styles.composerOnlyRoot)}
 				onDragOver={(e) => {
 					e.preventDefault();
 					setIsDragOver(true);
@@ -1549,7 +1538,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				onDragLeave={() => setIsDragOver(false)}
 				onDrop={handleDrop}
 			>
-				{!hideHeader && (
+				{!hideHeader && !composerOnly && (
 					<AgentChatHeader
 						paneId={paneId}
 						cwd={cwd}
@@ -1562,69 +1551,79 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 						onSelectSession={onSelectSession}
 					/>
 				)}
-				<div {...stylex.props(styles.messageRegion)}>
-					<div
-						ref={scrollRef}
-						{...stylex.props(styles.scrollArea)}
-						onScroll={handleScroll}
-					>
-						{messages.length === 0 &&
-							!isLoading &&
-							!cwd &&
-							onDirectoryChange && (
-								<div {...stylex.props(styles.directoryPickerWrap)}>
-									<div {...stylex.props(styles.directoryPickerInner)}>
-										<InlineDirectoryPicker
-											onSelect={(path) => {
-												if (path) onDirectoryChange(paneId, path);
-											}}
-											onCancel={() => {}}
-											multiSelect
-											showStartButton={false}
-											onSelectionChange={(paths) => {
-												pendingWorkspacePathsRef.current = paths;
-												savePendingWorkspacePaths(paneId, paths);
-											}}
-											onMultiSelect={(paths) => {
-												if (paths.length > 0) {
-													onDirectoryChange(paneId, paths[0]!, paths.slice(1));
-												}
-											}}
-										/>
-									</div>
-								</div>
-							)}
-						<ChatMessageList
-							messages={messages}
-							expandedTools={expandedTools}
-							toggleTool={toggleTool}
-							checkpoints={checkpoints}
-							revertCheckpoint={revertCheckpoint}
-							isLoading={isLoading}
-							handleSendMessage={handleSendMessage}
-							onMdFileClick={handleMdFileClick}
-						/>
-					</div>
-					{!isAtBottom && (
-						<button
-							type="button"
-							onClick={scrollToBottom}
-							{...stylex.props(styles.scrollButton)}
+				{!composerOnly && (
+					<div {...stylex.props(styles.messageRegion)}>
+						<div
+							ref={scrollRef}
+							{...stylex.props(styles.scrollArea)}
+							onScroll={handleScroll}
 						>
-							<IconArrowDown size={12} {...stylex.props(styles.scrollIcon)} />
-						</button>
-					)}
-				</div>
+							{messages.length === 0 &&
+								!isLoading &&
+								!cwd &&
+								onDirectoryChange && (
+									<div {...stylex.props(styles.directoryPickerWrap)}>
+										<div {...stylex.props(styles.directoryPickerInner)}>
+											<InlineDirectoryPicker
+												onSelect={(path) => {
+													if (path) onDirectoryChange(paneId, path);
+												}}
+												multiSelect
+												showStartButton={false}
+												onSelectionChange={(paths) => {
+													pendingWorkspacePathsRef.current = paths;
+													savePendingWorkspacePaths(paneId, paths);
+												}}
+												onMultiSelect={(paths) => {
+													if (paths.length > 0) {
+														onDirectoryChange(
+															paneId,
+															paths[0]!,
+															paths.slice(1)
+														);
+													}
+												}}
+											/>
+										</div>
+									</div>
+								)}
+							<ChatMessageList
+								messages={messages}
+								expandedTools={expandedTools}
+								toggleTool={toggleTool}
+								checkpoints={checkpoints}
+								revertCheckpoint={revertCheckpoint}
+								isLoading={isLoading}
+								startTime={startTime}
+								handleSendMessage={handleSendMessage}
+								onMdFileClick={handleMdFileClick}
+							/>
+						</div>
+						{!isAtBottom && (
+							<button
+								type="button"
+								onClick={scrollToBottom}
+								{...stylex.props(styles.scrollButton)}
+							>
+								<IconArrowDown size={12} {...stylex.props(styles.scrollIcon)} />
+							</button>
+						)}
+					</div>
+				)}
 
 				<div {...stylex.props(styles.composerRegion)}>
-					<div
-						{...stylex.props(styles.composerBackdrop)}
-						style={{ backgroundImage: effectValues.composerBackdrop }}
-					/>
-					<div
-						{...stylex.props(styles.composerFade)}
-						style={{ backgroundImage: effectValues.composerFade }}
-					/>
+					{!composerOnly && (
+						<>
+							<div
+								{...stylex.props(styles.composerBackdrop)}
+								style={{ backgroundImage: effectValues.composerBackdrop }}
+							/>
+							<div
+								{...stylex.props(styles.composerFade)}
+								style={{ backgroundImage: effectValues.composerFade }}
+							/>
+						</>
+					)}
 					<div {...stylex.props(styles.composerContent)}>
 						<ChatComposer
 							statusBar={
@@ -1691,6 +1690,15 @@ const styles = stylex.create({
 		flexDirection: "column",
 		transitionProperty: "box-shadow",
 		transitionDuration: "120ms",
+	},
+	composerOnlyRoot: {
+		position: "absolute",
+		zIndex: 50,
+		left: "50%",
+		bottom: controlSize._6,
+		width: "min(36rem, calc(100% - 2rem))",
+		height: "auto",
+		transform: "translateX(-50%)",
 	},
 	messageRegion: {
 		position: "relative",

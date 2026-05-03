@@ -1,4 +1,4 @@
-import type { ChatAgentKind } from "../../lib/agents.ts";
+import type { ChatAgentKind } from "../../features/agents/agents.ts";
 import type { AgentEvent } from "./events.ts";
 
 export interface AgentActivityEvent {

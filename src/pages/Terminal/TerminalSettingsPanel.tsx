@@ -20,7 +20,7 @@ import {
 	saveCustomTheme,
 	saveTerminalState,
 	type ThemeId,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 interface TerminalSettingsPanelProps {
@@ -166,8 +166,11 @@ function SearchFoldersSection() {
 
 	const browseFolder = useCallback(async () => {
 		try {
-			const res = await fetch("/api/config/pick-folder", { method: "POST" });
-			const { folder } = (await res.json()) as { folder: string | null };
+			const { folder } = await fetchJsonOr<{ folder: string | null }>(
+				"/api/config/pick-folder",
+				{ folder: null },
+				{ method: "POST" }
+			);
 			if (folder && !folders.includes(folder)) {
 				saveFolders([...folders, folder]);
 			}

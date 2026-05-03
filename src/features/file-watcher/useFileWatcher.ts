@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
+import type { DiffRequest } from "../../features/git/useGitDiff.ts";
 import { wsClient } from "../../lib/websocket.ts";
-import type { DiffRequest } from "../../hooks/useGitDiff.ts";
 
 interface UseFileWatcherOptions {
 	enabled: boolean;

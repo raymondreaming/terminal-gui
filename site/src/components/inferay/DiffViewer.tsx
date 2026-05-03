@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useShikiSnippet } from "../../hooks/useShikiHighlighter";
+import { useShikiSnippet } from "../../../../src/hooks/useShikiHighlighter.ts";
 import { colors, diffRows, inlineDiffLines } from "./data";
 
 // Diagonal hatch pattern for empty cells

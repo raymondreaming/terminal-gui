@@ -30,7 +30,8 @@ export function expandInlineCommandPrompts(
 	const commandRegex = /(^|\s)(\/[a-zA-Z][\w-]*)(?=\s|$)/g;
 	let match: RegExpExecArray | null;
 
-	while ((match = commandRegex.exec(text)) !== null) {
+	match = commandRegex.exec(text);
+	while (match !== null) {
 		const commandToken = match[2]!;
 		const commandName = commandToken.slice(1).toLowerCase();
 		const command = commands.find(
@@ -42,6 +43,7 @@ export function expandInlineCommandPrompts(
 			: commandToken;
 		expandedText = expandedText.replace(commandToken, expanded);
 		if (command.id) usedCommandIds.push(command.id);
+		match = commandRegex.exec(text);
 	}
 
 	return { expandedText, usedCommandIds };

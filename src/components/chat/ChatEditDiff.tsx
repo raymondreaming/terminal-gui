@@ -15,6 +15,20 @@ type DiffLine = {
 	newLineNum?: number;
 };
 
+function summarizeHunks(hunks: DiffLine[][]) {
+	let added = 0;
+	let removed = 0;
+	const allLines: string[] = [];
+	for (const hunk of hunks) {
+		for (const line of hunk) {
+			if (line.type === "added") added++;
+			else if (line.type === "removed") removed++;
+			if (line.type !== "context" && line.text.trim()) allLines.push(line.text);
+		}
+	}
+	return { hunks, stats: { added, removed }, allLines };
+}
+
 function computeDiffHunks(
 	oldStr: string,
 	newStr: string,
@@ -411,26 +425,7 @@ export function MiniEditDiff({
 }) {
 	const fileName = filePath.split("/").pop() || filePath;
 	const { hunks, stats, allLines } = useMemo(() => {
-		const computedHunks = computeDiffHunks(oldStr, newStr, 1);
-		let added = 0;
-		let removed = 0;
-		const lines: string[] = [];
-
-		for (const hunk of computedHunks) {
-			for (const line of hunk) {
-				if (line.type === "added") added++;
-				else if (line.type === "removed") removed++;
-				if (line.type !== "context" && line.text.trim() !== "") {
-					lines.push(line.text);
-				}
-			}
-		}
-
-		return {
-			hunks: computedHunks,
-			stats: { added, removed },
-			allLines: lines,
-		};
+		return summarizeHunks(computeDiffHunks(oldStr, newStr, 1));
 	}, [newStr, oldStr]);
 
 	return (
@@ -477,30 +472,9 @@ export function GroupedEditDiff({
 			return { hunks: [], stats: { added: 0, removed: 0 }, allLines: [] };
 		}
 
-		const computedHunks = computeDiffHunks(
-			result.originalText,
-			result.finalText,
-			1
+		return summarizeHunks(
+			computeDiffHunks(result.originalText, result.finalText, 1)
 		);
-		let added = 0;
-		let removed = 0;
-		const lines: string[] = [];
-
-		for (const hunk of computedHunks) {
-			for (const line of hunk) {
-				if (line.type === "added") added++;
-				else if (line.type === "removed") removed++;
-				if (line.type !== "context" && line.text.trim() !== "") {
-					lines.push(line.text);
-				}
-			}
-		}
-
-		return {
-			hunks: computedHunks,
-			stats: { added, removed },
-			allLines: lines,
-		};
 	}, [edits]);
 
 	if (hunks.length === 0) return null;

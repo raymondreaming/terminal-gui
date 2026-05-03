@@ -67,7 +67,7 @@ function SingleTerminalPane({
 }: {
 	pane: TerminalPane;
 	isActive: boolean;
-	onSelect: () => void;
+	onSelect?: () => void;
 }) {
 	const [inputValue, setInputValue] = useState("");
 	const getLineColor = (type: TerminalLine["type"]) => {
@@ -294,7 +294,6 @@ export function TerminalPanel({
 					<SingleTerminalPane
 						pane={terminalPanes[activePane]}
 						isActive={true}
-						onSelect={() => {}}
 					/>
 				)}
 			</div>

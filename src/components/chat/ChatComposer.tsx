@@ -1,12 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
 import type React from "react";
 import { useMemo, useRef } from "react";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
+import { getAgentIcon } from "../../features/agents/agent-ui.tsx";
 import {
 	CODEX_REASONING_LEVELS,
 	getAgentDefinition,
-} from "../../lib/agents.ts";
-import type { AgentKind } from "../../lib/terminal-utils.ts";
+} from "../../features/agents/agents.ts";
+import type { AgentKind } from "../../features/terminal/terminal-utils.ts";
 import { color, colorValues, controlSize, font } from "../../tokens.stylex.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
 import { IconButton } from "../ui/IconButton.tsx";
@@ -17,32 +17,13 @@ import {
 	IconTrash,
 	IconX,
 } from "../ui/Icons.tsx";
+import type {
+	AttachedImageInfo,
+	QueuedMessageInfo,
+	SlashCommand,
+} from "./agent-chat-shared.ts";
 import { Markdown } from "./ChatRichContent.tsx";
 import { renderInputHighlights } from "./chat-token-decorators.tsx";
-
-type SlashCommand = {
-	id?: string;
-	name: string;
-	description: string;
-	action: "local" | "send";
-	promptTemplate?: string;
-	category?: string;
-	isLocalCommand?: boolean;
-	isFromLibrary?: boolean;
-};
-
-type QueuedMessage = {
-	id: string;
-	text: string;
-	displayText: string;
-	images?: string[];
-};
-
-type AttachedImageInfo = {
-	name: string;
-	path: string;
-	previewUrl: string;
-};
 
 type AgentOption = {
 	id: AgentKind;
@@ -107,13 +88,13 @@ export function ChatComposer({
 	attachedImages: AttachedImageInfo[];
 	removeAttachedImage: (path: string) => void;
 	attachImage: (file: File) => Promise<void>;
-	queuedMessages: QueuedMessage[];
+	queuedMessages: QueuedMessageInfo[];
 	editingQueueId: string | null;
 	setEditingQueueId: (id: string | null) => void;
 	editingQueueText: string;
 	setEditingQueueText: (text: string) => void;
-	queueRef: React.RefObject<QueuedMessage[]>;
-	setQueuedMessages: (messages: QueuedMessage[]) => void;
+	queueRef: React.RefObject<QueuedMessageInfo[]>;
+	setQueuedMessages: (messages: QueuedMessageInfo[]) => void;
 	fileMenu: { show: boolean; selectedIdx: number; query: string };
 	setFileMenu: React.Dispatch<
 		React.SetStateAction<{
@@ -180,6 +161,18 @@ export function ChatComposer({
 			})),
 		[agentDefinition.models, agentKind]
 	);
+	const saveQueuedEdit = (id: string) => {
+		const trimmed = editingQueueText.trim();
+		if (trimmed) {
+			const item = queueRef.current?.find((q) => q.id === id);
+			if (item) {
+				item.text = trimmed;
+				item.displayText = trimmed;
+			}
+			setQueuedMessages([...(queueRef.current ?? [])]);
+		}
+		setEditingQueueId(null);
+	};
 
 	return (
 		<>
@@ -240,18 +233,7 @@ export function ChatComposer({
 										onChange={(e) => setEditingQueueText(e.target.value)}
 										onKeyDown={(e) => {
 											if (e.key === "Enter") {
-												const trimmed = editingQueueText.trim();
-												if (trimmed) {
-													const item = queueRef.current?.find(
-														(q) => q.id === qm.id
-													);
-													if (item) {
-														item.text = trimmed;
-														item.displayText = trimmed;
-													}
-													setQueuedMessages([...(queueRef.current ?? [])]);
-												}
-												setEditingQueueId(null);
+												saveQueuedEdit(qm.id);
 											} else if (e.key === "Escape") {
 												setEditingQueueId(null);
 											}
@@ -260,20 +242,7 @@ export function ChatComposer({
 									/>
 									<IconButton
 										type="button"
-										onClick={() => {
-											const trimmed = editingQueueText.trim();
-											if (trimmed) {
-												const item = queueRef.current?.find(
-													(q) => q.id === qm.id
-												);
-												if (item) {
-													item.text = trimmed;
-													item.displayText = trimmed;
-												}
-												setQueuedMessages([...(queueRef.current ?? [])]);
-											}
-											setEditingQueueId(null);
-										}}
+										onClick={() => saveQueuedEdit(qm.id)}
 										variant="ghost"
 										size="xs"
 										className={stylex.props(styles.saveButton).className}

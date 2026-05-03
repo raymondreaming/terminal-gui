@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { GitFileEntry } from "../../hooks/useGitStatus.ts";
-import { color, controlSize, font } from "../../tokens.stylex.ts";
+import type { GitFileEntry } from "../../features/git/useGitStatus.ts";
+import { postJson } from "../../lib/fetch-json.ts";
+import { color, controlSize, font, radius } from "../../tokens.stylex.ts";
 import { Button } from "../ui/Button.tsx";
 import {
 	IconChevronRight,
@@ -98,43 +99,36 @@ export function ChangeFileSidebar({
 			/>
 
 			{mainViewMode !== "graph" && (
-				<div {...stylex.props(styles.scrollArea)}>
-					<FileGroup
-						title="Unstaged"
-						files={[...modified, ...untracked]}
-						color="text-inferay-soft-white"
-						selected={selectedFile}
-						onSelect={onSelectFile}
-						actionLabel={showFileActions ? "Stage" : undefined}
-						onAction={showFileActions ? onStageFile : undefined}
-						onActionAll={showFileActions ? onStageAll : undefined}
-						viewMode={fileViewMode}
-						minHeight={200}
-						maxHeight={300}
-					/>
-					<FileGroup
-						title="Staged"
-						files={staged}
-						color="text-git-added"
-						selected={selectedFile}
-						onSelect={onSelectFile}
-						actionLabel={showFileActions ? "Unstage" : undefined}
-						onAction={showFileActions ? onUnstageFile : undefined}
-						onActionAll={showFileActions ? onUnstageAll : undefined}
-						viewMode={fileViewMode}
-					/>
-
-					{hasProject && !files.length && (
-						<div {...stylex.props(styles.emptyState)}>
-							<p {...stylex.props(styles.emptyText)}>Clean</p>
-						</div>
-					)}
-					{!hasProject && (
+				<div {...stylex.props(styles.splitArea)}>
+					{!hasProject ? (
 						<div {...stylex.props(styles.emptyState)}>
 							<p {...stylex.props(styles.emptyText, styles.centerText)}>
 								No repository
 							</p>
 						</div>
+					) : (
+						<>
+							<FileGroup
+								title="Unstaged"
+								files={[...modified, ...untracked]}
+								selected={selectedFile}
+								onSelect={onSelectFile}
+								actionLabel={showFileActions ? "Stage" : undefined}
+								onAction={showFileActions ? onStageFile : undefined}
+								onActionAll={showFileActions ? onStageAll : undefined}
+								viewMode={fileViewMode}
+							/>
+							<FileGroup
+								title="Staged"
+								files={staged}
+								selected={selectedFile}
+								onSelect={onSelectFile}
+								actionLabel={showFileActions ? "Unstage" : undefined}
+								onAction={showFileActions ? onUnstageFile : undefined}
+								onActionAll={showFileActions ? onUnstageAll : undefined}
+								viewMode={fileViewMode}
+							/>
+						</>
 					)}
 				</div>
 			)}
@@ -216,6 +210,12 @@ const styles = stylex.create({
 		minHeight: 0,
 		overflowY: "auto",
 	},
+	splitArea: {
+		display: "flex",
+		flex: 1,
+		minHeight: 0,
+		flexDirection: "column",
+	},
 	emptyState: {
 		display: "flex",
 		alignItems: "center",
@@ -250,39 +250,40 @@ const styles = stylex.create({
 		zIndex: 20,
 		display: "flex",
 		alignItems: "center",
-		gap: "0.375rem",
+		gap: controlSize._2,
 		borderBottomWidth: 1,
 		borderBottomStyle: "solid",
-		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		borderBottomColor: color.border,
 		backgroundColor: color.background,
-		paddingBlock: "0.375rem",
-		paddingInline: controlSize._2,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
 	},
 	headerLabel: {
-		color: color.textMuted,
-		fontSize: font.size_1,
-		fontWeight: font.weight_5,
+		color: color.textSoft,
+		fontSize: font.size_3,
+		fontWeight: font.weight_6,
+		letterSpacing: "0.01em",
 	},
 	spacer: {
 		flex: 1,
 	},
 	segmented: {
 		display: "flex",
-		height: controlSize._5,
+		height: controlSize._6,
 		alignItems: "center",
 		overflow: "hidden",
 		borderWidth: 1,
 		borderStyle: "solid",
 		borderColor: color.border,
-		borderRadius: "0.375rem",
+		borderRadius: radius.md,
 		backgroundColor: color.backgroundRaised,
 	},
 	segmentButton: {
 		height: "100%",
-		paddingInline: "0.375rem",
+		paddingInline: controlSize._2,
 		color: color.textMuted,
-		fontSize: "0.5rem",
-		fontWeight: font.weight_5,
+		fontSize: font.size_2,
+		fontWeight: font.weight_6,
 		transitionProperty: "background-color, color",
 		transitionDuration: "120ms",
 		backgroundColor: {
@@ -334,16 +335,18 @@ const styles = stylex.create({
 		borderTopWidth: 1,
 		borderTopStyle: "solid",
 		borderTopColor: color.border,
+		backgroundColor: color.background,
 	},
 	commitHeader: {
 		display: "flex",
-		height: controlSize._8,
+		height: controlSize._9,
 		alignItems: "center",
 		justifyContent: "space-between",
 		borderBottomWidth: 1,
 		borderBottomStyle: "solid",
-		borderBottomColor: "rgba(255, 255, 255, 0.06)",
-		paddingInline: "0.625rem",
+		borderBottomColor: color.border,
+		paddingInline: controlSize._3,
+		gap: controlSize._2,
 	},
 	inlineGroup: {
 		display: "flex",
@@ -360,38 +363,39 @@ const styles = stylex.create({
 	},
 	sectionTitle: {
 		color: color.textSoft,
-		fontSize: font.size_1,
+		fontSize: "0.6875rem",
 		fontWeight: font.weight_5,
 	},
 	generateButton: {
-		height: "1.375rem",
+		height: controlSize._6,
 		gap: controlSize._1,
-		paddingInline: "0.375rem",
-		fontSize: "0.5rem",
+		paddingInline: controlSize._2,
+		fontSize: font.size_2,
+		fontWeight: font.weight_6,
 	},
 	checkRow: {
 		display: "flex",
 		cursor: "pointer",
 		alignItems: "center",
-		gap: "0.375rem",
-		paddingBlock: "0.375rem",
-		paddingInline: "0.625rem",
+		gap: controlSize._2,
+		paddingBlock: controlSize._2,
+		paddingInline: controlSize._3,
 		backgroundColor: {
 			default: "transparent",
-			":hover": "rgba(255, 255, 255, 0.03)",
+			":hover": color.surfaceSubtle,
 		},
 	},
 	checkbox: {
 		width: font.size_3,
 		height: font.size_3,
-		accentColor: "var(--color-inferay-accent)",
+		accentColor: color.accent,
 	},
 	commitForm: {
 		display: "flex",
 		flexDirection: "column",
 		gap: controlSize._2,
-		paddingInline: "0.625rem",
-		paddingBottom: "0.625rem",
+		paddingInline: controlSize._3,
+		paddingBottom: controlSize._3,
 	},
 	commitEditor: {
 		overflow: "hidden",
@@ -399,9 +403,9 @@ const styles = stylex.create({
 		borderStyle: "solid",
 		borderColor: {
 			default: color.border,
-			":focus-within": "rgba(29, 185, 84, 0.5)",
+			":focus-within": color.borderControl,
 		},
-		borderRadius: "0.5rem",
+		borderRadius: radius.lg,
 		backgroundColor: color.backgroundRaised,
 	},
 	summaryRow: {
@@ -409,30 +413,31 @@ const styles = stylex.create({
 		alignItems: "center",
 		borderBottomWidth: 1,
 		borderBottomStyle: "solid",
-		borderBottomColor: "rgba(255, 255, 255, 0.04)",
+		borderBottomColor: color.borderSubtle,
 	},
 	summaryInput: {
 		minWidth: 0,
 		flex: 1,
 		backgroundColor: "transparent",
 		color: color.textMain,
-		fontSize: "0.6875rem",
+		fontSize: font.size_3,
+		fontWeight: font.weight_5,
 		outline: "none",
-		paddingBlock: controlSize._2,
-		paddingInline: "0.625rem",
+		paddingBlock: controlSize._2_5,
+		paddingInline: controlSize._3,
 		"::placeholder": {
-			color: "rgba(255, 255, 255, 0.3)",
+			color: color.textFaint,
 		},
 	},
 	summaryCount: {
 		flexShrink: 0,
-		paddingRight: "0.625rem",
-		color: "rgba(255, 255, 255, 0.4)",
+		paddingRight: controlSize._3,
+		color: color.textMuted,
 		fontSize: font.size_1,
 		fontVariantNumeric: "tabular-nums",
 	},
 	warningText: {
-		color: "#fbbf24",
+		color: color.warning,
 	},
 	descriptionInput: {
 		width: "100%",
@@ -441,16 +446,19 @@ const styles = stylex.create({
 		color: color.textMain,
 		fontSize: font.size_2,
 		outline: "none",
-		paddingBlock: controlSize._2,
-		paddingInline: "0.625rem",
+		paddingBlock: controlSize._2_5,
+		paddingInline: controlSize._3,
 		"::placeholder": {
-			color: "rgba(255, 255, 255, 0.3)",
+			color: color.textFaint,
 		},
 	},
 	commitButton: {
 		width: "100%",
 		justifyContent: "center",
-		gap: "0.375rem",
+		gap: controlSize._2,
+		minHeight: controlSize._9,
+		fontSize: font.size_3,
+		fontWeight: font.weight_6,
 	},
 	detailsRoot: {
 		display: "flex",
@@ -576,27 +584,41 @@ const styles = stylex.create({
 	},
 	fileGroup: {
 		display: "flex",
+		flex: 1,
+		minHeight: 0,
 		flexDirection: "column",
+	},
+	emptyGroupBody: {
+		flex: 1,
+		minHeight: 0,
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	emptyGroupText: {
+		color: color.textFaint,
+		fontSize: font.size_2,
 	},
 	groupHeader: {
 		position: "sticky",
 		top: 0,
 		zIndex: 10,
 		display: "flex",
-		height: controlSize._8,
+		height: controlSize._9,
 		flexShrink: 0,
 		alignItems: "center",
 		justifyContent: "space-between",
 		borderBottomWidth: 1,
 		borderBottomStyle: "solid",
-		borderBottomColor: "rgba(255, 255, 255, 0.06)",
+		borderBottomColor: color.border,
 		backgroundColor: color.background,
-		paddingInline: "0.625rem",
+		paddingInline: controlSize._3,
+		gap: controlSize._2,
 	},
 	groupToggle: {
 		display: "flex",
 		alignItems: "center",
-		gap: "0.375rem",
+		gap: controlSize._2,
 		backgroundColor: "transparent",
 	},
 	cursorPointer: {
@@ -616,47 +638,51 @@ const styles = stylex.create({
 	},
 	countPill: {
 		display: "flex",
-		minWidth: controlSize._4,
+		minWidth: controlSize._5,
 		height: controlSize._4,
 		alignItems: "center",
 		justifyContent: "center",
-		borderRadius: "999px",
-		backgroundColor: "rgba(255, 255, 255, 0.08)",
-		color: color.textMuted,
-		fontSize: "0.5rem",
+		borderRadius: radius.pill,
+		backgroundColor: color.surfaceControl,
+		color: color.textSoft,
+		fontSize: font.size_1,
+		fontWeight: font.weight_6,
 		fontVariantNumeric: "tabular-nums",
-		paddingInline: controlSize._1,
+		paddingInline: controlSize._1_5,
 	},
 	actionAllButton: {
-		height: "1.375rem",
+		height: controlSize._6,
+		gap: controlSize._1,
 		paddingInline: controlSize._2,
-		fontSize: "0.5rem",
+		fontSize: font.size_2,
+		fontWeight: font.weight_6,
 	},
 	groupList: {
 		flex: 1,
+		minHeight: 0,
 		overflowY: "auto",
 	},
 	pathRow: {
 		position: "relative",
 		display: "flex",
 		alignItems: "center",
-		gap: "0.375rem",
+		gap: controlSize._2,
 		borderLeftWidth: 2,
 		borderLeftStyle: "solid",
 		borderLeftColor: "transparent",
-		paddingBlock: controlSize._1,
-		paddingInline: controlSize._2,
+		paddingBlock: controlSize._1_5,
+		paddingInline: controlSize._3,
 		transitionProperty: "background-color, border-color",
 		transitionDuration: "120ms",
 		backgroundColor: {
 			default: "transparent",
-			":hover": "rgba(255, 255, 255, 0.04)",
+			":hover": color.surfaceSubtle,
 		},
 	},
 	treeRow: {
 		position: "relative",
 		display: "flex",
-		height: controlSize._6,
+		height: controlSize._5,
 		cursor: "pointer",
 		alignItems: "center",
 		gap: controlSize._1,
@@ -667,7 +693,7 @@ const styles = stylex.create({
 		transitionDuration: "120ms",
 		backgroundColor: {
 			default: "transparent",
-			":hover": "rgba(255, 255, 255, 0.04)",
+			":hover": color.surfaceSubtle,
 		},
 	},
 	fileRowActive: {
@@ -686,10 +712,10 @@ const styles = stylex.create({
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 		whiteSpace: "nowrap",
-		color: color.textSoft,
-		fontSize: font.size_2,
+		color: color.textMain,
+		fontSize: font.size_3,
 		fontWeight: font.weight_5,
-		lineHeight: 1.25,
+		lineHeight: 1.3,
 		transitionProperty: "color",
 		transitionDuration: "120ms",
 	},
@@ -700,9 +726,9 @@ const styles = stylex.create({
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 		whiteSpace: "nowrap",
-		color: "rgba(255, 255, 255, 0.34)",
-		fontSize: "0.5rem",
-		lineHeight: 1.25,
+		color: color.textMuted,
+		fontSize: font.size_1,
+		lineHeight: 1.3,
 	},
 	rowAction: {
 		position: "absolute",
@@ -710,17 +736,37 @@ const styles = stylex.create({
 		top: "50%",
 		zIndex: 10,
 		transform: "translateY(-50%)",
+		display: "flex",
+		width: "1.125rem",
+		height: "1.125rem",
+		alignItems: "center",
+		justifyContent: "center",
 		borderWidth: 1,
 		borderStyle: "solid",
-		borderColor: "rgba(255, 255, 255, 0.08)",
-		borderRadius: "0.375rem",
-		backgroundColor: color.backgroundRaised,
-		color: color.textMuted,
-		fontSize: "0.5rem",
-		paddingBlock: "0.125rem",
-		paddingInline: "0.375rem",
+		borderColor: "rgba(255, 255, 255, 0.12)",
+		borderRadius: "999px",
+		backgroundColor: "rgba(12, 14, 13, 0.92)",
+		color: color.textSoft,
+		opacity: 0,
+		pointerEvents: "none",
+		transitionProperty: "opacity, color, border-color, background-color",
+		transitionDuration: "120ms",
+	},
+	rowActionVisible: {
 		opacity: 1,
 		pointerEvents: "auto",
+		backgroundColor: {
+			default: "rgba(12, 14, 13, 0.92)",
+			":hover": "rgba(29, 185, 84, 0.16)",
+		},
+		borderColor: {
+			default: "rgba(255, 255, 255, 0.12)",
+			":hover": "rgba(29, 185, 84, 0.55)",
+		},
+		color: {
+			default: color.textSoft,
+			":hover": "var(--color-inferay-accent)",
+		},
 	},
 	rowActionSubtle: {
 		position: "absolute",
@@ -728,36 +774,37 @@ const styles = stylex.create({
 		top: "50%",
 		zIndex: 10,
 		transform: "translateY(-50%)",
-		borderRadius: "0.25rem",
-		color: color.textMuted,
-		fontSize: "0.5rem",
-		paddingBlock: "0.125rem",
-		paddingInline: "0.375rem",
-		opacity: 1,
-		backgroundColor: {
-			default: "transparent",
-			":hover": color.controlActive,
-		},
+		display: "flex",
+		width: "1.125rem",
+		height: "1.125rem",
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: "999px",
+		color: color.textSoft,
+		opacity: 0,
+		pointerEvents: "none",
+		transitionProperty: "opacity, color, background-color",
+		transitionDuration: "120ms",
 	},
 	folderIcon: {
 		flexShrink: 0,
-		color: "rgba(255, 255, 255, 0.3)",
+		color: color.textMuted,
 		transitionProperty: "color",
 		transitionDuration: "120ms",
 	},
 	folderIconOpen: {
-		color: "rgba(29, 185, 84, 0.6)",
+		color: color.textSoft,
 	},
 	treeName: {
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 		whiteSpace: "nowrap",
 		color: color.textSoft,
-		fontSize: "0.59375rem",
-		fontWeight: font.weight_5,
+		fontSize: font.size_2,
+		fontWeight: font.weight_6,
 	},
 	treeIndentSpacer: {
-		width: "0.625rem",
+		width: controlSize._2,
 		flexShrink: 0,
 	},
 	treeFileName: {
@@ -766,8 +813,8 @@ const styles = stylex.create({
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 		whiteSpace: "nowrap",
-		color: color.textSoft,
-		fontSize: "0.59375rem",
+		color: color.textMain,
+		fontSize: font.size_2,
 		fontWeight: font.weight_5,
 		transitionProperty: "color",
 		transitionDuration: "120ms",
@@ -776,7 +823,7 @@ const styles = stylex.create({
 
 /* ── Sub-components ───────────────────────────────────── */
 
-export function ChangeFileSidebarHeader({
+function ChangeFileSidebarHeader({
 	fileViewMode,
 	onFileViewModeChange,
 }: {
@@ -842,16 +889,11 @@ function CommitSection({
 		if (!cwd || !stagedCount || generating) return;
 		setGenerating(true);
 		try {
-			const res = await fetch("/api/git/generate-commit-message", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ cwd }),
-			});
-			if (!res.ok) return;
-			const data = (await res.json()) as { message?: string };
-			if (data.message) {
-				onCommitMessageChange(data.message);
-			}
+			const data = await postJson<{ message?: string }>(
+				"/api/git/generate-commit-message",
+				{ cwd }
+			);
+			if (data.message) onCommitMessageChange(data.message);
 		} catch {
 			// ignore
 		} finally {
@@ -876,10 +918,10 @@ function CommitSection({
 					className={stylex.props(styles.generateButton).className}
 				>
 					<IconSparkles
-						size={10}
+						size={11}
 						className={generating ? "animate-pulse" : ""}
 					/>
-					{generating ? "Generating..." : "Generate"}
+					<span>{generating ? "Generating..." : "Generate"}</span>
 				</Button>
 			</div>
 
@@ -931,7 +973,7 @@ function CommitSection({
 						onChange={(e) => {
 							const sum = commitMessage.split("\n")[0] || "";
 							onCommitMessageChange(
-								sum + (e.target.value ? "\n" + e.target.value : "")
+								sum + (e.target.value ? `\n${e.target.value}` : "")
 							);
 						}}
 						placeholder="Description"
@@ -945,14 +987,14 @@ function CommitSection({
 					onClick={onCommit}
 					disabled={!commitMessage.trim() || !stagedCount || isCommitting}
 					variant="primary"
-					size="md"
+					size="sm"
 					className={stylex.props(styles.commitButton).className}
 				>
 					<IconGitCommit size={12} />
 					{isCommitting
 						? "Committing..."
 						: stagedCount
-							? `Commit changes to ${stagedCount} file${stagedCount !== 1 ? "s" : ""}`
+							? `Commit ${stagedCount} file${stagedCount !== 1 ? "s" : ""}`
 							: "Nothing to commit"}
 				</Button>
 			</div>
@@ -1034,7 +1076,7 @@ function CommitDetailsPanel({
 	);
 }
 
-export function FileStatusIcon({ status }: { status: string }) {
+function FileStatusIcon({ status }: { status: string }) {
 	switch (status) {
 		case "M":
 			return (
@@ -1102,6 +1144,16 @@ interface TreeNode {
 	file?: GitFileEntry;
 }
 
+function sortTreeChildren(node: TreeNode): TreeNode[] {
+	return [...node.children.values()].sort((a, b) => {
+		const aIsDir = a.children.size > 0 && !a.file;
+		const bIsDir = b.children.size > 0 && !b.file;
+		if (aIsDir && !bIsDir) return -1;
+		if (!aIsDir && bIsDir) return 1;
+		return a.name.localeCompare(b.name);
+	});
+}
+
 function buildFileTree(files: GitFileEntry[]): TreeNode {
 	const root: TreeNode = { name: "", path: "", children: new Map() };
 
@@ -1151,6 +1203,8 @@ function TreeNodeRow({
 	onSelect,
 	onAction,
 	actionLabel,
+	hoveredActionPath,
+	onActionHover,
 	expandedDirs,
 	toggleDir,
 }: {
@@ -1160,6 +1214,8 @@ function TreeNodeRow({
 	onSelect: (f: GitFileEntry) => void;
 	onAction?: (path: string) => void;
 	actionLabel?: string;
+	hoveredActionPath: string | null;
+	onActionHover: (path: string | null) => void;
 	expandedDirs: Set<string>;
 	toggleDir: (path: string) => void;
 }) {
@@ -1169,19 +1225,15 @@ function TreeNodeRow({
 	const active =
 		file && selected?.path === file.path && selected?.staged === file.staged;
 
-	const sortedChildren = [...node.children.values()].sort((a, b) => {
-		const aIsDir = a.children.size > 0 && !a.file;
-		const bIsDir = b.children.size > 0 && !b.file;
-		if (aIsDir && !bIsDir) return -1;
-		if (!aIsDir && bIsDir) return 1;
-		return a.name.localeCompare(b.name);
-	});
+	const sortedChildren = sortTreeChildren(node);
 
 	return (
 		<>
 			<div
 				{...stylex.props(styles.treeRow, active && styles.fileRowActive)}
-				style={{ paddingLeft: `${5 + depth * 11}px`, paddingRight: 8 }}
+				style={{ paddingLeft: `${4 + depth * 9}px`, paddingRight: 6 }}
+				onMouseEnter={() => file && onActionHover(file.path)}
+				onMouseLeave={() => file && onActionHover(null)}
 				onClick={() => {
 					if (isDir) {
 						toggleDir(node.path);
@@ -1227,9 +1279,13 @@ function TreeNodeRow({
 									e.stopPropagation();
 									onAction(file.path);
 								}}
-								{...stylex.props(styles.rowAction)}
+								{...stylex.props(
+									styles.rowAction,
+									hoveredActionPath === file.path && styles.rowActionVisible
+								)}
+								title={`${actionLabel} ${file.path}`}
 							>
-								{actionLabel}
+								<IconPlus size={11} />
 							</button>
 						)}
 					</>
@@ -1246,6 +1302,8 @@ function TreeNodeRow({
 						onSelect={onSelect}
 						onAction={onAction}
 						actionLabel={actionLabel}
+						hoveredActionPath={hoveredActionPath}
+						onActionHover={onActionHover}
 						expandedDirs={expandedDirs}
 						toggleDir={toggleDir}
 					/>
@@ -1254,7 +1312,7 @@ function TreeNodeRow({
 	);
 }
 
-export function FileGroup({
+function FileGroup({
 	title,
 	files,
 	selected,
@@ -1264,12 +1322,9 @@ export function FileGroup({
 	onActionAll,
 	isCollapsible = true,
 	viewMode = "path",
-	minHeight,
-	maxHeight,
 }: {
 	title: string;
 	files: GitFileEntry[];
-	color?: string;
 	selected: SelectedFile | null;
 	onSelect: (f: GitFileEntry) => void;
 	actionLabel?: string;
@@ -1277,10 +1332,11 @@ export function FileGroup({
 	onActionAll?: () => void;
 	isCollapsible?: boolean;
 	viewMode?: "path" | "tree";
-	minHeight?: number;
-	maxHeight?: number;
 }) {
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [hoveredActionPath, setHoveredActionPath] = useState<string | null>(
+		null
+	);
 	const [expandedDirs, setExpandedDirs] = useState<Set<string>>(() =>
 		getExpandedDirs(files)
 	);
@@ -1304,22 +1360,21 @@ export function FileGroup({
 	}, []);
 
 	const tree = useMemo(() => buildFileTree(files), [files]);
+	const isEmpty = files.length === 0;
 
-	if (!files.length) return null;
 	return (
-		<div
-			{...stylex.props(styles.fileGroup)}
-			style={{
-				minHeight: minHeight && !isCollapsed ? minHeight : undefined,
-			}}
-		>
+		<div {...stylex.props(styles.fileGroup)}>
 			<div {...stylex.props(styles.groupHeader)}>
 				<button
 					type="button"
-					onClick={() => isCollapsible && setIsCollapsed(!isCollapsed)}
+					onClick={() =>
+						isCollapsible && !isEmpty && setIsCollapsed(!isCollapsed)
+					}
 					{...stylex.props(
 						styles.groupToggle,
-						isCollapsible ? styles.cursorPointer : styles.cursorDefault
+						isCollapsible && !isEmpty
+							? styles.cursorPointer
+							: styles.cursorDefault
 					)}
 				>
 					{isCollapsible && (
@@ -1327,30 +1382,35 @@ export function FileGroup({
 							size={10}
 							{...stylex.props(
 								styles.chevron,
-								!isCollapsed && styles.chevronOpen
+								!isCollapsed && !isEmpty && styles.chevronOpen
 							)}
 						/>
 					)}
 					<span {...stylex.props(styles.sectionTitle)}>{title} Files</span>
 					<span {...stylex.props(styles.countPill)}>{files.length}</span>
 				</button>
-				{onActionAll && !isCollapsed && (
+				{onActionAll && !isCollapsed && actionLabel && !isEmpty && (
 					<Button
 						type="button"
 						onClick={onActionAll}
+						title={`${actionLabel} all files`}
 						variant="secondary"
 						size="sm"
 						className={stylex.props(styles.actionAllButton).className}
 					>
-						{actionLabel} All
+						<IconPlus size={11} />
+						<span>{actionLabel} all</span>
 					</Button>
 				)}
 			</div>
-			{!isCollapsed && (
-				<div
-					{...stylex.props(styles.groupList)}
-					style={{ maxHeight: maxHeight ?? undefined }}
-				>
+			{isEmpty ? (
+				<div {...stylex.props(styles.emptyGroupBody)}>
+					<span {...stylex.props(styles.emptyGroupText)}>
+						No {title.toLowerCase()} changes
+					</span>
+				</div>
+			) : !isCollapsed ? (
+				<div {...stylex.props(styles.groupList)}>
 					{viewMode === "path" &&
 						files.map((f) => {
 							const active =
@@ -1366,6 +1426,8 @@ export function FileGroup({
 										styles.pathRow,
 										active && styles.fileRowActive
 									)}
+									onMouseEnter={() => setHoveredActionPath(f.path)}
+									onMouseLeave={() => setHoveredActionPath(null)}
 								>
 									<FileStatusIcon status={f.status} />
 									<button
@@ -1393,10 +1455,13 @@ export function FileGroup({
 												e.stopPropagation();
 												onAction(f.path);
 											}}
-											{...stylex.props(styles.rowActionSubtle)}
+											{...stylex.props(
+												styles.rowActionSubtle,
+												hoveredActionPath === f.path && styles.rowActionVisible
+											)}
 											title={`${actionLabel} ${f.path}`}
 										>
-											{actionLabel}
+											<IconPlus size={11} />
 										</button>
 									)}
 								</div>
@@ -1404,31 +1469,25 @@ export function FileGroup({
 						})}
 					{viewMode === "tree" && (
 						<div>
-							{[...tree.children.values()]
-								.sort((a, b) => {
-									const aIsDir = a.children.size > 0 && !a.file;
-									const bIsDir = b.children.size > 0 && !b.file;
-									if (aIsDir && !bIsDir) return -1;
-									if (!aIsDir && bIsDir) return 1;
-									return a.name.localeCompare(b.name);
-								})
-								.map((child) => (
-									<TreeNodeRow
-										key={child.path}
-										node={child}
-										depth={0}
-										selected={selected}
-										onSelect={onSelect}
-										onAction={onAction}
-										actionLabel={actionLabel}
-										expandedDirs={expandedDirs}
-										toggleDir={toggleDir}
-									/>
-								))}
+							{sortTreeChildren(tree).map((child) => (
+								<TreeNodeRow
+									key={child.path}
+									node={child}
+									depth={0}
+									selected={selected}
+									onSelect={onSelect}
+									onAction={onAction}
+									actionLabel={actionLabel}
+									hoveredActionPath={hoveredActionPath}
+									onActionHover={setHoveredActionPath}
+									expandedDirs={expandedDirs}
+									toggleDir={toggleDir}
+								/>
+							))}
 						</div>
 					)}
 				</div>
-			)}
+			) : null}
 		</div>
 	);
 }

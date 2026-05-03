@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
 	loadDefaultChatSettings,
 	type NEW_PANE_AGENT_KINDS,
-} from "../../lib/agents.ts";
+} from "../../features/agents/agents.ts";
 import {
 	DEFAULT_TERMINAL_MAIN_VIEW,
 	isTerminalMainView,
@@ -22,7 +22,7 @@ import {
 	createTerminalPane,
 	loadTerminalState,
 	saveTerminalState,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { Button } from "../ui/Button.tsx";
 import { DropdownButton } from "../ui/DropdownButton.tsx";

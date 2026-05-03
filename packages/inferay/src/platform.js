@@ -21,7 +21,7 @@ export function defaultInstallPath() {
 	return "/Applications/inferay.app";
 }
 
-export function devAppCandidates(cwd = process.cwd()) {
+function devAppCandidates(cwd = process.cwd()) {
 	return [
 		resolve(cwd, "build/dev-macos-arm64/inferay-dev.app"),
 		resolve(cwd, "build/dev-macos-arm64/inferay.app"),

@@ -32,7 +32,7 @@ let reposCache: {
 	cachedAt: number;
 } | null = null;
 
-export interface ForgeAccount {
+interface ForgeAccount {
 	provider: "github";
 	host: string;
 	login: string;

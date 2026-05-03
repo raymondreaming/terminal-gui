@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { memo } from "react";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import { IconCircle, IconRobot, IconX } from "../../components/ui/Icons.tsx";
-import type { ClaudeProcess } from "../../hooks/useClaudeProcesses.ts";
+import type { ClaudeProcess } from "../../features/agents/useClaudeProcesses.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { CollapsibleSidebarSection } from "./CollapsibleSidebarSection.tsx";
 

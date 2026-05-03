@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchJson, postJson, sendJson } from "../lib/fetch-json.ts";
-import type { Prompt } from "../pages/PromptsPage/support.ts";
+import { fetchJson, postJson, sendJson } from "../../lib/fetch-json.ts";
+import type { Prompt } from "../../pages/PromptsPage/support.ts";
 
 let promptsCache: Prompt[] | null = null;
 let promptsPromise: Promise<Prompt[]> | null = null;

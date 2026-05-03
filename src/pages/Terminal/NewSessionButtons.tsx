@@ -1,8 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { memo } from "react";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import { getAgentDefinition } from "../../lib/agents.ts";
-import type { AgentKind } from "../../lib/terminal-utils.ts";
+import { getAgentIcon } from "../../features/agents/agent-ui.tsx";
+import { getAgentDefinition } from "../../features/agents/agents.ts";
+import type { AgentKind } from "../../features/terminal/terminal-utils.ts";
 import {
 	color,
 	controlSize,

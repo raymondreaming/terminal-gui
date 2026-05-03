@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
-import type { AgentKind, ChatAgentKind } from "./agents.ts";
+import type { AgentKind, ChatAgentKind } from "../agents/agents.ts";
 
 const isWin = process.platform === "win32";
 const homeDir =

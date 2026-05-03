@@ -15,10 +15,9 @@ import {
 	IconCopy,
 	IconGitBranch,
 	IconLayoutGrid,
-	IconLayoutRows,
 	IconX,
 } from "../../components/ui/Icons.tsx";
-import type { DiffLine, HunkDiff } from "../../hooks/useGitDiff.ts";
+import type { DiffLine, HunkDiff } from "../../features/git/useGitDiff.ts";
 import { useShikiHighlighter } from "../../hooks/useShikiHighlighter.ts";
 import { type Token, tokenizeLine } from "../../lib/syntax-tokens.ts";
 import {
@@ -29,7 +28,7 @@ import {
 	radius,
 } from "../../tokens.stylex.ts";
 
-export type DiffViewMode = "split" | "stacked" | "hunks";
+export type DiffViewMode = "split" | "hunks";
 
 interface GitDiffViewProps {
 	diff: HunkDiff;
@@ -76,6 +75,7 @@ const DIFF_CONFIG = {
 };
 
 const LINE_H = DIFF_CONFIG.lineHeight;
+const GUTTER_W = DIFF_CONFIG.lineNumWidth + DIFF_CONFIG.signWidth;
 const OVERSCAN = DIFF_CONFIG.overscan;
 const MAX_RENDERED_DIFF_LINES = 6000;
 const MAX_RENDERED_LINE_CHARS = 4000;
@@ -90,6 +90,9 @@ const diffStyles = stylex.create({
 	virtualScroller: {
 		flex: 1,
 		overflow: "auto",
+		overflowAnchor: "none",
+		overscrollBehavior: "contain",
+		scrollbarGutter: "stable",
 	},
 	minimap: {
 		width: "14px",
@@ -336,11 +339,6 @@ const diffStyles = stylex.create({
 		borderRightStyle: "solid",
 		borderRightColor: color.border,
 	},
-	diffPaneBorderBottom: {
-		borderBottomWidth: 1,
-		borderBottomStyle: "solid",
-		borderBottomColor: color.border,
-	},
 	emptyPane: {
 		display: "flex",
 		flex: 1,
@@ -348,13 +346,6 @@ const diffStyles = stylex.create({
 		justifyContent: "center",
 		color: color.textFaint,
 		fontSize: font.size_4,
-	},
-	stacked: {
-		display: "flex",
-		minHeight: 0,
-		flex: 1,
-		flexDirection: "column",
-		overflow: "hidden",
 	},
 	imageBody: {
 		display: "flex",
@@ -397,11 +388,15 @@ const diffStyles = stylex.create({
 	row: {
 		display: "flex",
 		height: LINE_H,
+		maxHeight: LINE_H,
+		minHeight: LINE_H,
 		position: "relative",
 	},
 	lineNumber: {
 		flexShrink: 0,
 		fontFamily: font.familyDiff,
+		lineHeight: `${LINE_H}px`,
+		overflow: "hidden",
 		paddingRight: controlSize._1,
 		textAlign: "right",
 		userSelect: "none",
@@ -410,13 +405,40 @@ const diffStyles = stylex.create({
 	sign: {
 		flexShrink: 0,
 		fontFamily: font.familyDiff,
+		lineHeight: `${LINE_H}px`,
+		overflow: "hidden",
 		textAlign: "center",
 		userSelect: "none",
 		width: DIFF_CONFIG.signWidth,
 	},
+	gutterLayer: {
+		position: "sticky",
+		left: 0,
+		zIndex: 2,
+		width: GUTTER_W,
+		height: 0,
+		backgroundColor: color.background,
+		pointerEvents: "none",
+	},
+	gutterBlock: {
+		position: "absolute",
+		left: 0,
+		width: GUTTER_W,
+		backgroundColor: color.background,
+	},
+	gutterRow: {
+		display: "flex",
+		height: LINE_H,
+		maxHeight: LINE_H,
+		minHeight: LINE_H,
+		overflow: "hidden",
+		backgroundColor: color.background,
+	},
 	content: {
 		flex: 1,
 		fontFamily: font.familyDiff,
+		lineHeight: `${LINE_H}px`,
+		overflow: "hidden",
 		minWidth: "max-content",
 		paddingLeft: controlSize._1,
 		paddingRight: controlSize._3,
@@ -440,6 +462,23 @@ const diffStyles = stylex.create({
 	},
 });
 
+function getDiffRowBg(line: DiffLine, isHighlighted?: boolean) {
+	const isAdd = line.type === "add";
+	const isRemove = line.type === "remove";
+	if (isHighlighted) {
+		return isAdd
+			? DIFF_CONFIG.addBgHighlight
+			: isRemove
+				? DIFF_CONFIG.removeBgHighlight
+				: "rgba(255,255,255,0.08)";
+	}
+	return isAdd
+		? DIFF_CONFIG.addBg
+		: isRemove
+			? DIFF_CONFIG.removeBg
+			: "transparent";
+}
+
 const DiffRow = memo(function DiffRow({
 	line,
 	tokens,
@@ -447,6 +486,7 @@ const DiffRow = memo(function DiffRow({
 	onCopy,
 	isHighlighted,
 	minWidth,
+	hideGutter,
 }: {
 	line: DiffLine;
 	ext: string;
@@ -455,6 +495,7 @@ const DiffRow = memo(function DiffRow({
 	onCopy?: (content: string) => void;
 	isHighlighted?: boolean;
 	minWidth?: number;
+	hideGutter?: boolean;
 }) {
 	if (line.type === "hunk") {
 		return (
@@ -480,25 +521,12 @@ const DiffRow = memo(function DiffRow({
 
 	const isAdd = line.type === "add";
 	const isRemove = line.type === "remove";
-	const getBgColor = () => {
-		if (isHighlighted) {
-			return isAdd
-				? DIFF_CONFIG.addBgHighlight
-				: isRemove
-					? DIFF_CONFIG.removeBgHighlight
-					: "rgba(255,255,255,0.08)";
-		}
-		return isAdd
-			? DIFF_CONFIG.addBg
-			: isRemove
-				? DIFF_CONFIG.removeBg
-				: "transparent";
-	};
 	const hoverBg = isAdd
 		? DIFF_CONFIG.addBgHover
 		: isRemove
 			? DIFF_CONFIG.removeBgHover
 			: undefined;
+	const bgColor = getDiffRowBg(line, isHighlighted);
 
 	const handleCopy = (e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -537,38 +565,13 @@ const DiffRow = memo(function DiffRow({
 			className={`diff-row ${rowProps.className ?? ""}`}
 			style={{
 				lineHeight: `${LINE_H}px`,
-				backgroundColor: getBgColor(),
+				backgroundColor: bgColor,
 				minWidth: minWidth || "100%",
+				paddingLeft: hideGutter ? GUTTER_W : undefined,
 				"--hover-bg": hoverBg,
 			}}
 		>
-			<span
-				{...stylex.props(diffStyles.lineNumber)}
-				style={{
-					fontSize: DIFF_CONFIG.lineNumFontSize,
-					color: isAdd
-						? DIFF_CONFIG.addLineNumColor
-						: isRemove
-							? DIFF_CONFIG.removeLineNumColor
-							: DIFF_CONFIG.lineNumColor,
-				}}
-			>
-				{line.number ?? ""}
-			</span>
-
-			<span
-				{...stylex.props(diffStyles.sign)}
-				style={{
-					fontSize: DIFF_CONFIG.signFontSize,
-					color: isAdd
-						? DIFF_CONFIG.addSignColor
-						: isRemove
-							? DIFF_CONFIG.removeSignColor
-							: undefined,
-				}}
-			>
-				{isAdd ? "+" : isRemove ? "-" : ""}
-			</span>
+			{!hideGutter && <DiffGutterCells line={line} />}
 
 			<span
 				{...stylex.props(diffStyles.content)}
@@ -593,6 +596,60 @@ const DiffRow = memo(function DiffRow({
 					/>
 				</button>
 			)}
+		</div>
+	);
+});
+
+const DiffGutterCells = memo(function DiffGutterCells({
+	line,
+}: {
+	line: DiffLine;
+}) {
+	const isAdd = line.type === "add";
+	const isRemove = line.type === "remove";
+	return (
+		<>
+			<span
+				{...stylex.props(diffStyles.lineNumber)}
+				style={{
+					fontSize: DIFF_CONFIG.lineNumFontSize,
+					color: isAdd
+						? DIFF_CONFIG.addLineNumColor
+						: isRemove
+							? DIFF_CONFIG.removeLineNumColor
+							: DIFF_CONFIG.lineNumColor,
+				}}
+			>
+				{line.number ?? ""}
+			</span>
+			<span
+				{...stylex.props(diffStyles.sign)}
+				style={{
+					fontSize: DIFF_CONFIG.signFontSize,
+					color: isAdd
+						? DIFF_CONFIG.addSignColor
+						: isRemove
+							? DIFF_CONFIG.removeSignColor
+							: undefined,
+				}}
+			>
+				{isAdd ? "+" : isRemove ? "-" : ""}
+			</span>
+		</>
+	);
+});
+
+const DiffGutterRow = memo(function DiffGutterRow({
+	line,
+}: {
+	line: DiffLine;
+}) {
+	if (line.type === "hunk" || line.type === "spacer") {
+		return <div {...stylex.props(diffStyles.gutterRow)} />;
+	}
+	return (
+		<div {...stylex.props(diffStyles.gutterRow)}>
+			<DiffGutterCells line={line} />
 		</div>
 	);
 });
@@ -634,7 +691,7 @@ function VirtualPanel({
 	lines: DiffLine[];
 	ext: string;
 	scrollRef: React.RefObject<HTMLDivElement | null>;
-	onScroll: (scrollTop: number, scrollLeft: number) => void;
+	onScroll?: (scrollTop: number, scrollLeft: number) => void;
 	disableTokenize: boolean;
 	showMinimap?: boolean;
 	externalScrollTop?: number;
@@ -646,6 +703,7 @@ function VirtualPanel({
 	const [scrollTop, setScrollTop] = useState(0);
 	const [viewH, setViewH] = useState(600);
 	const rafRef = useRef<number>(0);
+	const lastScrollRef = useRef({ left: 0, top: 0 });
 
 	useEffect(() => {
 		const el = scrollRef.current;
@@ -665,6 +723,7 @@ function VirtualPanel({
 		lastAppliedScrollRef.current = externalScrollTop;
 		if (scrollRef.current) {
 			scrollRef.current.scrollTop = externalScrollTop;
+			lastScrollRef.current.top = externalScrollTop;
 			setScrollTop(externalScrollTop);
 		}
 	}, [externalScrollTop, scrollRef]);
@@ -675,8 +734,13 @@ function VirtualPanel({
 		rafRef.current = requestAnimationFrame(() => {
 			if (!scrollRef.current) return;
 			const { scrollTop: st, scrollLeft: sl } = scrollRef.current;
-			setScrollTop(st);
-			onScroll(st, sl);
+			const last = lastScrollRef.current;
+			if (Math.abs(last.top - st) > 0.5) {
+				last.top = st;
+				setScrollTop(st);
+			}
+			if (Math.abs(last.left - sl) > 0.5) last.left = sl;
+			onScroll?.(st, sl);
 		});
 	}, [scrollRef, onScroll]);
 
@@ -740,7 +804,7 @@ function VirtualPanel({
 			rows.push({
 				line,
 				tokens:
-					line.type === "spacer" || line.type === "hunk" || useShiki
+					line.type === "spacer" || line.type === "hunk" || highlightedHtml
 						? null
 						: getTokens(line.content, ext, disableTokenize),
 				highlightedHtml,
@@ -784,11 +848,20 @@ function VirtualPanel({
 				>
 					<div
 						style={{
-							transform: `translateY(${start * LINE_H}px)`,
-							willChange: "transform",
+							position: "absolute",
+							top: start * LINE_H,
+							left: 0,
+							right: 0,
 							minWidth: minContentWidth,
 						}}
 					>
+						<div {...stylex.props(diffStyles.gutterLayer)}>
+							<div {...stylex.props(diffStyles.gutterBlock)} style={{ top: 0 }}>
+								{visibleRows.map(({ line, key }) => (
+									<DiffGutterRow key={key} line={line} />
+								))}
+							</div>
+						</div>
 						{visibleRows.map(
 							({ line, tokens, highlightedHtml, key, isHighlighted }) => (
 								<DiffRow
@@ -800,6 +873,7 @@ function VirtualPanel({
 									onCopy={onCopyLine}
 									isHighlighted={isHighlighted}
 									minWidth={minContentWidth}
+									hideGutter
 								/>
 							)
 						)}
@@ -1006,36 +1080,30 @@ export const GitDiffView = memo(function GitDiffView({
 		},
 		[changePositions]
 	);
-	const goToNextChange = useCallback(() => {
-		const currentScroll =
-			rightRef.current?.scrollTop ?? leftRef.current?.scrollTop ?? 0;
-		const currentLine = Math.floor(currentScroll / LINE_H);
-		const nextIdx = changePositions.findIndex((pos) => pos > currentLine + 2);
-		if (nextIdx !== -1) {
-			scrollToChangeIdx(nextIdx);
-		} else if (changePositions.length > 0) {
-			scrollToChangeIdx(0);
-		}
-	}, [changePositions, scrollToChangeIdx]);
-
-	const goToPrevChange = useCallback(() => {
-		const currentScroll =
-			rightRef.current?.scrollTop ?? leftRef.current?.scrollTop ?? 0;
-		const currentLine = Math.floor(currentScroll / LINE_H);
-		let prevIdx = -1;
-		for (let i = changePositions.length - 1; i >= 0; i--) {
-			const changeLine = changePositions[i];
-			if (changeLine !== undefined && changeLine < currentLine - 2) {
-				prevIdx = i;
-				break;
-			}
-		}
-		if (prevIdx !== -1) {
-			scrollToChangeIdx(prevIdx);
-		} else if (changePositions.length > 0) {
-			scrollToChangeIdx(changePositions.length - 1);
-		}
-	}, [changePositions, scrollToChangeIdx]);
+	const stepChange = useCallback(
+		(dir: 1 | -1) => {
+			if (changePositions.length === 0) return;
+			const currentScroll =
+				rightRef.current?.scrollTop ?? leftRef.current?.scrollTop ?? 0;
+			const currentLine = Math.floor(currentScroll / LINE_H);
+			const idx =
+				dir === 1
+					? changePositions.findIndex((pos) => pos > currentLine + 2)
+					: (() => {
+							for (let i = changePositions.length - 1; i >= 0; i--) {
+								const p = changePositions[i];
+								if (p !== undefined && p < currentLine - 2) return i;
+							}
+							return -1;
+						})();
+			scrollToChangeIdx(
+				idx !== -1 ? idx : dir === 1 ? 0 : changePositions.length - 1
+			);
+		},
+		[changePositions, scrollToChangeIdx]
+	);
+	const goToNextChange = useCallback(() => stepChange(1), [stepChange]);
+	const goToPrevChange = useCallback(() => stepChange(-1), [stepChange]);
 	const handleCopyLine = useCallback((content: string) => {
 		navigator.clipboard.writeText(content).then(() => {
 			setShowCopyFeedback(true);
@@ -1141,8 +1209,9 @@ export const GitDiffView = memo(function GitDiffView({
 			syncing.current = true;
 			const to = src === "left" ? rightRef.current : leftRef.current;
 			if (to) {
-				to.scrollTop = scrollTop;
-				to.scrollLeft = scrollLeft;
+				if (Math.abs(to.scrollTop - scrollTop) > 0.5) to.scrollTop = scrollTop;
+				if (Math.abs(to.scrollLeft - scrollLeft) > 0.5)
+					to.scrollLeft = scrollLeft;
 			}
 			requestAnimationFrame(() => {
 				syncing.current = false;
@@ -1232,6 +1301,34 @@ export const GitDiffView = memo(function GitDiffView({
 		);
 	}
 
+	const renderDiffPane = (
+		side: "left" | "right",
+		borderStyle?: typeof diffStyles.diffPaneBorderRight
+	) => {
+		const isLeft = side === "left";
+		return (
+			<div {...stylex.props(diffStyles.diffPane, borderStyle)}>
+				{isLeft && diff.isNew ? (
+					<div {...stylex.props(diffStyles.emptyPane)}>New file</div>
+				) : (
+					<VirtualPanel
+						lines={isLeft ? diff.oldLines : diff.newLines}
+						ext={ext}
+						scrollRef={isLeft ? leftRef : rightRef}
+						disableTokenize={disableTokenize}
+						onScroll={(st, sl) => sync(side, st, sl)}
+						showMinimap={!isLeft}
+						externalScrollTop={externalScrollTop}
+						filePath={filePath}
+						onCopyLine={handleCopyLine}
+						highlightedChangeIdx={highlightedChangeIdx}
+						changeLineMap={changeLineMap}
+					/>
+				)}
+			</div>
+		);
+	};
+
 	return (
 		<div
 			ref={containerRef}
@@ -1255,86 +1352,9 @@ export const GitDiffView = memo(function GitDiffView({
 			<div {...stylex.props(diffStyles.body)}>
 				{viewMode === "split" ? (
 					<>
-						<div
-							{...stylex.props(
-								diffStyles.diffPane,
-								diffStyles.diffPaneBorderRight
-							)}
-						>
-							{diff.isNew ? (
-								<div {...stylex.props(diffStyles.emptyPane)}>New file</div>
-							) : (
-								<VirtualPanel
-									lines={diff.oldLines}
-									ext={ext}
-									scrollRef={leftRef}
-									disableTokenize={disableTokenize}
-									onScroll={(st, sl) => sync("left", st, sl)}
-									externalScrollTop={externalScrollTop}
-									filePath={filePath}
-									onCopyLine={handleCopyLine}
-									highlightedChangeIdx={highlightedChangeIdx}
-									changeLineMap={changeLineMap}
-								/>
-							)}
-						</div>
-						<div {...stylex.props(diffStyles.diffPane)}>
-							<VirtualPanel
-								lines={diff.newLines}
-								ext={ext}
-								scrollRef={rightRef}
-								disableTokenize={disableTokenize}
-								onScroll={(st, sl) => sync("right", st, sl)}
-								showMinimap
-								externalScrollTop={externalScrollTop}
-								filePath={filePath}
-								onCopyLine={handleCopyLine}
-								highlightedChangeIdx={highlightedChangeIdx}
-								changeLineMap={changeLineMap}
-							/>
-						</div>
+						{renderDiffPane("left", diffStyles.diffPaneBorderRight)}
+						{renderDiffPane("right")}
 					</>
-				) : viewMode === "stacked" ? (
-					<div {...stylex.props(diffStyles.stacked)}>
-						<div
-							{...stylex.props(
-								diffStyles.diffPane,
-								diffStyles.diffPaneBorderBottom
-							)}
-						>
-							{diff.isNew ? (
-								<div {...stylex.props(diffStyles.emptyPane)}>New file</div>
-							) : (
-								<VirtualPanel
-									lines={diff.oldLines}
-									ext={ext}
-									scrollRef={leftRef}
-									disableTokenize={disableTokenize}
-									onScroll={(st, sl) => sync("left", st, sl)}
-									externalScrollTop={externalScrollTop}
-									filePath={filePath}
-									onCopyLine={handleCopyLine}
-									highlightedChangeIdx={highlightedChangeIdx}
-									changeLineMap={changeLineMap}
-								/>
-							)}
-						</div>
-						<div {...stylex.props(diffStyles.diffPane)}>
-							<VirtualPanel
-								lines={diff.newLines}
-								ext={ext}
-								scrollRef={rightRef}
-								disableTokenize={disableTokenize}
-								onScroll={(st, sl) => sync("right", st, sl)}
-								showMinimap
-								externalScrollTop={externalScrollTop}
-								filePath={filePath}
-								onCopyLine={handleCopyLine}
-								highlightedChangeIdx={highlightedChangeIdx}
-								changeLineMap={changeLineMap}
-							/>
-						</div>
-					</div>
 				) : (
 					<SinglePanel
 						lines={hunkLines}
@@ -1406,7 +1426,6 @@ function SinglePanel({
 				ext={ext}
 				scrollRef={scrollRef}
 				disableTokenize={disableTokenize}
-				onScroll={() => {}}
 				showMinimap
 				externalScrollTop={externalScrollTop}
 				filePath={filePath}
@@ -1431,12 +1450,6 @@ function DiffViewToolbar({
 					title="Split diff"
 					icon={<IconLayoutGrid size={11} />}
 					onClick={() => onChange("split")}
-				/>
-				<DiffViewButton
-					active={viewMode === "stacked"}
-					title="Vertical diff"
-					icon={<IconLayoutRows size={11} />}
-					onClick={() => onChange("stacked")}
 				/>
 				<DiffViewButton
 					active={viewMode === "hunks"}

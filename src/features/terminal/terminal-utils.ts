@@ -3,13 +3,13 @@ import {
 	type ChatAgentKind,
 	getAgentDefinition,
 	loadDefaultChatSettings,
-} from "./agents.ts";
+} from "../agents/agents.ts";
 
-import { sendJson } from "./fetch-json.ts";
+import { sendJson } from "../../lib/fetch-json.ts";
 
-import { readStoredJson, writeStoredJson } from "./stored-json.ts";
+import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
 
-export type { AgentKind } from "./agents.ts";
+export type { AgentKind } from "../agents/agents.ts";
 
 export type HexColor = `#${string}`;
 
@@ -402,17 +402,6 @@ export function getStatusInfo(status: string): StatusInfo {
 		iconType: "circle",
 		isActive: false,
 	};
-}
-
-function formatElapsedTime(seconds: number): string {
-	if (seconds < 0) return "0s";
-	if (seconds < 60) return `${seconds}s`;
-	const mins = Math.floor(seconds / 60);
-	const secs = seconds % 60;
-	if (mins < 60) return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-	const hours = Math.floor(mins / 60);
-	const remainingMins = mins % 60;
-	return `${hours}h ${remainingMins}m`;
 }
 
 export interface CustomThemeColors {

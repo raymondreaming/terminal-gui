@@ -55,11 +55,11 @@ export type AgentEvent =
 			event: unknown;
 	  };
 
-export function basename(value: string): string {
+function basename(value: string): string {
 	return value.split("/").pop() || value;
 }
 
-export function trimSummary(value: string, max = 64): string {
+function trimSummary(value: string, max = 64): string {
 	return value.length > max ? `${value.slice(0, max)}...` : value;
 }
 

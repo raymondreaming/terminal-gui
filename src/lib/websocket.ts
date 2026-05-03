@@ -1,6 +1,6 @@
 import { getServerWebSocketUrl } from "./server-origin.ts";
 
-export interface WSMessage {
+interface WSMessage {
 	type: string;
 	runId?: string;
 	paneId?: string;

@@ -16,43 +16,24 @@ import {
 } from "../../components/ui/Icons.tsx";
 import { Notice, Panel, PanelHeader } from "../../components/ui/Surface.tsx";
 import { TextInput } from "../../components/ui/TextInput.tsx";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
+import { getAgentIcon } from "../../features/agents/agent-ui.tsx";
 import {
 	type ChatAgentKind,
 	CODEX_REASONING_LEVELS,
 	getAgentDefinition,
 	loadDefaultChatSettings,
 	saveDefaultChatSettings,
-} from "../../lib/agents.ts";
+} from "../../features/agents/agents.ts";
 import {
 	loadAppThemeId,
 	mapAppThemeToTerminalTheme,
 } from "../../lib/app-theme.ts";
-import type { ThemeId } from "../../lib/terminal-utils.ts";
+import { fetchJsonOr, sendJson } from "../../lib/fetch-json.ts";
+import type { ForgeAccount, GithubRepo } from "../../lib/forge-types.ts";
+import type { ThemeId } from "../../features/terminal/terminal-utils.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { ONBOARDING_DONE_KEY } from "../OnboardingPage/index.tsx";
 import { TerminalSettingsPanel } from "../Terminal/TerminalSettingsPanel.tsx";
-
-interface ForgeAccount {
-	provider: "github";
-	host: string;
-	login: string;
-	name: string | null;
-	avatarUrl: string | null;
-	email: string | null;
-	active: boolean;
-}
-
-interface GithubRepo {
-	name: string;
-	full_name: string;
-	description: string | null;
-	html_url: string;
-	language: string | null;
-	stargazers_count: number;
-	updated_at: string;
-	private: boolean;
-}
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 const PROFILE_CACHE_TTL_MS = 120_000;
@@ -322,19 +303,18 @@ export function ProfilePage() {
 	const connectGithub = async () => {
 		setConnecting(true);
 		try {
-			await fetch("/api/forge/connect", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ provider: "github" }),
-			});
+			await sendJson("/api/forge/connect", { provider: "github" });
 		} finally {
 			setConnecting(false);
 		}
 	};
 
 	const pickCloneDirectory = async () => {
-		const response = await fetch("/api/config/pick-folder", { method: "POST" });
-		const payload = (await response.json()) as { folder: string | null };
+		const payload = await fetchJsonOr<{ folder: string | null }>(
+			"/api/config/pick-folder",
+			{ folder: null },
+			{ method: "POST" }
+		);
 		if (payload.folder) setCloneDirectory(payload.folder);
 	};
 
@@ -799,23 +779,6 @@ const styles = stylex.create({
 		minHeight: 0,
 		backgroundColor: color.background,
 	},
-	sidebar: {
-		display: "flex",
-		width: "220px",
-		flexShrink: 0,
-		flexDirection: "column",
-		borderRightWidth: 1,
-		borderRightStyle: "solid",
-		borderRightColor: color.border,
-		backgroundColor: color.background,
-	},
-	sidebarHeader: {
-		borderBottomWidth: 1,
-		borderBottomStyle: "solid",
-		borderBottomColor: color.border,
-		paddingBlock: controlSize._4,
-		paddingInline: controlSize._4,
-	},
 	accountPreview: {
 		display: "flex",
 		alignItems: "center",
@@ -941,62 +904,6 @@ const styles = stylex.create({
 		color: color.textMuted,
 		fontSize: font.size_1,
 		fontWeight: font.weight_5,
-	},
-	sidebarName: {
-		overflow: "hidden",
-		textOverflow: "ellipsis",
-		whiteSpace: "nowrap",
-		color: color.textMain,
-		fontSize: "0.6875rem",
-		fontWeight: font.weight_5,
-	},
-	sidebarMeta: {
-		overflow: "hidden",
-		textOverflow: "ellipsis",
-		whiteSpace: "nowrap",
-		color: color.textMuted,
-		fontSize: "0.5rem",
-	},
-	nav: {
-		flex: 1,
-		paddingBlock: controlSize._3,
-		paddingInline: controlSize._3,
-	},
-	navItem: {
-		display: "flex",
-		width: "100%",
-		height: controlSize._8,
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: controlSize._2,
-		backgroundColor: color.controlActive,
-		color: color.textMain,
-		fontSize: font.size_2,
-		paddingInline: "0.625rem",
-	},
-	mutedIcon: {
-		color: color.textMuted,
-	},
-	navCount: {
-		marginLeft: "auto",
-		color: color.textMuted,
-		fontSize: "0.5rem",
-		fontVariantNumeric: "tabular-nums",
-	},
-	sidebarActions: {
-		display: "flex",
-		flexDirection: "column",
-		gap: controlSize._2,
-		borderTopWidth: 1,
-		borderTopStyle: "solid",
-		borderTopColor: color.border,
-		padding: controlSize._3,
-	},
-	fullWidth: {
-		width: "100%",
 	},
 	noShrink: {
 		flexShrink: 0,

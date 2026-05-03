@@ -7,6 +7,7 @@ import {
 	motion,
 	radius,
 } from "../../tokens.stylex.ts";
+import { ThinkingIndicator } from "../ui/DotMatrixLoader.tsx";
 import { IconChevronDown, IconClock } from "../ui/Icons.tsx";
 import { GroupedEditDiff, MiniEditDiff } from "./ChatEditDiff.tsx";
 import { AskUserQuestionCard, Markdown } from "./ChatRichContent.tsx";
@@ -326,11 +327,6 @@ const Bubble = React.memo(function Bubble({
 			return (
 				<div {...stylex.props(styles.systemRunRow)}>
 					<div {...stylex.props(styles.systemRunPill)}>
-						<div {...stylex.props(styles.dots)}>
-							<span {...stylex.props(styles.dot)} />
-							<span {...stylex.props(styles.dot, styles.dot2)} />
-							<span {...stylex.props(styles.dot, styles.dot3)} />
-						</div>
 						<span {...stylex.props(styles.runningCommand)}>/{commandName}</span>
 					</div>
 				</div>
@@ -430,6 +426,7 @@ export function ChatMessageList({
 	checkpoints,
 	revertCheckpoint,
 	isLoading,
+	startTime,
 	handleSendMessage,
 	onMdFileClick,
 }: {
@@ -439,6 +436,7 @@ export function ChatMessageList({
 	checkpoints: CheckpointInfo[];
 	revertCheckpoint: (id: string) => void;
 	isLoading: boolean;
+	startTime?: number | null;
 	handleSendMessage?: (text: string) => void;
 	onMdFileClick?: (path: string) => void;
 }) {
@@ -481,6 +479,7 @@ export function ChatMessageList({
 					</React.Fragment>
 				);
 			})}
+			{isLoading && startTime && <ThinkingIndicator startTime={startTime} />}
 		</div>
 	);
 }
@@ -645,35 +644,17 @@ const styles = stylex.create({
 		paddingBlock: controlSize._1_5,
 		paddingInline: controlSize._3,
 	},
-	dots: {
-		display: "flex",
-		alignItems: "center",
-		gap: "3px",
-	},
-	dot: {
-		width: "5px",
-		height: "5px",
-		borderRadius: radius.pill,
-		backgroundColor: color.accent,
-		animationName: stylex.keyframes({
-			"50%": {
-				transform: "translateY(-2px)",
-			},
-		}),
-		animationDuration: "0.6s",
-		animationIterationCount: "infinite",
+	runningCommand: {
+		color: color.accent,
+		fontFamily: font.familyMono,
+		fontSize: font.size_4,
+		fontWeight: font.weight_5,
 	},
 	dot2: {
 		animationDelay: "0.1s",
 	},
 	dot3: {
 		animationDelay: "0.2s",
-	},
-	runningCommand: {
-		color: color.accent,
-		fontFamily: font.familyMono,
-		fontSize: font.size_4,
-		fontWeight: font.weight_5,
 	},
 	systemText: {
 		color: color.textMuted,
@@ -765,12 +746,6 @@ const styles = stylex.create({
 		color: color.textSoft,
 		fontSize: font.size_3,
 		lineHeight: 1.6,
-	},
-	readyText: {
-		color: color.textMuted,
-		fontSize: font.size_2,
-		paddingTop: controlSize._8,
-		textAlign: "center",
 	},
 	messageList: {
 		display: "flex",

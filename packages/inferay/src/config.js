@@ -2,10 +2,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 
-export const CONFIG_DIR = join(homedir(), ".inferay");
+const CONFIG_DIR = join(homedir(), ".inferay");
 export const CONFIG_PATH = join(CONFIG_DIR, "config.json");
 
-export async function readConfig() {
+async function readConfig() {
 	try {
 		return JSON.parse(await readFile(CONFIG_PATH, "utf8"));
 	} catch (error) {
@@ -16,7 +16,7 @@ export async function readConfig() {
 	}
 }
 
-export async function writeConfig(config) {
+async function writeConfig(config) {
 	await mkdir(dirname(CONFIG_PATH), { recursive: true });
 	await writeFile(CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`);
 }
