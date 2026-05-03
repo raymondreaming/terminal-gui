@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
-import { getAgentIcon } from "../../lib/agent-ui.tsx";
-import { getAgentDefinition } from "../../lib/agents.ts";
+import { getAgentIcon } from "../../features/agents/agent-ui.tsx";
+import { getAgentDefinition } from "../../features/agents/agents.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
 import { IconGitBranch, IconX } from "../ui/Icons.tsx";

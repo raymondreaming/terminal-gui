@@ -1,50 +1,15 @@
 import {
 	createClaudeEnv,
 	resolveClaudeBinary,
-} from "../../../lib/terminal-command.ts";
+} from "../../../features/terminal/terminal-command.ts";
 import type { AgentEvent } from "../events.ts";
 import { summarizeToolInput } from "../events.ts";
+import {
+	drainStreamToString,
+	flushNdjsonLeftover,
+	parseNdjsonLines,
+} from "../stream-utils.ts";
 import type { AgentAdapter, AgentHandle, AgentRunContext } from "../types.ts";
-
-const MAX_STDERR_CHARS = 64_000;
-
-async function drainStreamToString(
-	stream: ReadableStream<Uint8Array>,
-	maxChars = MAX_STDERR_CHARS
-) {
-	const reader = stream.getReader();
-	const decoder = new TextDecoder();
-	let text = "";
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		text += decoder.decode(value, { stream: true });
-		if (text.length > maxChars) text = text.slice(-maxChars);
-	}
-	return text + decoder.decode();
-}
-
-function parseNdjsonLines(
-	leftover: string,
-	handler: (event: any) => void
-): string {
-	const lines = leftover.split("\n");
-	const remainder = lines.pop()!;
-	for (const line of lines) {
-		if (!line.trim()) continue;
-		try {
-			handler(JSON.parse(line));
-		} catch {}
-	}
-	return remainder;
-}
-
-function flushNdjsonLeftover(leftover: string, handler: (event: any) => void) {
-	if (!leftover.trim()) return;
-	try {
-		handler(JSON.parse(leftover));
-	} catch {}
-}
 
 function emitClaudeAgentEvent(event: any, ctx: AgentRunContext) {
 	const normalized = normalizeClaudeEvent(event);

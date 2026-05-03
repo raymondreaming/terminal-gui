@@ -1,8 +1,7 @@
-import { mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
+import { atomicWriteJson } from "../../lib/atomic-write.ts";
 import { PROJECT_ROOT } from "../../lib/path-utils.ts";
 import { tryRoute } from "../../lib/route-helpers.ts";
-import { atomicWriteJson } from "../../lib/atomic-write.ts";
 
 const PROMPTS_FILE = resolve(PROJECT_ROOT, "data/prompts.json");
 const LEGACY_PROMPTS_FILE = resolve(PROJECT_ROOT, "src/data/prompts.json");

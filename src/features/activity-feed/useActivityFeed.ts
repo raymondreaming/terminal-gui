@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { wsClient } from "../../lib/websocket.ts";
 
-export type ActivityType =
+type ActivityType =
 	| "thinking"
 	| "responding"
 	| "tool_start"
@@ -10,7 +10,7 @@ export type ActivityType =
 	| "checkpoint"
 	| "error";
 
-export interface ActivityEvent {
+interface ActivityEvent {
 	id: string;
 	type: ActivityType;
 	timestamp: number;

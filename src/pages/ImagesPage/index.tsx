@@ -1,7 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { IconButton } from "../../components/ui/IconButton.tsx";
 import { IconCamera, IconTrash } from "../../components/ui/Icons.tsx";
+import { useAsyncResource } from "../../hooks/useAsyncResource.ts";
+import { fetchJsonOr } from "../../lib/fetch-json.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 interface ImageEntry {
@@ -35,25 +37,19 @@ function formatTime(ts: number): string {
 }
 
 export function ImagesPage() {
-	const [images, setImages] = useState<ImageEntry[]>([]);
-	const [loading, setLoading] = useState(true);
+	const {
+		data: images,
+		setData: setImages,
+		loading,
+	} = useAsyncResource<ImageEntry[]>(
+		() =>
+			fetchJsonOr<{ images?: ImageEntry[] }>("/api/images", {}).then(
+				(d) => d.images ?? []
+			),
+		[],
+		[]
+	);
 	const [selected, setSelected] = useState<ImageEntry | null>(null);
-
-	const fetchImages = useCallback(async () => {
-		try {
-			const res = await fetch("/api/images");
-			const data = await res.json();
-			setImages(data.images ?? []);
-		} catch {
-			setImages([]);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		fetchImages();
-	}, [fetchImages]);
 
 	const deleteImage = useCallback(
 		async (img: ImageEntry) => {
@@ -65,7 +61,7 @@ export function ImagesPage() {
 				if (selected?.path === img.path) setSelected(null);
 			} catch {}
 		},
-		[selected]
+		[selected, setImages]
 	);
 
 	return (

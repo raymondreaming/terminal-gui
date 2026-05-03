@@ -56,9 +56,15 @@ async function isGitRepo(cwd: string): Promise<boolean> {
 	return result !== null;
 }
 
-async function getGitRoot(cwd: string): Promise<string | null> {
-	const result = await run(["rev-parse", "--show-toplevel"], cwd);
-	return result?.trim() || null;
+function parseCommitSummaryLog(result: string | null) {
+	if (!result) return [];
+	return result
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => {
+			const [hash = "", message = "", author = "", date = ""] = line.split("|");
+			return { hash, message, author, date };
+		});
 }
 
 export async function getStatus(cwd: string): Promise<GitStatusResult | null> {
@@ -231,15 +237,7 @@ export async function getLog(
 		["log", `--max-count=${limit}`, "--format=%h|%s|%an|%ar"],
 		cwd
 	);
-	if (!result) return [];
-
-	return result
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => {
-			const [hash = "", message = "", author = "", date = ""] = line.split("|");
-			return { hash, message, author, date };
-		});
+	return parseCommitSummaryLog(result);
 }
 
 export async function getGraphLog(
@@ -373,15 +371,7 @@ export async function getFileHistory(
 		],
 		cwd
 	);
-	if (!result) return [];
-
-	return result
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => {
-			const [hash = "", message = "", author = "", date = ""] = line.split("|");
-			return { hash, message, author, date };
-		});
+	return parseCommitSummaryLog(result);
 }
 
 export interface CommitFile {
@@ -410,12 +400,6 @@ export async function getCommitDetails(
 	const [fullHash = "", message = "", author = "", date = ""] = info
 		.trim()
 		.split("|");
-
-	// Get files changed with stats
-	const filesResult = await run(
-		["diff-tree", "--no-commit-id", "--name-status", "-r", "--numstat", hash],
-		cwd
-	);
 
 	const files: CommitFile[] = [];
 

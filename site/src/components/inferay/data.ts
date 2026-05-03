@@ -1144,8 +1144,8 @@ export const chatThreads = [
 ];
 
 // File tree with git staging status
-export type FileStatus = "M" | "A" | "D" | "?";
-export type GitFile = {
+type FileStatus = "M" | "A" | "D" | "?";
+type GitFile = {
 	name: string;
 	path: string;
 	status: FileStatus;

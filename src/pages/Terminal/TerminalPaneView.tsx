@@ -1,7 +1,4 @@
 import * as stylex from "@stylexjs/stylex";
-import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
-import { Terminal } from "@xterm/xterm";
 import type React from "react";
 import { memo, useEffect, useRef } from "react";
 import type { AgentChatHandle } from "../../components/chat/AgentChatView.tsx";
@@ -12,13 +9,13 @@ import {
 	getAgentDefinition,
 	isChatAgentKind,
 	loadDefaultChatSettings,
-} from "../../lib/agents.ts";
+} from "../../features/agents/agents.ts";
 import type {
 	AgentKind,
 	TerminalPaneModel,
 	TerminalTheme,
-} from "../../lib/terminal-utils.ts";
-import { wsClient } from "../../lib/websocket.ts";
+} from "../../features/terminal/terminal-utils.ts";
+import { useXtermTerminal } from "../../hooks/useXtermTerminal.ts";
 import { color, font } from "../../tokens.stylex.ts";
 
 interface TerminalPaneViewProps {
@@ -61,10 +58,6 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 	onAddPane,
 	onSetPaneAgentKind,
 }: TerminalPaneViewProps) {
-	const containerRef = useRef<HTMLDivElement>(null);
-	const termRef = useRef<Terminal | null>(null);
-	const fitAddonRef = useRef<FitAddon | null>(null);
-	const initializedRef = useRef(false);
 	const chatHandleRef = useRef<AgentChatHandle | null>(null);
 	const viewAgentKind: AgentKind =
 		pane.pendingCwd && !isChatAgentKind(pane.agentKind)
@@ -72,149 +65,20 @@ export const TerminalPaneView = memo(function TerminalPaneView({
 			: pane.agentKind;
 	const isAgentChatPane = isChatAgentKind(viewAgentKind);
 	const paneLabel = getAgentDefinition(viewAgentKind).label;
-
-	useEffect(() => {
-		if (isAgentChatPane || pane.pendingCwd || !containerRef.current) return;
-		const term = new Terminal({
-			cursorBlink: true,
-			fontSize,
-			fontFamily: `"${fontFamily}", monospace`,
-			theme: {
-				background: theme.bg,
-				foreground: theme.fg,
-				cursor: theme.cursor,
-			},
-			allowProposedApi: true,
-			scrollback: 1000,
-			scrollOnUserInput: true,
-		});
-		const fitAddon = new FitAddon();
-		term.loadAddon(fitAddon);
-		term.loadAddon(new WebLinksAddon());
-		term.open(containerRef.current);
-		termRef.current = term;
-		fitAddonRef.current = fitAddon;
-
-		// Force hide scrollbar after terminal opens
-		requestAnimationFrame(() => {
-			const viewport = containerRef.current?.querySelector(".xterm-viewport");
-			if (viewport instanceof HTMLElement) {
-				viewport.style.overflow = "hidden";
-				viewport.style.scrollbarWidth = "none";
-				viewport.style.setProperty("-ms-overflow-style", "none");
-			}
-			// Also hide scrollbar on the terminal element itself
-			const xtermElement = containerRef.current?.querySelector(".xterm");
-			if (xtermElement instanceof HTMLElement) {
-				xtermElement.style.overflow = "hidden";
-			}
-		});
-		let reconnectCleanup: (() => void) | null = null;
-		requestAnimationFrame(() => {
-			fitAddon.fit();
-			if (!initializedRef.current) {
-				initializedRef.current = true;
-				const dims = fitAddon.proposeDimensions();
-				reconnectCleanup = wsClient.subscribe(pane.id, (msg: any) => {
-					if (msg.type === "terminal:reconnected") {
-						if (msg.ok) {
-							if (msg.buffer && termRef.current)
-								termRef.current.write(msg.buffer);
-						} else {
-							wsClient.send({
-								type: "terminal:create",
-								paneId: pane.id,
-								agentKind: pane.agentKind,
-								isClaude: pane.isClaude,
-								cols: dims?.cols ?? 80,
-								rows: dims?.rows ?? 24,
-								cwd: pane.cwd,
-							});
-						}
-						termRef.current?.focus();
-						reconnectCleanup?.();
-						reconnectCleanup = null;
-					}
-				});
-				wsClient.send({ type: "terminal:reconnect", paneId: pane.id });
-			}
-			term.focus();
-		});
-		const dataDisposable = term.onData((data) => {
-			wsClient.send({ type: "terminal:input", paneId: pane.id, data });
-		});
-		const resizeDisposable = term.onResize(({ cols, rows }) => {
-			wsClient.send({ type: "terminal:resize", paneId: pane.id, cols, rows });
-		});
-		const cleanupMessage = wsClient.subscribe(pane.id, (msg: any) => {
-			if (msg.type === "terminal:output") term.write(msg.data);
-			else if (msg.type === "terminal:exit")
-				term.write(
-					`\r\n\x1b[90m[Process exited with code ${msg.exitCode ?? "unknown"}]\x1b[0m\r\n`
-				);
-			else if (msg.type === "terminal:reconnected" && msg.ok && msg.buffer)
-				term.write(msg.buffer);
-		});
-		const cleanupReconnect = wsClient.onReconnect(() => {
-			wsClient.send({ type: "terminal:reconnect", paneId: pane.id });
-		});
-		let rafId: number | null = null;
-		const resizeObserver = new ResizeObserver(() => {
-			if (rafId !== null) cancelAnimationFrame(rafId);
-			rafId = requestAnimationFrame(() => {
-				rafId = null;
-				fitAddon.fit();
-			});
-		});
-		resizeObserver.observe(containerRef.current);
-		return () => {
-			reconnectCleanup?.();
-			dataDisposable.dispose();
-			resizeDisposable.dispose();
-			cleanupMessage();
-			cleanupReconnect();
-			if (rafId !== null) cancelAnimationFrame(rafId);
-			resizeObserver.disconnect();
-			term.dispose();
-			termRef.current = null;
-			fitAddonRef.current = null;
-		};
-	}, [
-		isAgentChatPane,
-		pane.id,
-		pane.pendingCwd,
-		fontFamily,
+	const { containerRef, termRef, refit } = useXtermTerminal({
+		enabled: !isAgentChatPane && !pane.pendingCwd,
+		paneId: pane.id,
+		agentKind: pane.agentKind,
+		isClaude: pane.isClaude,
+		cwd: pane.cwd,
+		theme,
 		fontSize,
-		pane.agentKind,
-		pane.cwd,
-		pane.isClaude,
-		theme.bg,
-		theme.cursor,
-		theme.fg,
-	]);
+		fontFamily,
+	});
 
 	useEffect(() => {
-		if (termRef.current) {
-			termRef.current.options.theme = {
-				background: theme.bg,
-				foreground: theme.fg,
-				cursor: theme.cursor,
-			};
-		}
-	}, [theme]);
-
-	useEffect(() => {
-		if (termRef.current) {
-			termRef.current.options.fontSize = fontSize;
-			termRef.current.options.fontFamily = `"${fontFamily}", monospace`;
-			fitAddonRef.current?.fit();
-		}
-	}, [fontSize, fontFamily]);
-
-	useEffect(() => {
-		if (isSelected && !isAgentChatPane && termRef.current)
-			termRef.current.focus();
-	}, [isAgentChatPane, isSelected]);
+		if (isSelected && !isAgentChatPane) refit();
+	}, [isAgentChatPane, isSelected, refit]);
 
 	return (
 		<div

@@ -10,7 +10,7 @@ import {
 	getPaneTitle,
 	getStatusInfo,
 	type TerminalPaneModel,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
 import {
 	color,
 	controlSize,

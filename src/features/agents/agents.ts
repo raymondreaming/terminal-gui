@@ -1,3 +1,5 @@
+import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
+
 export type ChatAgentKind = "claude" | "codex";
 export type AgentKind = "terminal" | ChatAgentKind;
 export type AgentIconKey = "terminal" | "anthropic" | "openai";
@@ -161,7 +163,7 @@ const FALLBACK_DEFAULT_CHAT_SETTINGS: DefaultChatSettings = {
 	reasoningLevel: "low",
 };
 
-export function normalizeDefaultChatSettings(
+function normalizeDefaultChatSettings(
 	settings: Partial<DefaultChatSettings> | null | undefined
 ): DefaultChatSettings {
 	const agentKind: ChatAgentKind =
@@ -187,22 +189,17 @@ export function normalizeDefaultChatSettings(
 }
 
 export function loadDefaultChatSettings(): DefaultChatSettings {
-	try {
-		const raw = localStorage.getItem(DEFAULT_CHAT_SETTINGS_KEY);
-		const parsed = raw
-			? (JSON.parse(raw) as Partial<DefaultChatSettings>)
-			: null;
-		return normalizeDefaultChatSettings(parsed);
-	} catch {
-		return FALLBACK_DEFAULT_CHAT_SETTINGS;
-	}
+	return normalizeDefaultChatSettings(
+		readStoredJson<Partial<DefaultChatSettings> | null>(
+			DEFAULT_CHAT_SETTINGS_KEY,
+			null
+		)
+	);
 }
 
 export function saveDefaultChatSettings(settings: DefaultChatSettings) {
-	try {
-		localStorage.setItem(
-			DEFAULT_CHAT_SETTINGS_KEY,
-			JSON.stringify(normalizeDefaultChatSettings(settings))
-		);
-	} catch {}
+	writeStoredJson(
+		DEFAULT_CHAT_SETTINGS_KEY,
+		normalizeDefaultChatSettings(settings)
+	);
 }

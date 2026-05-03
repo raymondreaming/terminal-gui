@@ -139,27 +139,6 @@ export const IconTrash = iconMulti([
 	"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
 ]);
 
-const IconPlay = icon("M5 3l14 9-14 9V3z");
-
-const IconPause = iconMulti(["M6 4h4v16H6z", "M14 4h4v16H14z"]);
-
-const IconHammer = iconMulti([
-	"M15.12 7.88c1.17-1.17 1.17-3.07 0-4.24L13 5.76",
-	"M8.88 15.12l-4.24 4.24a1.5 1.5 0 0 0 2.12 2.12l4.24-4.24",
-	"M17.5 10.5L10.5 17.5",
-	"M14 7l3 3",
-]);
-
-const IconTarget = iconMulti([
-	"M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z",
-	"M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 6z",
-	"M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
-]);
-
-const IconPalette = iconMulti([
-	"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.75 1.5-1.5 0-.39-.15-.74-.38-1.02-.22-.27-.35-.62-.35-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-9.5-10-9.5z",
-]);
-
 export const IconLayout = iconMulti(["M3 3h18v18H3z", "M3 9h18", "M9 21V9"]);
 export const IconLayoutGrid = iconMulti([
 	"M3 3h7v7H3z",
@@ -303,12 +282,6 @@ export const IconSlash = iconMulti([
 	"M14 14h3",
 ]);
 
-const IconLayers = iconMulti([
-	"M12 2 2 7l10 5 10-5-10-5z",
-	"M2 12l10 5 10-5",
-	"M2 17l10 5 10-5",
-]);
-
 export function IconGitCommit({ size = 16, ...props }: IconProps) {
 	return (
 		<svg
@@ -338,39 +311,9 @@ export const IconFilePlus = iconMulti([
 	"M9 15h6",
 ]);
 
-export const IconUsers = iconMulti([
-	"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2",
-	"M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-	"M23 21v-2a4 4 0 0 0-3-3.87",
-	"M16 3.13a4 4 0 0 1 0 7.75",
-]);
-
-const IconList = iconMulti([
-	"M8 6h13",
-	"M8 12h13",
-	"M8 18h13",
-	"M3 6h.01",
-	"M3 12h.01",
-	"M3 18h.01",
-]);
-
 export const IconClock = iconMulti([
 	"M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z",
 	"M12 6v6l4 2",
-]);
-
-const IconMessageSquare = iconMulti([
-	"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
-]);
-
-const IconFileSearch = iconMulti([
-	"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
-	"M14 2v6h6",
-	"M12 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
-]);
-
-const IconBookmark = iconMulti([
-	"M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
 ]);
 
 export const IconCopy = iconMulti([
@@ -593,9 +536,6 @@ export const IconPanelLeft = iconMulti([
 	"M9 3v18",
 ]);
 
-// Panel right icon for collapsing right sidebar
-const IconPanelRight = iconMulti(["M3 3h18v18H3V3z", "M15 3v18"]);
-
 export const IconExternalLink = iconMulti([
 	"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
 	"M15 3h6v6",
@@ -650,14 +590,6 @@ export function IconSettings({ size = 16, ...props }: IconProps) {
 	);
 }
 
-export const IconZap = icon("M13 2L3 14h7l-1 8 10-12h-7l1-8z");
-
-export const IconLogOut = iconMulti([
-	"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4",
-	"M16 17l5-5-5-5",
-	"M21 12H9",
-]);
-
 export const IconExpand = iconMulti([
 	"M15 3h6v6",
 	"M21 3l-7 7",
@@ -684,13 +616,6 @@ export const IconLoader = iconMulti([
 	"M18 12h4",
 	"M4.93 19.07l2.83-2.83",
 	"M16.24 7.76l2.83-2.83",
-]);
-
-// Zen mode icon - auto-follow file changes (eye with sparkle)
-const IconZen = iconMulti([
-	"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z",
-	"M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
-	"M17 2l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2",
 ]);
 
 export type { IconProps };

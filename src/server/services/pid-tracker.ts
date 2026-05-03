@@ -56,10 +56,6 @@ export const PidTracker = {
 			if (await file.exists()) {
 				const pids: number[] = await file.json();
 				if (pids.length > 0) {
-					console.log(
-						`[PID] Cleaning ${pids.length} orphaned process(es):`,
-						pids
-					);
 					await Promise.all(pids.map(treeKill));
 				}
 			}

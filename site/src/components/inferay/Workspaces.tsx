@@ -168,7 +168,7 @@ function WorkspaceDetail({
 }: {
 	workspace: Workspace;
 	onClose: () => void;
-	onActivate: () => void;
+	onActivate?: () => void;
 }) {
 	const model = models[workspace.model];
 
@@ -503,9 +503,6 @@ export function Workspaces() {
 						<WorkspaceDetail
 							workspace={selectedWorkspace}
 							onClose={handleClose}
-							onActivate={() =>
-								console.log("Activate:", selectedWorkspace.name)
-							}
 						/>
 					</div>
 				)}

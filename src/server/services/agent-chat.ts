@@ -1,11 +1,16 @@
 import type { ServerWebSocket } from "bun";
-import { type ChatAgentKind, getAgentDefinition } from "../../lib/agents.ts";
+import type { ChatAgentKind } from "../../features/agents/agents.ts";
 import {
 	createClaudeEnv,
 	resolveClaudeBinary,
-} from "../../lib/terminal-command.ts";
+} from "../../features/terminal/terminal-command.ts";
 import type { AgentEvent } from "../agents/events.ts";
-import { getAgentAdapter } from "../agents/registry.ts";
+import { getAgentAdapter, resolveAgentModel } from "../agents/registry.ts";
+import {
+	drainStreamToString,
+	flushNdjsonLeftover,
+	parseNdjsonLines,
+} from "../agents/stream-utils.ts";
 import type { AgentHandle, AgentRunContext } from "../agents/types.ts";
 import { CheckpointService } from "./checkpoint.ts";
 
@@ -19,7 +24,6 @@ interface ServerChatMessage {
 
 const MAX_BUFFER_MESSAGES = 100;
 const MAX_BUFFER_CHARS = 200_000;
-const MAX_STDERR_CHARS = 64_000;
 const DISCONNECTED_SESSION_TTL_MS = 5 * 60 * 1000;
 
 let serverMsgId = 0;
@@ -266,21 +270,6 @@ function updateSessionId(
 	});
 }
 
-function resolveChatModel(
-	agentKind: ChatAgentKind,
-	requestedModel?: string
-): string | undefined {
-	const definition = getAgentDefinition(agentKind);
-	if (!definition.models.length) return undefined;
-	if (
-		requestedModel &&
-		definition.models.some((model) => model.id === requestedModel)
-	) {
-		return requestedModel;
-	}
-	return definition.defaultModel || definition.models[0]?.id;
-}
-
 function normalizeReferencePaths(paths?: string[]): string[] {
 	if (!Array.isArray(paths)) return [];
 	const seen = new Set<string>();
@@ -293,44 +282,6 @@ function normalizeReferencePaths(paths?: string[]): string[] {
 		normalized.push(trimmed);
 	}
 	return normalized;
-}
-
-async function drainStreamToString(
-	stream: ReadableStream<Uint8Array>,
-	maxChars = MAX_STDERR_CHARS
-) {
-	const reader = stream.getReader();
-	const decoder = new TextDecoder();
-	let text = "";
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		text += decoder.decode(value, { stream: true });
-		if (text.length > maxChars) text = text.slice(-maxChars);
-	}
-	return text + decoder.decode();
-}
-
-function parseNdjsonLines(
-	leftover: string,
-	handler: (event: any) => void
-): string {
-	const lines = leftover.split("\n");
-	const remainder = lines.pop()!;
-	for (const line of lines) {
-		if (!line.trim()) continue;
-		try {
-			handler(JSON.parse(line));
-		} catch {}
-	}
-	return remainder;
-}
-
-function flushNdjsonLeftover(leftover: string, handler: (event: any) => void) {
-	if (!leftover.trim()) return;
-	try {
-		handler(JSON.parse(leftover));
-	} catch {}
 }
 
 async function finalizeCheckpoint(
@@ -374,6 +325,10 @@ async function runAgent(
 	emitDone = true
 ) {
 	const adapter = getAgentAdapter(session.agentKind);
+	const prompt =
+		session.agentKind === "codex"
+			? `${CODEX_WORKFLOW_INSTRUCTIONS}\n\n${text}`
+			: text;
 	session.agentEvents ??= [];
 	const ctx: AgentRunContext = {
 		paneId,
@@ -405,7 +360,7 @@ async function runAgent(
 		},
 	};
 	const state = adapter.createState(ctx);
-	const handle = adapter.createHandle(text, ctx, state);
+	const handle = adapter.createHandle(prompt, ctx, state);
 	session.currentHandle = handle;
 
 	try {
@@ -419,6 +374,11 @@ async function runAgent(
 const GOAL_MAX_TURNS = 20;
 const GOAL_COMPLETE_MARKER = "[[GOAL_COMPLETE]]";
 const GOAL_NEEDS_INPUT_MARKER = "[[GOAL_NEEDS_INPUT]]";
+const CODEX_WORKFLOW_INSTRUCTIONS = `<inferay-workflow-instructions>
+Do not run formatters with write mode as a routine chat-completion step. In this project, do not run \`bunx biome check --write ...\` unless the user explicitly asks for Biome formatting.
+Do not run \`bun run build:renderer\` at the end of every chat. Run builds/tests only when the user requests verification or when the change genuinely needs that specific check.
+If formatting is needed, prefer the project's intended formatting or commit-hook flow and keep formatting-only churn out of unrelated edits.
+</inferay-workflow-instructions>`;
 
 function parseGoalCommand(
 	text: string
@@ -531,7 +491,8 @@ export const ChatService = {
 		clientSessionId?: string | null,
 		agentKind: ChatAgentKind = "claude",
 		model?: string,
-		reasoningLevel?: string
+		reasoningLevel?: string,
+		systemPrefix?: string
 	) {
 		const nextReferencePaths = normalizeReferencePaths(referencePaths);
 		let session = sessions.get(paneId);
@@ -559,7 +520,7 @@ export const ChatService = {
 			session.sessionId = null; // clear when switching agent kinds
 		}
 		session.agentKind = agentKind;
-		session.model = resolveChatModel(agentKind, model);
+		session.model = resolveAgentModel(agentKind, model);
 		if (reasoningLevel !== undefined) session.reasoningLevel = reasoningLevel;
 		session.clients.add(ws);
 		if (cwd) session.cwd = cwd;
@@ -588,6 +549,9 @@ export const ChatService = {
 				return;
 			}
 			prompt = goalPrompt;
+		}
+		if (systemPrefix) {
+			prompt = `${systemPrefix}\n\n${prompt}`;
 		}
 
 		let checkpointId: string | null = null;

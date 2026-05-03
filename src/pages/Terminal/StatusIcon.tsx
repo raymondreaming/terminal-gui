@@ -6,7 +6,7 @@ import {
 	IconTerminal,
 	IconWrench,
 } from "../../components/ui/Icons.tsx";
-import type { StatusIconType } from "../../lib/terminal-utils.ts";
+import type { StatusIconType } from "../../features/terminal/terminal-utils.ts";
 
 export function StatusIcon({
 	iconType,

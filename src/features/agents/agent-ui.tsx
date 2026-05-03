@@ -2,7 +2,7 @@ import {
 	IconAnthropic,
 	IconOpenAI,
 	IconTerminal,
-} from "../components/ui/Icons.tsx";
+} from "../../components/ui/Icons.tsx";
 import {
 	type AgentIconKey,
 	type AgentKind,

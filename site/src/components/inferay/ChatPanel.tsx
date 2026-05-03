@@ -11,6 +11,77 @@ import {
 	type ChatMessage,
 } from "./data";
 
+function ChatMessages({
+	messages,
+	userMax = "max-w-[90%]",
+}: {
+	messages: ChatMessage[];
+	userMax?: string;
+}) {
+	return (
+		<>
+			{messages.map((msg, i) => (
+				<div key={i}>
+					{msg.role === "user" ? (
+						<div className="flex justify-end">
+							<p
+								className={`${userMax} px-3 py-2 rounded-2xl rounded-br-sm bg-inferay-accent/20 text-[11px] text-inferay-text leading-relaxed`}
+							>
+								{msg.content}
+							</p>
+						</div>
+					) : (
+						<div className="space-y-2">
+							<p className="text-[11px] text-inferay-text-2 leading-relaxed">
+								{msg.content}
+							</p>
+							{msg.tool && (
+								<div className="rounded-md border border-inferay-border overflow-hidden">
+									<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-inferay-border">
+										<span
+											className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-inferay-text-3`}
+										>
+											<Icons.Chevron />
+										</span>
+										{msg.tool.name === "Bash" ? (
+											<Icons.Bash />
+										) : msg.tool.name === "Search" ? (
+											<Icons.Search />
+										) : (
+											<Icons.File />
+										)}
+										<span className="flex-1 text-[8px] font-mono text-inferay-text-2 truncate">
+											{msg.tool.file || msg.tool.command || msg.tool.query}
+										</span>
+										{msg.inlineDiff && (
+											<span className="flex items-center gap-0.5 text-[8px]">
+												<span className="text-green-400">+4</span>
+												<span className="text-red-400">−1</span>
+											</span>
+										)}
+									</div>
+									{msg.inlineDiff && (
+										<InlineDiffBlock
+											lines={
+												msg.diffVariant && msg.diffVariant in inlineDiffVariants
+													? inlineDiffVariants[
+															msg.diffVariant as keyof typeof inlineDiffVariants
+														]
+													: inlineDiffLines
+											}
+											filePath={msg.tool.file || "file.tsx"}
+										/>
+									)}
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+			))}
+		</>
+	);
+}
+
 // Main Chat Panel (used in Editor view)
 export function ChatPanel({
 	selectedModel,
@@ -38,63 +109,7 @@ export function ChatPanel({
 
 			{/* Messages */}
 			<div ref={containerRef} className="flex-1 overflow-y-auto p-3 space-y-3">
-				{chatMessages.map((msg, i) => (
-					<div key={i}>
-						{msg.role === "user" ? (
-							<div className="flex justify-end">
-								<p className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-inferay-accent/20 text-[11px] text-inferay-text leading-relaxed">
-									{msg.content}
-								</p>
-							</div>
-						) : (
-							<div className="space-y-2">
-								<p className="text-[11px] text-inferay-text-2 leading-relaxed">
-									{msg.content}
-								</p>
-								{msg.tool && (
-									<div className="rounded-md border border-inferay-border overflow-hidden">
-										<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-inferay-border">
-											<span
-												className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-inferay-text-3`}
-											>
-												<Icons.Chevron />
-											</span>
-											{msg.tool.name === "Bash" ? (
-												<Icons.Bash />
-											) : msg.tool.name === "Search" ? (
-												<Icons.Search />
-											) : (
-												<Icons.File />
-											)}
-											<span className="flex-1 text-[8px] font-mono text-inferay-text-2 truncate">
-												{msg.tool.file || msg.tool.command || msg.tool.query}
-											</span>
-											{msg.inlineDiff && (
-												<span className="flex items-center gap-0.5 text-[8px]">
-													<span className="text-green-400">+4</span>
-													<span className="text-red-400">−1</span>
-												</span>
-											)}
-										</div>
-										{msg.inlineDiff && (
-											<InlineDiffBlock
-												lines={
-													msg.diffVariant &&
-													msg.diffVariant in inlineDiffVariants
-														? inlineDiffVariants[
-																msg.diffVariant as keyof typeof inlineDiffVariants
-															]
-														: inlineDiffLines
-												}
-												filePath={msg.tool.file || "file.tsx"}
-											/>
-										)}
-									</div>
-								)}
-							</div>
-						)}
-					</div>
-				))}
+				<ChatMessages messages={chatMessages} userMax="max-w-[85%]" />
 			</div>
 
 			{/* Activity bar */}
@@ -241,63 +256,7 @@ function VerticalChatPanel({
 
 			{/* Messages */}
 			<div className="flex-1 overflow-y-auto p-3 space-y-3">
-				{messages.map((msg, i) => (
-					<div key={i}>
-						{msg.role === "user" ? (
-							<div className="flex justify-end">
-								<p className="max-w-[90%] px-3 py-2 rounded-2xl rounded-br-sm bg-inferay-accent/20 text-[11px] text-inferay-text leading-relaxed">
-									{msg.content}
-								</p>
-							</div>
-						) : (
-							<div className="space-y-2">
-								<p className="text-[11px] text-inferay-text-2 leading-relaxed">
-									{msg.content}
-								</p>
-								{msg.tool && (
-									<div className="rounded-md border border-inferay-border overflow-hidden">
-										<div className="flex items-center gap-1 px-1.5 py-1 bg-black border-b border-inferay-border">
-											<span
-												className={`${msg.inlineDiff ? "rotate-90" : ""} transition-transform text-inferay-text-3`}
-											>
-												<Icons.Chevron />
-											</span>
-											{msg.tool.name === "Bash" ? (
-												<Icons.Bash />
-											) : msg.tool.name === "Search" ? (
-												<Icons.Search />
-											) : (
-												<Icons.File />
-											)}
-											<span className="flex-1 text-[8px] font-mono text-inferay-text-2 truncate">
-												{msg.tool.file || msg.tool.command || msg.tool.query}
-											</span>
-											{msg.inlineDiff && (
-												<span className="flex items-center gap-0.5 text-[8px]">
-													<span className="text-green-400">+4</span>
-													<span className="text-red-400">−1</span>
-												</span>
-											)}
-										</div>
-										{msg.inlineDiff && (
-											<InlineDiffBlock
-												lines={
-													msg.diffVariant &&
-													msg.diffVariant in inlineDiffVariants
-														? inlineDiffVariants[
-																msg.diffVariant as keyof typeof inlineDiffVariants
-															]
-														: inlineDiffLines
-												}
-												filePath={msg.tool.file || "file.tsx"}
-											/>
-										)}
-									</div>
-								)}
-							</div>
-						)}
-					</div>
-				))}
+				<ChatMessages messages={messages} />
 			</div>
 
 			{/* Activity bar */}

@@ -47,7 +47,7 @@ export const colorValues = {
 	gitUnmerged: "var(--color-git-unmerged)",
 } as const;
 
-export const controlSizeValues = {
+const controlSizeValues = {
 	_0: "0",
 	_0_5: "0.125rem",
 	_1: "0.25rem",
@@ -66,7 +66,7 @@ export const controlSizeValues = {
 	_16: "4rem",
 } as const;
 
-export const fontValues = {
+const fontValues = {
 	familyMono: "var(--font-mono)",
 	familyDiff: "var(--font-diff)",
 	size_0: "0.4375rem",
@@ -80,7 +80,7 @@ export const fontValues = {
 	weight_6: "600",
 } as const;
 
-export const radiusValues = {
+const radiusValues = {
 	none: "0",
 	xs: "0.125rem",
 	sm: "0.25rem",
@@ -90,14 +90,14 @@ export const radiusValues = {
 	pill: "999px",
 } as const;
 
-export const motionValues = {
+const motionValues = {
 	durationFast: "120ms",
 	durationBase: "150ms",
 	durationSlow: "200ms",
 	ease: "ease",
 } as const;
 
-export const shadowValues = {
+const shadowValues = {
 	none: "none",
 	selectedRing: "0 0 0 1px rgba(255, 255, 255, 0.05)",
 	focusRing: "0 0 0 1px rgba(229, 229, 231, 0.35)",
@@ -120,6 +120,7 @@ export const font = stylex.defineVars(fontValues);
 export const radius = stylex.defineVars(radiusValues);
 export const motion = stylex.defineVars(motionValues);
 export const shadow = stylex.defineVars(shadowValues);
+// fallow-ignore-next-line unused-export
 export const effect = stylex.defineVars(effectValues);
 
 export const colorTheme = stylex.createTheme(color, colorValues);

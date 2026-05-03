@@ -66,6 +66,18 @@ function tooLargeDiff(message: string, isNew = false): HunkDiff {
 	};
 }
 
+function getDiffParams(req: Request) {
+	const url = new URL(req.url);
+	const cwd = url.searchParams.get("cwd");
+	const file = url.searchParams.get("file");
+	if (!cwd || !file) return null;
+	return {
+		cwd,
+		file,
+		staged: url.searchParams.get("staged") === "true",
+	};
+}
+
 async function getHunkDiff(
 	cwd: string,
 	filePath: string,
@@ -339,35 +351,31 @@ export function gitRoutes() {
 
 		"/api/git/diff": {
 			GET: tryRoute(async (req) => {
-				const url = new URL(req.url);
-				const cwd = url.searchParams.get("cwd");
-				const file = url.searchParams.get("file");
-				const staged = url.searchParams.get("staged") === "true";
-				if (!cwd || !file) return badRequest("Missing cwd or file parameter");
-				const diff = await getDiff(cwd, file, staged);
+				const params = getDiffParams(req);
+				if (!params) return badRequest("Missing cwd or file parameter");
+				const diff = await getDiff(params.cwd, params.file, params.staged);
 				return Response.json({ diff });
 			}),
 		},
 
 		"/api/git/full-diff": {
 			GET: tryRoute(async (req) => {
-				const url = new URL(req.url);
-				const cwd = url.searchParams.get("cwd");
-				const file = url.searchParams.get("file");
-				const staged = url.searchParams.get("staged") === "true";
-				if (!cwd || !file) return badRequest("Missing cwd or file parameter");
-				const result = await getHunkDiff(cwd, file, staged);
+				const params = getDiffParams(req);
+				if (!params) return badRequest("Missing cwd or file parameter");
+				const result = await getHunkDiff(
+					params.cwd,
+					params.file,
+					params.staged
+				);
 				return Response.json(result);
 			}),
 		},
 
 		"/api/git/file-with-diff": {
 			GET: tryRoute(async (req) => {
-				const url = new URL(req.url);
-				const cwd = url.searchParams.get("cwd");
-				const file = url.searchParams.get("file");
-				const staged = url.searchParams.get("staged") === "true";
-				if (!cwd || !file) return badRequest("Missing cwd or file parameter");
+				const params = getDiffParams(req);
+				if (!params) return badRequest("Missing cwd or file parameter");
+				const { cwd, file, staged } = params;
 
 				const fullPath = resolve(cwd, file);
 

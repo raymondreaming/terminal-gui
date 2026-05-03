@@ -18,7 +18,7 @@ interface QuickPick {
 
 interface InlineDirectoryPickerProps {
 	onSelect: (path: string | null) => void;
-	onCancel: () => void;
+	onCancel?: () => void;
 	multiSelect?: boolean;
 	onMultiSelect?: (paths: string[]) => void;
 	hideInput?: boolean;
@@ -193,7 +193,7 @@ export function InlineDirectoryPicker({
 		if (itemCount === 0) {
 			if (e.key === "Escape") {
 				e.preventDefault();
-				onCancel();
+				onCancel?.();
 			}
 			return;
 		}
@@ -210,7 +210,7 @@ export function InlineDirectoryPicker({
 			if (path) handleItemClick(path);
 		} else if (e.key === "Escape") {
 			e.preventDefault();
-			onCancel();
+			onCancel?.();
 		}
 	};
 
@@ -521,30 +521,6 @@ const styles = stylex.create({
 		color: color.textMuted,
 		fontSize: font.size_1,
 	},
-	resultsPopout: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		bottom: "100%",
-		zIndex: 10,
-		overflow: "hidden",
-		marginBottom: controlSize._1,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: controlSize._2,
-		backgroundColor: color.backgroundRaised,
-		boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.6)",
-	},
-	resultsList: {
-		maxHeight: "180px",
-		overflowY: "auto",
-	},
-	loadingSlot: {
-		position: "absolute",
-		right: controlSize._2,
-		top: controlSize._2,
-	},
 	spinner: {
 		width: font.size_3,
 		height: font.size_3,
@@ -575,18 +551,6 @@ const styles = stylex.create({
 		flexWrap: "wrap",
 		gap: controlSize._1,
 		overflowY: "auto",
-	},
-	inputFrame: {
-		display: "flex",
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: controlSize._3,
-		backgroundColor: color.backgroundRaised,
-		paddingBlock: controlSize._2,
-		paddingInline: controlSize._3,
 	},
 	unifiedFrame: {
 		display: "flex",

@@ -92,7 +92,8 @@ export const websocketHandler = {
 					msg.sessionId,
 					msg.agentKind ?? "claude",
 					msg.model,
-					msg.reasoningLevel
+					msg.reasoningLevel,
+					msg.systemPrefix
 				);
 			} else if (msg.type === "chat:reconnect") {
 				ChatService.reassignWs(msg.paneId, ws);

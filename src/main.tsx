@@ -2,11 +2,10 @@ import * as stylex from "@stylexjs/stylex";
 import { lazy, type ReactElement, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
-import { BottomTerminalPanel } from "./components/layout/BottomTerminalPanel.tsx";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { TerminalShellHeader } from "./components/layout/TerminalShellHeader.tsx";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
-import { preloadPrompts } from "./hooks/usePrompts.ts";
+import { preloadPrompts } from "./features/prompts/usePrompts.ts";
 import {
 	APP_PAGE_ROUTES,
 	type AppRouteId,
@@ -124,7 +123,6 @@ function AppShell() {
 							</Routes>
 						</Suspense>
 					</main>
-					<BottomTerminalPanel />
 				</div>
 			</div>
 		</div>

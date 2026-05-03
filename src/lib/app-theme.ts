@@ -3,9 +3,9 @@ import {
 	readStoredValue,
 	writeStoredValue,
 } from "./stored-json.ts";
-import type { ThemeId } from "./terminal-utils.ts";
+import type { ThemeId } from "../features/terminal/terminal-utils.ts";
 
-export interface AppThemeColors {
+interface AppThemeColors {
 	readonly black: string;
 	readonly darkGray: string;
 	readonly gray: string;
@@ -23,7 +23,7 @@ export interface AppThemeColors {
 	readonly mutedGray: string;
 }
 
-export interface AppTheme {
+interface AppTheme {
 	readonly id: AppThemeId;
 	readonly name: string;
 	readonly colors: AppThemeColors;

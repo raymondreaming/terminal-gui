@@ -1,6 +1,5 @@
-import type { ChatAgentKind } from "../../lib/agents.ts";
-import { getAgentDefinition } from "../../lib/agents.ts";
-import { getAgentAdapter } from "../agents/registry.ts";
+import type { ChatAgentKind } from "../../features/agents/agents.ts";
+import { getAgentAdapter, resolveAgentModel } from "../agents/registry.ts";
 import type { AgentRunContext } from "../agents/types.ts";
 
 interface RunAgentOnceOptions {
@@ -10,21 +9,6 @@ interface RunAgentOnceOptions {
 	model?: string;
 	reasoningLevel?: string;
 	timeoutMs?: number;
-}
-
-function resolveModel(
-	agentKind: ChatAgentKind,
-	requestedModel?: string
-): string | undefined {
-	const definition = getAgentDefinition(agentKind);
-	if (!definition.models.length) return undefined;
-	if (
-		requestedModel &&
-		definition.models.some((model) => model.id === requestedModel)
-	) {
-		return requestedModel;
-	}
-	return definition.defaultModel || definition.models[0]?.id;
 }
 
 function extractChatResult(event: unknown): string {
@@ -64,7 +48,7 @@ export async function runAgentOnce({
 	const ctx: AgentRunContext = {
 		paneId: `one-off-${agentKind}-${Date.now()}`,
 		cwd,
-		model: resolveModel(agentKind, model),
+		model: resolveAgentModel(agentKind, model),
 		reasoningLevel,
 		getSessionId: () => sessionId,
 		updateSessionId: (nextSessionId) => {

@@ -24,7 +24,7 @@ import { Repositories } from "./inferay/Repositories";
 
 // ============ MAIN COMPONENT ============
 
-export function Inferay() {
+function Inferay() {
 	const [view, setView] = useState<
 		| "code"
 		| "chat"

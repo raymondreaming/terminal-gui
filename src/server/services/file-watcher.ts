@@ -1,4 +1,4 @@
-import { watch, type FSWatcher } from "fs";
+import { type FSWatcher, watch } from "fs";
 import { broadcastAll } from "../ws.ts";
 
 interface WatchedDir {
@@ -34,7 +34,12 @@ export function watchDirectory(cwd: string): void {
 			watched.lastEvent = now;
 
 			broadcastAll(
-				JSON.stringify({ type: "file:changed", cwd, file: filename, eventType })
+				JSON.stringify({
+					type: "file:changed",
+					cwd,
+					file: filename,
+					eventType,
+				})
 			);
 		});
 
@@ -49,11 +54,5 @@ export function unwatchDirectory(cwd: string): void {
 	if (watched) {
 		watched.watcher.close();
 		watchedDirs.delete(cwd);
-	}
-}
-
-function unwatchAll(): void {
-	for (const [cwd] of watchedDirs) {
-		unwatchDirectory(cwd);
 	}
 }

@@ -61,15 +61,32 @@ async function getHighlighter(): Promise<Highlighter> {
 	return highlighterInstance;
 }
 
+async function ensureLanguage(hl: Highlighter, language: BundledLanguage) {
+	if (loadedLanguages.has(language)) return;
+	await hl.loadLanguage(language);
+	loadedLanguages.add(language);
+}
+
+function highlightLine(
+	hl: Highlighter,
+	line: string,
+	language: BundledLanguage,
+	theme: BundledTheme
+) {
+	try {
+		const html = hl.codeToHtml(line, { lang: language, theme });
+		const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
+		const innerHtml = match?.[1] ?? escapeHtml(line);
+		return unwrapLineSpan(innerHtml) || escapeHtml(line);
+	} catch {
+		return escapeHtml(line);
+	}
+}
+
 function getLanguageFromPath(filePath: string): BundledLanguage | null {
 	const ext = filePath.split(".").pop()?.toLowerCase();
 	if (!ext) return null;
 	return EXTENSION_TO_LANG[ext] ?? null;
-}
-
-export interface HighlightedLine {
-	lineNum: number;
-	html: string;
 }
 
 export interface UseShikiHighlighterOptions {
@@ -81,7 +98,7 @@ export interface UseShikiHighlighterOptions {
 }
 
 export interface ShikiHighlighterAPI {
-	getHighlightedLine: (lineIdx: number) => string;
+	getHighlightedLine: (lineIdx: number) => string | undefined;
 	isReady: boolean;
 	language: string | null;
 }
@@ -122,12 +139,7 @@ export function useShikiHighlighter({
 				const hl = await getHighlighter();
 				if (cancelled) return;
 
-				// Load language if not already loaded
-				if (!loadedLanguages.has(language!)) {
-					await hl.loadLanguage(language!);
-					loadedLanguages.add(language!);
-				}
-
+				await ensureLanguage(hl, language);
 				if (cancelled) return;
 
 				highlighterRef.current = hl;
@@ -139,15 +151,7 @@ export function useShikiHighlighter({
 				for (let i = start; i <= end && i < currentLines.length; i++) {
 					const line = currentLines[i];
 					if (!line) continue;
-					try {
-						const html = hl.codeToHtml(line, { lang: language!, theme });
-						const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
-						const innerHtml = match?.[1] ?? escapeHtml(line);
-						const cleaned = unwrapLineSpan(innerHtml);
-						cacheRef.current.set(i, cleaned || escapeHtml(line));
-					} catch {
-						cacheRef.current.set(i, escapeHtml(line));
-					}
+					cacheRef.current.set(i, highlightLine(hl, line, language, theme));
 				}
 
 				setIsReady(true);
@@ -181,25 +185,8 @@ export function useShikiHighlighter({
 			const line = lines[i];
 			if (!line) continue;
 
-			try {
-				// Highlight single line
-				const html = hl.codeToHtml(line, {
-					lang,
-					theme,
-				});
-
-				// Extract just the inner content (remove pre/code wrapper)
-				const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
-				const innerHtml = match?.[1] ?? escapeHtml(line);
-
-				const cleaned = unwrapLineSpan(innerHtml);
-
-				cacheRef.current.set(i, cleaned || escapeHtml(line));
-				newLinesHighlighted = true;
-			} catch {
-				cacheRef.current.set(i, escapeHtml(line));
-				newLinesHighlighted = true;
-			}
+			cacheRef.current.set(i, highlightLine(hl, line, lang, theme));
+			newLinesHighlighted = true;
 		}
 
 		// Force re-render if new lines were highlighted
@@ -214,14 +201,8 @@ export function useShikiHighlighter({
 	}, [filePath]);
 
 	const getHighlightedLine = useCallback(
-		(lineIdx: number): string => {
-			const cached = cacheRef.current.get(lineIdx);
-			if (cached) return cached;
-
-			// Return escaped plain text if not yet highlighted
-			return escapeHtml(lines[lineIdx] ?? "");
-		},
-		[lines]
+		(lineIdx: number): string | undefined => cacheRef.current.get(lineIdx),
+		[]
 	);
 
 	return {
@@ -283,12 +264,7 @@ export function useShikiSnippet(
 				const hl = await getHighlighter();
 				if (cancelled) return;
 
-				// Load language if needed
-				if (!loadedLanguages.has(language!)) {
-					await hl.loadLanguage(language!);
-					loadedLanguages.add(language!);
-				}
-
+				await ensureLanguage(hl, language);
 				if (cancelled) return;
 
 				const result = new Map<number, string>();
@@ -300,20 +276,10 @@ export function useShikiSnippet(
 						continue;
 					}
 
-					try {
-						const html = hl.codeToHtml(line, {
-							lang: language!,
-							theme: "github-dark-default",
-						});
-
-						const match = html.match(/<code[^>]*>([\s\S]*?)<\/code>/);
-						const innerHtml = match?.[1] ?? escapeHtml(line);
-						const cleaned = unwrapLineSpan(innerHtml);
-
-						result.set(i, cleaned || escapeHtml(line));
-					} catch {
-						result.set(i, escapeHtml(line));
-					}
+					result.set(
+						i,
+						highlightLine(hl, line, language, "github-dark-default")
+					);
 				}
 
 				if (!cancelled) {

@@ -20,11 +20,10 @@ import {
 	IconGlobe,
 	IconX,
 } from "../../components/ui/Icons.tsx";
-import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
-import { useClaudeProcesses } from "../../hooks/useClaudeProcesses.ts";
-import { useGitStatus } from "../../hooks/useGitStatus.ts";
+import { useAgentSessions } from "../../features/agents/useAgentSessions.ts";
+import { useClaudeProcesses } from "../../features/agents/useClaudeProcesses.ts";
+import { useGitStatus } from "../../features/git/useGitStatus.ts";
 import { useRunningPorts } from "../../hooks/useRunningPorts.ts";
-import { isChatAgentKind } from "../../lib/agents.ts";
 import { wsClient } from "../../lib/websocket.ts";
 import { EditorPage } from "../EditorPage/index.tsx";
 import { GitPage } from "../GitPage/index.tsx";
@@ -39,11 +38,6 @@ import { TerminalSettingsPanel } from "./TerminalSettingsPanel.tsx";
 
 import "@xterm/xterm/css/xterm.css";
 
-import {
-	loadAppThemeId,
-	mapAppThemeToTerminalTheme,
-} from "../../lib/app-theme.ts";
-import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import {
 	type AgentKind,
 	cacheTerminalState,
@@ -66,7 +60,12 @@ import {
 	type TerminalGroupModel,
 	type TerminalPaneModel,
 	type ThemeId,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
+import {
+	loadAppThemeId,
+	mapAppThemeToTerminalTheme,
+} from "../../lib/app-theme.ts";
+import { readStoredValue, writeStoredValue } from "../../lib/stored-json.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 type MainViewMode = "editor" | "chat" | "graph" | "changes";
@@ -372,7 +371,6 @@ function AgentStartPane({
 					onSelect={(path) => {
 						if (path) onStart(agentKind, path);
 					}}
-					onCancel={() => {}}
 					multiSelect
 					onMultiSelect={(paths) => {
 						if (paths.length > 0) {
@@ -601,12 +599,6 @@ export function TerminalPage({
 	const currentGroup = useMemo(
 		() => groups.find((g) => g.id === selectedGroupId),
 		[groups, selectedGroupId]
-	);
-	const chatPanes = useMemo(
-		() =>
-			currentGroup?.panes.filter((pane) => isChatAgentKind(pane.agentKind)) ??
-			[],
-		[currentGroup]
 	);
 	const graphCwds = useMemo(
 		() =>
@@ -1009,6 +1001,36 @@ export function TerminalPage({
 			.map((pane) => `${pane.id}:${pane.cwd ?? ""}`)
 			.join(",")}`;
 	}, [currentGroup]);
+	const renderStartPane = () => (
+		<AgentStartPane
+			onStart={handleStartAgentPane}
+			onClose={
+				currentGroup && groups.length > 1 ? closeCurrentStartPane : undefined
+			}
+		/>
+	);
+	const renderTerminalGrid = (mode: "grid" | "rows" = layoutMode) =>
+		currentGroup ? (
+			<TerminalGrid
+				panes={currentGroup.panes}
+				selectedPaneId={currentGroup.selectedPaneId}
+				columns={currentGroup.columns}
+				rows={currentGroup.rows ?? DEFAULT_ROWS}
+				layoutMode={mode}
+				theme={theme}
+				fontSize={fontSize}
+				fontFamily={fontFamily}
+				onSelectPane={selectPane}
+				onClosePane={removePane}
+				onDirectorySelect={handleDirectorySelected}
+				onDirectoryCancel={removePane}
+				onChatRef={handleChatRef}
+				onAgentStatusChange={handleAgentStatusChange}
+				onReorderPanes={reorderPanes}
+				onAddPane={handleAddPane}
+				onSetPaneAgentKind={handleSetPaneAgentKind}
+			/>
+		) : null;
 	if (isPopout || (isStandalone && compactMode)) {
 		return (
 			<div {...stylex.props(styles.standaloneRoot)}>
@@ -1032,36 +1054,9 @@ export function TerminalPage({
 					onOpenInBrowser={openInBrowser}
 				/>
 				<div {...stylex.props(styles.popoutBody)}>
-					{!currentGroup || currentGroup.panes.length === 0 ? (
-						<AgentStartPane
-							onStart={handleStartAgentPane}
-							onClose={
-								currentGroup && groups.length > 1
-									? closeCurrentStartPane
-									: undefined
-							}
-						/>
-					) : (
-						<TerminalGrid
-							panes={currentGroup.panes}
-							selectedPaneId={currentGroup.selectedPaneId}
-							columns={currentGroup.columns}
-							rows={currentGroup.rows ?? DEFAULT_ROWS}
-							layoutMode="grid"
-							theme={theme}
-							fontSize={fontSize}
-							fontFamily={fontFamily}
-							onSelectPane={selectPane}
-							onClosePane={removePane}
-							onDirectorySelect={handleDirectorySelected}
-							onDirectoryCancel={removePane}
-							onChatRef={handleChatRef}
-							onAgentStatusChange={handleAgentStatusChange}
-							onReorderPanes={reorderPanes}
-							onAddPane={handleAddPane}
-							onSetPaneAgentKind={handleSetPaneAgentKind}
-						/>
-					)}
+					{!currentGroup || currentGroup.panes.length === 0
+						? renderStartPane()
+						: renderTerminalGrid("grid")}
 				</div>
 			</div>
 		);
@@ -1127,49 +1122,13 @@ export function TerminalPage({
 							)}
 						>
 							{!currentGroup || currentGroup.panes.length === 0 ? (
-								<AgentStartPane
-									onStart={handleStartAgentPane}
-									onClose={
-										currentGroup && groups.length > 1
-											? closeCurrentStartPane
-											: undefined
-									}
-								/>
+								renderStartPane()
 							) : mainView === "editor" ? (
 								<EditorPage key={editorViewKey} />
 							) : mainView === "changes" ? (
 								<GitPage />
 							) : mainView === "chat" ? (
-								!currentGroup || currentGroup.panes.length === 0 ? (
-									<AgentStartPane
-										onStart={handleStartAgentPane}
-										onClose={
-											currentGroup && groups.length > 1
-												? closeCurrentStartPane
-												: undefined
-										}
-									/>
-								) : (
-									<TerminalGrid
-										panes={currentGroup.panes}
-										selectedPaneId={currentGroup.selectedPaneId}
-										columns={currentGroup.columns}
-										rows={currentGroup.rows ?? DEFAULT_ROWS}
-										layoutMode={layoutMode}
-										theme={theme}
-										fontSize={fontSize}
-										fontFamily={fontFamily}
-										onSelectPane={selectPane}
-										onClosePane={removePane}
-										onDirectorySelect={handleDirectorySelected}
-										onDirectoryCancel={removePane}
-										onChatRef={handleChatRef}
-										onAgentStatusChange={handleAgentStatusChange}
-										onReorderPanes={reorderPanes}
-										onAddPane={handleAddPane}
-										onSetPaneAgentKind={handleSetPaneAgentKind}
-									/>
-								)
+								renderTerminalGrid()
 							) : mainView === "graph" ? (
 								graphCwds.length === 0 ? (
 									<GraphEmptyState message="Open a project directory in one of this group's panes to populate the file graph." />
@@ -1182,25 +1141,7 @@ export function TerminalPage({
 									/>
 								)
 							) : (
-								<TerminalGrid
-									panes={currentGroup.panes}
-									selectedPaneId={currentGroup.selectedPaneId}
-									columns={currentGroup.columns}
-									rows={currentGroup.rows ?? DEFAULT_ROWS}
-									layoutMode={layoutMode}
-									theme={theme}
-									fontSize={fontSize}
-									fontFamily={fontFamily}
-									onSelectPane={selectPane}
-									onClosePane={removePane}
-									onDirectorySelect={handleDirectorySelected}
-									onDirectoryCancel={removePane}
-									onChatRef={handleChatRef}
-									onAgentStatusChange={handleAgentStatusChange}
-									onReorderPanes={reorderPanes}
-									onAddPane={handleAddPane}
-									onSetPaneAgentKind={handleSetPaneAgentKind}
-								/>
+								renderTerminalGrid()
 							)}
 							{showSettings && (
 								<TerminalSettingsPanel

@@ -4,8 +4,13 @@ import { resolve } from "node:path";
 import {
 	createCodexEnv,
 	resolveCodexBinary,
-} from "../../../lib/terminal-command.ts";
+} from "../../../features/terminal/terminal-command.ts";
 import { summarizeToolInput } from "../events.ts";
+import {
+	drainStreamToString,
+	flushNdjsonLeftover,
+	parseNdjsonLines,
+} from "../stream-utils.ts";
 import type { AgentAdapter, AgentHandle, AgentRunContext } from "../types.ts";
 
 interface CodexRunState {
@@ -17,47 +22,6 @@ interface CodexRunState {
 	hasFinalAssistantMessage: boolean;
 	lastAssistantMessage: string;
 	currentToolId: string | null;
-}
-
-const MAX_STDERR_CHARS = 64_000;
-
-async function drainStreamToString(
-	stream: ReadableStream<Uint8Array>,
-	maxChars = MAX_STDERR_CHARS
-) {
-	const reader = stream.getReader();
-	const decoder = new TextDecoder();
-	let text = "";
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		text += decoder.decode(value, { stream: true });
-		if (text.length > maxChars) text = text.slice(-maxChars);
-	}
-	return text + decoder.decode();
-}
-
-function parseNdjsonLines(
-	leftover: string,
-	handler: (event: any) => void
-): string {
-	const lines = leftover.split("\n");
-	const remainder = lines.pop()!;
-	for (const line of lines) {
-		if (!line.trim()) continue;
-		try {
-			handler(JSON.parse(line));
-		} catch {}
-	}
-	return remainder;
-}
-
-function flushNdjsonLeftover(leftover: string, handler: (event: any) => void) {
-	if (leftover.trim()) {
-		try {
-			handler(JSON.parse(leftover));
-		} catch {}
-	}
 }
 
 function extractText(value: any): string {

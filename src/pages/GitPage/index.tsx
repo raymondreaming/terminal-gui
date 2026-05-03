@@ -10,7 +10,6 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	loadStoredMessages,
 	savePendingSend,
 	saveStoredInput,
 } from "../../components/chat/chat-session-store.ts";
@@ -28,28 +27,19 @@ import {
 	IconTerminal,
 	IconX,
 } from "../../components/ui/Icons.tsx";
-import { useAgentSessions } from "../../hooks/useAgentSessions.ts";
-import { useGitDiff } from "../../hooks/useGitDiff.ts";
-import { type GitFileEntry, useGitStatus } from "../../hooks/useGitStatus.ts";
-import type { AgentKind } from "../../lib/agents.ts";
+import type { AgentKind } from "../../features/agents/agents.ts";
 import {
 	buildCommitMessage,
-	buildFilePrompt,
 	buildRepoExplainPrompt,
 	buildSummaryPrompt,
 	type ChangeCheckpoint,
 	checkpointKey,
 	buildReviewPrompt as composeReviewPrompt,
 	createChangeSignature,
-	formatShortTime,
-} from "../../lib/changes-workspace.ts";
-import { createDiffDocumentFromHunkDiff } from "../../lib/diff-document.ts";
-import { fetchJson, postJson } from "../../lib/fetch-json.ts";
-import {
-	readStoredJson,
-	writeStoredJson,
-	writeStoredValue,
-} from "../../lib/stored-json.ts";
+} from "../../features/git/changes-workspace.ts";
+import { useGitChangeActions } from "../../features/git/useGitChangeActions.ts";
+import { useGitDiff } from "../../features/git/useGitDiff.ts";
+import { useGitStatus } from "../../features/git/useGitStatus.ts";
 import {
 	createGroupId,
 	createTerminalPane,
@@ -58,7 +48,13 @@ import {
 	DEFAULT_OPACITY,
 	loadTerminalState,
 	saveTerminalState,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
+import { fetchJson, postJson } from "../../lib/fetch-json.ts";
+import {
+	readStoredJson,
+	writeStoredJson,
+	writeStoredValue,
+} from "../../lib/stored-json.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { InlineDirectoryPicker } from "../Terminal/InlineDirectoryPicker.tsx";
 
@@ -72,11 +68,6 @@ function persist(dirs: string[]) {
 	writeStoredJson("git-watched-dirs", dirs);
 }
 
-interface StoredChatMessage {
-	role?: string;
-	content?: string;
-}
-
 export function GitPage() {
 	const navigate = useNavigate();
 	const [dirs, setDirs] = useState<string[]>(() =>
@@ -85,15 +76,12 @@ export function GitPage() {
 	const [activeCwd, setActiveCwd] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [pickerError, setPickerError] = useState<string | null>(null);
-	const [actionMessage, setActionMessage] = useState<string | null>(null);
 	const [actionBusy, setActionBusy] = useState<string | null>(null);
 	const [fileViewMode, setFileViewMode] = useState<"path" | "tree">("path");
-	const [agentActivityVersion, setAgentActivityVersion] = useState(0);
 	const [openActionMenu, setOpenActionMenu] = useState<"repo" | "file" | null>(
 		null
 	);
-	const { projects, refetch } = useGitStatus(dirs);
-	const { sessions: liveAgentSessions } = useAgentSessions();
+	const { projects, refetch, applyOptimistic } = useGitStatus(dirs);
 	const {
 		diff,
 		request: diffReq,
@@ -112,6 +100,20 @@ export function GitPage() {
 	const [checkpointVersion, setCheckpointVersion] = useState(0);
 	const prevCwd = useRef<string | null>(null);
 	const hasAutoSelected = useRef(false);
+	const allFiles = useMemo(() => {
+		if (!project) return [];
+		const unstaged = project.files.filter((f) => !f.staged);
+		const staged = project.files.filter((f) => f.staged);
+		return [...unstaged, ...staged];
+	}, [project]);
+	const selectFile = useCallback(
+		(path: string, staged: boolean) => {
+			if (!project) return;
+			setSelFile({ path, staged });
+			loadDiff({ cwd: project.cwd, file: path, staged });
+		},
+		[project?.cwd, loadDiff, project]
+	);
 	useEffect(() => {
 		if (!project || project.files.length === 0) return;
 		const cwdChanged = project.cwd !== prevCwd.current;
@@ -122,42 +124,8 @@ export function GitPage() {
 		if (hasAutoSelected.current) return;
 		hasAutoSelected.current = true;
 		const f = project.files[0]!;
-		setSelFile({ path: f.path, staged: f.staged });
-		loadDiff({ cwd: project.cwd, file: f.path, staged: f.staged });
-	}, [project, loadDiff]);
-	const allFiles = useMemo(() => {
-		if (!project) return [];
-		const unstaged = project.files.filter((f) => !f.staged);
-		const staged = project.files.filter((f) => f.staged);
-		return [...unstaged, ...staged];
-	}, [project]);
-	const selectedFileEntry = useMemo(() => {
-		if (!selFile || !project) return null;
-		return (
-			project.files.find(
-				(file) => file.path === selFile.path && file.staged === selFile.staged
-			) ?? null
-		);
-	}, [project, selFile]);
-	const diffDocument = useMemo(() => {
-		if (!diff || !diffReq || !project) return null;
-		return createDiffDocumentFromHunkDiff({
-			cwd: project.cwd,
-			path: diffReq.file,
-			staged: diffReq.staged,
-			status: selectedFileEntry?.status ?? "M",
-			diff,
-		});
-	}, [diff, diffReq, project, selectedFileEntry]);
-
-	const selectFile = useCallback(
-		(path: string, staged: boolean) => {
-			if (!project) return;
-			setSelFile({ path, staged });
-			loadDiff({ cwd: project.cwd, file: path, staged });
-		},
-		[project?.cwd, loadDiff, project]
-	);
+		selectFile(f.path, f.staged);
+	}, [project, selectFile]);
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
 			const tag = (e.target as HTMLElement)?.tagName;
@@ -180,12 +148,11 @@ export function GitPage() {
 			}
 
 			const next = allFiles[nextIdx]!;
-			setSelFile({ path: next.path, staged: next.staged });
-			loadDiff({ cwd: project.cwd, file: next.path, staged: next.staged });
+			selectFile(next.path, next.staged);
 		};
 		window.addEventListener("keydown", handler);
 		return () => window.removeEventListener("keydown", handler);
-	}, [project?.cwd, allFiles, selFile, loadDiff, project]);
+	}, [project, allFiles, selFile, selectFile]);
 
 	const switchRepo = useCallback(
 		(cwd: string) => {
@@ -246,60 +213,22 @@ export function GitPage() {
 		project?.files.filter((f) => !f.staged && f.status !== "?") || [];
 	const untracked = project?.files.filter((f) => f.status === "?") || [];
 
-	// ── Commit state & git actions ──
-	const [commitMessage, setCommitMessage] = useState("");
-	const [isCommitting, setIsCommitting] = useState(false);
-	const [amendMode, setAmendMode] = useState(false);
-
-	const gitAction = useCallback(
-		async (endpoint: string, body: object) => {
-			await fetch(`/api/git/${endpoint}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(body),
-			});
-			refetch();
-		},
-		[refetch]
-	);
-
-	const stageFile = useCallback(
-		(file: string) =>
-			project?.cwd && gitAction("stage", { cwd: project.cwd, file }),
-		[project?.cwd, gitAction]
-	);
-	const unstageFile = useCallback(
-		(file: string) =>
-			project?.cwd && gitAction("unstage", { cwd: project.cwd, file }),
-		[project?.cwd, gitAction]
-	);
-	const stageAll = useCallback(
-		() => project?.cwd && gitAction("stage", { cwd: project.cwd }),
-		[project?.cwd, gitAction]
-	);
-	const unstageAll = useCallback(
-		() => project?.cwd && gitAction("unstage", { cwd: project.cwd }),
-		[project?.cwd, gitAction]
-	);
-
-	const handleCommit = useCallback(async () => {
-		if (!project?.cwd || !commitMessage.trim() || isCommitting) return;
-		setIsCommitting(true);
-		try {
-			const res = await fetch("/api/git/commit", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ cwd: project.cwd, message: commitMessage }),
-			});
-			const result = await res.json();
-			if (result.success) {
-				setCommitMessage("");
-				refetch();
-			}
-		} finally {
-			setIsCommitting(false);
-		}
-	}, [project?.cwd, commitMessage, isCommitting, refetch]);
+	const {
+		commit: handleCommit,
+		commitMessage,
+		setCommitMessage,
+		isCommitting,
+		amendMode,
+		setAmendMode,
+		stageFile,
+		unstageFile,
+		stageAll,
+		unstageAll,
+	} = useGitChangeActions({
+		cwd: project?.cwd,
+		applyOptimistic,
+		refetchStatus: refetch,
+	});
 
 	const changeSignature = useMemo(
 		() => (project ? createChangeSignature(project.files) : ""),
@@ -318,38 +247,6 @@ export function GitPage() {
 		latestCheckpoint &&
 		latestCheckpoint.signature !== changeSignature
 	);
-	const totalChanges =
-		(project?.stagedCount ?? 0) +
-		(project?.unstagedCount ?? 0) +
-		(project?.untrackedCount ?? 0);
-	const repoAgentActivity = useMemo(() => {
-		if (!project) return null;
-		void agentActivityVersion;
-		const state = loadTerminalState();
-		const panes = (state?.groups ?? [])
-			.flatMap((group) => group.panes)
-			.filter(
-				(pane) =>
-					pane.cwd === project.cwd &&
-					pane.agentKind &&
-					pane.agentKind !== "terminal"
-			);
-		const pane = panes[panes.length - 1];
-		if (!pane) return null;
-		const messages = loadStoredMessages<StoredChatMessage>(pane.id);
-		const latestPrompt = [...messages]
-			.reverse()
-			.find((message) => message.role === "user" && message.content?.trim());
-		const liveSession = liveAgentSessions.find(
-			(session) => session.paneId === pane.id
-		);
-		return {
-			agentKind: pane.agentKind,
-			latestPrompt: latestPrompt?.content?.trim() ?? "",
-			status: liveSession?.isRunning ? "running" : "idle",
-		};
-	}, [project, agentActivityVersion, liveAgentSessions]);
-
 	const refreshProject = useCallback(async () => {
 		setActionBusy("refresh");
 		try {
@@ -361,7 +258,6 @@ export function GitPage() {
 					staged: selFile.staged,
 				});
 			}
-			setActionMessage("Refreshed");
 		} finally {
 			setActionBusy(null);
 		}
@@ -409,7 +305,6 @@ export function GitPage() {
 				opacity: existing?.opacity ?? DEFAULT_OPACITY,
 			});
 			window.dispatchEvent(new Event("terminal-shell-change"));
-			setAgentActivityVersion((version) => version + 1);
 			navigate("/terminal");
 			return pane;
 		},
@@ -433,21 +328,16 @@ export function GitPage() {
 				path,
 				reveal,
 			});
-			setActionMessage(reveal ? "Opened in Finder" : "Opened file");
 		} catch {
-			setActionMessage(reveal ? "Could not open Finder" : "Could not open");
 		} finally {
 			setActionBusy(null);
 		}
 	}, []);
 
-	const copyText = useCallback(async (text: string, message: string) => {
+	const copyText = useCallback(async (text: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
-			setActionMessage(message);
-		} catch {
-			setActionMessage("Copy failed");
-		}
+		} catch {}
 	}, []);
 
 	const loadReviewPrompt = useCallback(async () => {
@@ -468,9 +358,8 @@ export function GitPage() {
 		try {
 			const prompt = await loadReviewPrompt();
 			if (!prompt) return;
-			await copyText(prompt, "Review prompt copied");
+			await copyText(prompt);
 		} catch {
-			setActionMessage("Could not build review prompt");
 		} finally {
 			setActionBusy(null);
 		}
@@ -484,9 +373,7 @@ export function GitPage() {
 			if (!prompt) return;
 			const summaryPrompt = buildSummaryPrompt(project, prompt);
 			openPane("claude", summaryPrompt, true);
-			setActionMessage("Summary requested");
 		} catch {
-			setActionMessage("Could not summarize changes");
 		} finally {
 			setActionBusy(null);
 		}
@@ -499,9 +386,7 @@ export function GitPage() {
 				const prompt = await loadReviewPrompt();
 				if (!prompt) return;
 				openPane(agentKind, prompt, autoSend);
-				setActionMessage(autoSend ? "Review sent" : "Review draft opened");
 			} catch {
-				setActionMessage("Could not build review prompt");
 			} finally {
 				setActionBusy(null);
 			}
@@ -509,40 +394,9 @@ export function GitPage() {
 		[loadReviewPrompt, openPane]
 	);
 
-	const loadFilePrompt = useCallback(
-		async (file: GitFileEntry, intent: "explain" | "fix") => {
-			if (!project) return;
-			const result = await fetchJson<{ diff: string }>(
-				`/api/git/diff?cwd=${encodeURIComponent(project.cwd)}&file=${encodeURIComponent(file.path)}&staged=${file.staged}`
-			);
-			return buildFilePrompt(project, file, result.diff, intent);
-		},
-		[project]
-	);
-
-	const askAboutFile = useCallback(
-		async (agentKind: "claude" | "codex", intent: "explain" | "fix") => {
-			if (!selFile) return;
-			setActionBusy(`file:${intent}:${agentKind}`);
-			try {
-				const prompt = await loadFilePrompt(selFile, intent);
-				if (!prompt) return;
-				openPane(agentKind, prompt, true);
-				setActionMessage(
-					intent === "fix" ? "Fix request sent" : "File question sent"
-				);
-			} catch {
-				setActionMessage("Could not build file prompt");
-			} finally {
-				setActionBusy(null);
-			}
-		},
-		[loadFilePrompt, openPane, selFile]
-	);
-
 	const copyCommitMessage = useCallback(async () => {
 		if (!project) return;
-		await copyText(buildCommitMessage(project), "Commit message copied");
+		await copyText(buildCommitMessage(project));
 	}, [project, copyText]);
 
 	const createCheckpoint = useCallback(() => {
@@ -555,13 +409,11 @@ export function GitPage() {
 		};
 		writeStoredJson(checkpointKey(project.cwd), checkpoint);
 		setCheckpointVersion((version) => version + 1);
-		setActionMessage(`Checkpoint ${checkpoint.id} created`);
 	}, [project, changeSignature]);
 
 	const explainRepo = useCallback(() => {
 		if (!project) return;
 		openPane("claude", buildRepoExplainPrompt(project), true);
-		setActionMessage("Repo explanation requested");
 	}, [openPane, project]);
 
 	useEffect(() => {
@@ -758,8 +610,7 @@ export function GitPage() {
 								{
 									label: "Copy branch",
 									onSelect: () =>
-										project.branch &&
-										void copyText(project.branch, "Branch copied"),
+										project.branch && void copyText(project.branch),
 								},
 								{ label: "Open in Editor", onSelect: openEditor },
 								{
@@ -1182,7 +1033,7 @@ const styles = stylex.create({
 	},
 	fileSidebar: {
 		display: "flex",
-		width: "14rem",
+		width: "17.5rem",
 		flexShrink: 0,
 		flexDirection: "column",
 		borderLeftWidth: 1,

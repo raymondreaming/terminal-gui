@@ -50,7 +50,7 @@ export function findAsset(release, platform) {
 	return preferred.map((matcher) => assets.find(matcher)).find(Boolean);
 }
 
-export function findChecksumAsset(release) {
+function findChecksumAsset(release) {
 	const assets = Array.isArray(release.assets) ? release.assets : [];
 	return assets.find((asset) => /checksums?\.txt$/i.test(asset.name || ""));
 }
@@ -72,14 +72,14 @@ export async function downloadAsset(asset) {
 	return destination;
 }
 
-export async function sha256(filePath) {
+async function sha256(filePath) {
 	const hash = createHash("sha256");
 	const file = await readFile(filePath);
 	hash.update(file);
 	return hash.digest("hex");
 }
 
-export async function verifyChecksum(filePath, expected) {
+async function verifyChecksum(filePath, expected) {
 	if (!expected) {
 		return null;
 	}

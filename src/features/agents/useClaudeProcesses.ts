@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 
-import { fetchJsonOr, sendJson } from "../lib/fetch-json.ts";
+import { fetchJsonOr, sendJson } from "../../lib/fetch-json.ts";
 
-import { usePollingResource } from "./usePollingResource.ts";
+import { usePollingResource } from "../../hooks/usePollingResource.ts";
 
 export interface ClaudeProcess {
 	pid: number;

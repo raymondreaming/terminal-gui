@@ -2,7 +2,7 @@ import { readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import type { ServerWebSocket } from "bun";
-import type { AgentKind } from "../../lib/agents.ts";
+import type { AgentKind } from "../../features/agents/agents.ts";
 import { PROJECT_ROOT } from "../../lib/path-utils.ts";
 import {
 	badRequest,
@@ -13,7 +13,7 @@ import {
 import {
 	createClaudeEnv,
 	resolveInteractiveAgentCommand,
-} from "../../lib/terminal-command.ts";
+} from "../../features/terminal/terminal-command.ts";
 import { ChatService } from "../services/agent-chat.ts";
 import { ConfigManager } from "../services/config-manager.ts";
 import { PidTracker } from "../services/pid-tracker.ts";

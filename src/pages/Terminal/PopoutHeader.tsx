@@ -23,7 +23,7 @@ import {
 	getPaneTitle,
 	getStatusInfo,
 	type TerminalGroupModel,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import { StatusIcon } from "./StatusIcon.tsx";
 

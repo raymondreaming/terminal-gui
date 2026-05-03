@@ -2,7 +2,7 @@ import React from "react";
 import { Icons } from "./Icons";
 
 // File extension to icon mapping
-export type FileIconType =
+type FileIconType =
 	| "react"
 	| "typescript"
 	| "javascript"
@@ -13,7 +13,7 @@ export type FileIconType =
 	| "default";
 
 // Get icon type from filename
-export function getFileIconType(filename: string): FileIconType {
+function getFileIconType(filename: string): FileIconType {
 	const ext = filename.split(".").pop()?.toLowerCase() || "";
 	const name = filename.toLowerCase();
 
@@ -66,7 +66,7 @@ export function getFileIconType(filename: string): FileIconType {
 }
 
 // Icon colors by type
-export const fileIconColors: Record<FileIconType, string> = {
+const fileIconColors: Record<FileIconType, string> = {
 	react: "text-cyan-400",
 	typescript: "text-blue-400",
 	javascript: "text-yellow-400",
@@ -78,7 +78,7 @@ export const fileIconColors: Record<FileIconType, string> = {
 };
 
 // File icon component
-export function FileIcon({
+function FileIcon({
 	filename,
 	className = "",
 }: {

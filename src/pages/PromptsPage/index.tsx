@@ -5,7 +5,7 @@ import {
 	IconPlus,
 	IconSearch,
 } from "../../components/ui/Icons.tsx";
-import { usePrompts } from "../../hooks/usePrompts.ts";
+import { usePrompts } from "../../features/prompts/usePrompts.ts";
 import {
 	color,
 	controlSize,

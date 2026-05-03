@@ -1,12 +1,12 @@
 import { useCallback } from "react";
 
-import type { ChatAgentKind } from "../lib/agents.ts";
+import { fetchJsonOr } from "../../lib/fetch-json.ts";
 
-import { fetchJsonOr } from "../lib/fetch-json.ts";
+import { usePollingResource } from "../../hooks/usePollingResource.ts";
 
-import { usePollingResource } from "./usePollingResource.ts";
+import type { ChatAgentKind } from "./agents.ts";
 
-export interface AgentSession {
+interface AgentSession {
 	paneId: string;
 	agentKind: ChatAgentKind;
 	cwd: string;

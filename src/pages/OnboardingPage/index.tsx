@@ -28,33 +28,14 @@ import {
 	DEFAULT_ROWS,
 	loadTerminalState,
 	saveTerminalState,
-} from "../../lib/terminal-utils.ts";
+} from "../../features/terminal/terminal-utils.ts";
+import { fetchJsonOr, sendJson } from "../../lib/fetch-json.ts";
+import type { ForgeAccount, GithubRepo } from "../../lib/forge-types.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 
 export const ONBOARDING_DONE_KEY = "inferay-onboarding-done";
 
 /* ─── Types ─── */
-
-interface ForgeAccount {
-	provider: "github";
-	host: string;
-	login: string;
-	name: string | null;
-	avatarUrl: string | null;
-	email: string | null;
-	active: boolean;
-}
-
-interface GithubRepo {
-	name: string;
-	full_name: string;
-	description: string | null;
-	html_url: string;
-	language: string | null;
-	stargazers_count: number;
-	updated_at: string;
-	private: boolean;
-}
 
 type Step = "intro" | "github" | "projects" | "complete";
 
@@ -98,14 +79,13 @@ export function OnboardingPage() {
 	// Selected repos
 	const [selectedRepos, setSelectedRepos] = useState<Set<string>>(new Set());
 
-	const activeAccount = accounts.find((a) => a.active) ?? accounts[0] ?? null;
-
 	const loadAccounts = useCallback(async () => {
 		setAccountsLoading(true);
 		try {
-			const res = await fetch("/api/forge/accounts");
-			if (!res.ok) throw new Error();
-			const data = (await res.json()) as { accounts?: ForgeAccount[] };
+			const data = await fetchJsonOr<{ accounts?: ForgeAccount[] }>(
+				"/api/forge/accounts",
+				{}
+			);
 			const found = Array.isArray(data.accounts) ? data.accounts : [];
 			setAccounts(found);
 			return found;
@@ -120,9 +100,10 @@ export function OnboardingPage() {
 	const loadRepos = useCallback(async () => {
 		setReposLoading(true);
 		try {
-			const res = await fetch("/api/forge/repos?limit=50");
-			if (!res.ok) throw new Error();
-			const data = (await res.json()) as { repos?: GithubRepo[] };
+			const data = await fetchJsonOr<{ repos?: GithubRepo[] }>(
+				"/api/forge/repos?limit=50",
+				{}
+			);
 			setRepos(Array.isArray(data.repos) ? data.repos : []);
 		} catch {
 			setRepos([]);
@@ -151,11 +132,7 @@ export function OnboardingPage() {
 	const connectGithub = async () => {
 		setConnecting(true);
 		try {
-			await fetch("/api/forge/connect", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ provider: "github" }),
-			});
+			await sendJson("/api/forge/connect", { provider: "github" });
 		} finally {
 			setConnecting(false);
 		}
@@ -172,9 +149,11 @@ export function OnboardingPage() {
 		if (isAddingFolder) return;
 		setIsAddingFolder(true);
 		try {
-			const res = await fetch("/api/config/pick-folder", { method: "POST" });
-			if (!res.ok) return;
-			const data = (await res.json()) as { folder: string | null };
+			const data = await fetchJsonOr<{ folder: string | null }>(
+				"/api/config/pick-folder",
+				{ folder: null },
+				{ method: "POST" }
+			);
 			if (data.folder && !localFolders.includes(data.folder)) {
 				setLocalFolders((prev) => [...prev, data.folder as string]);
 			}
@@ -268,7 +247,6 @@ export function OnboardingPage() {
 				onRefresh={refreshAccounts}
 				onBack={() => setStep("intro")}
 				onNext={() => setStep("projects")}
-				onSkip={finish}
 			/>
 			<ProjectsStep
 				step={step}
@@ -356,7 +334,6 @@ function GithubStep({
 	onRefresh,
 	onBack,
 	onNext,
-	onSkip,
 }: {
 	step: Step;
 	accounts: ForgeAccount[];
@@ -366,7 +343,6 @@ function GithubStep({
 	onRefresh: () => void;
 	onBack: () => void;
 	onNext: () => void;
-	onSkip: () => void;
 }) {
 	const vis = stepClass(step, "github", {
 		active: "translate-x-0 translate-y-0 opacity-100",

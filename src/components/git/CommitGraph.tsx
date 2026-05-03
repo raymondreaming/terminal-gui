@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { memo, useEffect, useMemo, useState } from "react";
-import type { GraphNode, GraphRow } from "../../hooks/useGitGraph";
+import type { GraphNode, GraphRow } from "../../features/git/useGitGraph";
+import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
 import { color, controlSize, font } from "../../tokens.stylex.ts";
 import {
 	CommitGraphLinesLayer,
@@ -107,13 +108,10 @@ function parseRefs(refs: string[]): ParsedRef[] {
 }
 
 function loadColumns(): ColumnVisibility {
-	try {
-		const raw = localStorage.getItem(COLUMN_PREFS_KEY);
-		if (!raw) return DEFAULT_COLUMNS;
-		return { ...DEFAULT_COLUMNS, ...(JSON.parse(raw) as ColumnVisibility) };
-	} catch {
-		return DEFAULT_COLUMNS;
-	}
+	return {
+		...DEFAULT_COLUMNS,
+		...readStoredJson<Partial<ColumnVisibility>>(COLUMN_PREFS_KEY, {}),
+	};
 }
 
 /** Small SVG icons for ref badges */
@@ -521,9 +519,7 @@ export const CommitGraph = memo(function CommitGraph({
 
 	useEffect(() => setColumns(loadColumns()), []);
 	useEffect(() => {
-		try {
-			localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify(columns));
-		} catch {}
+		writeStoredJson(COLUMN_PREFS_KEY, columns);
 	}, [columns]);
 
 	const maxColumn = useMemo(() => {

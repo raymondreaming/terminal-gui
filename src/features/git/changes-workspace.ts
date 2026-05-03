@@ -1,4 +1,4 @@
-import type { GitFileEntry, GitProjectStatus } from "../hooks/useGitStatus.ts";
+import type { GitFileEntry, GitProjectStatus } from "./useGitStatus.ts";
 
 export interface ChangeCheckpoint {
 	id: string;
@@ -23,13 +23,6 @@ export function createChangeSignature(files: GitFileEntry[]) {
 		)
 		.sort()
 		.join("|");
-}
-
-export function formatShortTime(timestamp: number) {
-	return new Date(timestamp).toLocaleTimeString([], {
-		hour: "numeric",
-		minute: "2-digit",
-	});
 }
 
 export function buildReviewPrompt(
@@ -64,30 +57,6 @@ export function buildSummaryPrompt(
 		"",
 		reviewPrompt,
 	].join("\n");
-}
-
-export function buildFilePrompt(
-	project: GitProjectStatus,
-	file: GitFileEntry,
-	diff: string,
-	intent: "explain" | "fix"
-) {
-	const instruction =
-		intent === "fix"
-			? "Find and fix issues in this changed file. Keep the change scoped to this file unless another file is required."
-			: "Explain this changed file. Focus on what changed, why it matters, and any risks.";
-	return [
-		instruction,
-		"",
-		`Repository: ${project.name}`,
-		`File: ${file.path}`,
-		`Status: ${file.status}`,
-		file.staged ? "Area: staged changes" : "Area: unstaged changes",
-		"",
-		diff.trim(),
-	]
-		.filter(Boolean)
-		.join("\n");
 }
 
 export function buildRepoExplainPrompt(project: GitProjectStatus) {

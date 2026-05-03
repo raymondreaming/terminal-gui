@@ -85,6 +85,73 @@
 	}
 }
 
+@keyframes dmx-ripple-echo {
+	0%,
+	100% {
+		opacity: 0.1;
+	}
+	28% {
+		opacity: 0.98;
+	}
+	56% {
+		opacity: 0.32;
+	}
+	78% {
+		opacity: 0.78;
+	}
+}
+
+.dmx-ripple-dot {
+	display: block;
+	border-radius: 1px;
+	background-color: var(--color-inferay-soft-white);
+	will-change: opacity;
+	animation-name: dmx-ripple-echo;
+	animation-duration: var(--dmx-cycle, 1500ms);
+	animation-timing-function: ease-in-out;
+	animation-iteration-count: infinite;
+	animation-delay: calc(
+		var(--dmx-ripple-ring, 0) * 0.14 * var(--dmx-cycle, 1500ms) +
+			var(--dmx-ripple-parity, 0) * 0.03 * var(--dmx-cycle, 1500ms)
+	);
+}
+
+@keyframes dmx-spiral-fade {
+	0%,
+	100% {
+		opacity: 0.15;
+	}
+	8% {
+		opacity: 1;
+	}
+	16% {
+		opacity: 0.73;
+	}
+	24% {
+		opacity: 0.56;
+	}
+	32% {
+		opacity: 0.4;
+	}
+	40% {
+		opacity: 0.22;
+	}
+}
+
+.dmx-spiral-dot {
+	display: block;
+	border-radius: 1px;
+	background-color: var(--color-inferay-soft-white);
+	will-change: opacity;
+	animation-name: dmx-spiral-fade;
+	animation-duration: var(--dmx-cycle, 2400ms);
+	animation-timing-function: linear;
+	animation-iteration-count: infinite;
+	animation-delay: calc(
+		var(--dmx-spiral-order, 0) * 0.04 * var(--dmx-cycle, 2400ms)
+	);
+}
+
 html,
 body,
 #root {

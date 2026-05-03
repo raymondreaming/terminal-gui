@@ -25,6 +25,7 @@ import {
 	IconSimulator,
 	IconSwift,
 } from "../../components/ui/Icons.tsx";
+import { readStoredJson, writeStoredJson } from "../../lib/stored-json.ts";
 import { color, controlSize, font, radius } from "../../tokens.stylex.ts";
 
 interface SimulatorDevice {
@@ -105,6 +106,14 @@ function DeviceKindIcon({ name, size = 13 }: { name: string; size?: number }) {
 	return <IconIPhone size={size} />;
 }
 
+function toggleSet<T>(value: T) {
+	return (current: Set<T>) => {
+		const next = new Set(current);
+		next.has(value) ? next.delete(value) : next.add(value);
+		return next;
+	};
+}
+
 function platformForDevice(name: string): FarmPlatform {
 	return name.toLowerCase().includes("ipad") ? "ipad" : "iphone";
 }
@@ -125,17 +134,6 @@ function launchPhaseLabel(phase: LaunchPhase) {
 	if (phase === "booting") return "Booting simulator";
 	if (phase === "launching") return "Opening app";
 	return "Building";
-}
-
-function loadDeviceProjectIds(): Record<string, string> {
-	try {
-		const parsed = JSON.parse(
-			localStorage.getItem(SIMULATOR_DEVICE_PROJECTS_KEY) ?? "{}"
-		);
-		return parsed && typeof parsed === "object" ? parsed : {};
-	} catch {
-		return {};
-	}
 }
 
 type StreamState = "idle" | "connecting" | "live" | "disconnected";
@@ -375,6 +373,48 @@ function BaguetteStream({
 	);
 }
 
+function FarmEmptyState() {
+	return (
+		<div {...stylex.props(styles.farmEmptyState)}>
+			<IconSimulator size={22} />
+			<span>No devices match these filters.</span>
+		</div>
+	);
+}
+
+function FilterPills<T extends string>({
+	items,
+	selected,
+	onToggle,
+	label,
+	count,
+}: {
+	items: readonly T[];
+	selected: Set<T>;
+	onToggle: (item: T) => void;
+	label: (item: T) => string;
+	count: (item: T) => number;
+}) {
+	return (
+		<div {...stylex.props(styles.farmHeaderFilterGroup)}>
+			{items.map((item) => (
+				<Button
+					key={item}
+					type="button"
+					size="sm"
+					variant={selected.has(item) ? "secondary" : "ghost"}
+					onClick={() => onToggle(item)}
+				>
+					{label(item)}
+					<span {...stylex.props(styles.sidebarSwitchCount)}>
+						{count(item)}
+					</span>
+				</Button>
+			))}
+		</div>
+	);
+}
+
 function FarmTile({
 	device,
 	baseUrl,
@@ -458,7 +498,7 @@ function FarmTile({
 				</span>
 				<button
 					type="button"
-					{...stylex.props(styles.deviceKillButton)}
+					{...stylex.props(styles.miniPrimaryButton, styles.deviceKillButton)}
 					onClick={booted ? onKill : onBoot}
 				>
 					{booted ? "Kill" : "Boot"}
@@ -485,8 +525,11 @@ export function SimulatorPaneView() {
 	const [launchedProjectId, setLaunchedProjectId] = useState<string | null>(
 		() => localStorage.getItem(SIMULATOR_LAUNCHED_PROJECT_KEY)
 	);
-	const [deviceProjectIds, setDeviceProjectIds] =
-		useState<Record<string, string>>(loadDeviceProjectIds);
+	const [deviceProjectIds, setDeviceProjectIds] = useState<
+		Record<string, string>
+	>(() =>
+		readStoredJson<Record<string, string>>(SIMULATOR_DEVICE_PROJECTS_KEY, {})
+	);
 	const [projectSearch, setProjectSearch] = useState("");
 	const [streamState, setStreamState] = useState<StreamState>("idle");
 	const [viewMode, setViewMode] = useState<"focus" | "farm">("focus");
@@ -659,21 +702,15 @@ export function SimulatorPaneView() {
 		[refresh, selectedDevice, selectedLaunchDevice]
 	);
 
-	const toggleFarmPlatform = useCallback((platform: FarmPlatform) => {
-		setFarmPlatforms((current) => {
-			const next = new Set(current);
-			next.has(platform) ? next.delete(platform) : next.add(platform);
-			return next;
-		});
-	}, []);
+	const toggleFarmPlatform = useCallback(
+		(platform: FarmPlatform) => setFarmPlatforms(toggleSet(platform)),
+		[]
+	);
 
-	const toggleFarmState = useCallback((state: FarmState) => {
-		setFarmStates((current) => {
-			const next = new Set(current);
-			next.has(state) ? next.delete(state) : next.add(state);
-			return next;
-		});
-	}, []);
+	const toggleFarmState = useCallback(
+		(state: FarmState) => setFarmStates(toggleSet(state)),
+		[]
+	);
 
 	const buildLaunchProject = useCallback(
 		async (project: SimulatorProject) => {
@@ -722,10 +759,7 @@ export function SimulatorPaneView() {
 				localStorage.setItem(SIMULATOR_LAUNCHED_PROJECT_KEY, project.id);
 				setDeviceProjectIds((current) => {
 					const next = { ...current, [targetDevice.udid]: project.id };
-					localStorage.setItem(
-						SIMULATOR_DEVICE_PROJECTS_KEY,
-						JSON.stringify(next)
-					);
+					writeStoredJson(SIMULATOR_DEVICE_PROJECTS_KEY, next);
 					return next;
 				});
 				await refresh();
@@ -970,54 +1004,20 @@ export function SimulatorPaneView() {
 										<section {...stylex.props(styles.farmFleet)}>
 											<div {...stylex.props(styles.farmFleetHead)}>
 												<div {...stylex.props(styles.farmHeaderFilters)}>
-													<div {...stylex.props(styles.farmHeaderFilterGroup)}>
-														{(["iphone", "ipad"] as FarmPlatform[]).map(
-															(platform) => (
-																<Button
-																	key={platform}
-																	type="button"
-																	size="sm"
-																	variant={
-																		farmPlatforms.has(platform)
-																			? "secondary"
-																			: "ghost"
-																	}
-																	onClick={() => toggleFarmPlatform(platform)}
-																>
-																	{platform === "ipad" ? "iPad" : "iPhone"}
-																	<span
-																		{...stylex.props(styles.sidebarSwitchCount)}
-																	>
-																		{farmCounts.platforms[platform]}
-																	</span>
-																</Button>
-															)
-														)}
-													</div>
-													<div {...stylex.props(styles.farmHeaderFilterGroup)}>
-														{(["live", "boot", "off"] as FarmState[]).map(
-															(state) => (
-																<Button
-																	key={state}
-																	type="button"
-																	size="sm"
-																	variant={
-																		farmStates.has(state)
-																			? "secondary"
-																			: "ghost"
-																	}
-																	onClick={() => toggleFarmState(state)}
-																>
-																	{farmStateLabel(state)}
-																	<span
-																		{...stylex.props(styles.sidebarSwitchCount)}
-																	>
-																		{farmCounts.states[state]}
-																	</span>
-																</Button>
-															)
-														)}
-													</div>
+													<FilterPills
+														items={["iphone", "ipad"] as const}
+														selected={farmPlatforms}
+														onToggle={toggleFarmPlatform}
+														label={(p) => (p === "ipad" ? "iPad" : "iPhone")}
+														count={(p) => farmCounts.platforms[p]}
+													/>
+													<FilterPills
+														items={["live", "boot", "off"] as const}
+														selected={farmStates}
+														onToggle={toggleFarmState}
+														label={farmStateLabel}
+														count={(s) => farmCounts.states[s]}
+													/>
 												</div>
 												<div {...stylex.props(styles.farmTools)}>
 													<Button
@@ -1053,10 +1053,7 @@ export function SimulatorPaneView() {
 											{farmLayout === "list" ? (
 												<div {...stylex.props(styles.farmList)}>
 													{filteredFarmDevices.length === 0 ? (
-														<div {...stylex.props(styles.farmEmptyState)}>
-															<IconSimulator size={22} />
-															<span>No devices match these filters.</span>
-														</div>
+														<FarmEmptyState />
 													) : (
 														filteredFarmDevices.map((device) => {
 															const deviceState = stateForDevice(device.state);
@@ -1107,10 +1104,7 @@ export function SimulatorPaneView() {
 													)}
 												>
 													{filteredFarmDevices.length === 0 ? (
-														<div {...stylex.props(styles.farmEmptyState)}>
-															<IconSimulator size={22} />
-															<span>No devices match these filters.</span>
-														</div>
+														<FarmEmptyState />
 													) : (
 														filteredFarmDevices.map((device) => (
 															<FarmTile
@@ -1181,7 +1175,10 @@ export function SimulatorPaneView() {
 														<div {...stylex.props(styles.farmFocusActions)}>
 															<button
 																type="button"
-																{...stylex.props(styles.deviceKillButton)}
+																{...stylex.props(
+																	styles.miniPrimaryButton,
+																	styles.deviceKillButton
+																)}
 																onClick={() =>
 																	void bootSelectedSimulator(selectedDevice)
 																}
@@ -1191,7 +1188,10 @@ export function SimulatorPaneView() {
 															</button>
 															<button
 																type="button"
-																{...stylex.props(styles.deviceKillButton)}
+																{...stylex.props(
+																	styles.miniPrimaryButton,
+																	styles.deviceKillButton
+																)}
 																onClick={() =>
 																	void shutdownSelectedSimulator(selectedDevice)
 																}
@@ -1278,52 +1278,10 @@ const styles = stylex.create({
 		backgroundColor: color.background,
 		padding: controlSize._1_5,
 	},
-	deviceShelf: {
-		display: "flex",
-		flexShrink: 0,
-		flexDirection: "column",
-		gap: "0.1875rem",
-		borderBottomWidth: 1,
-		borderBottomStyle: "solid",
-		borderBottomColor: color.border,
-		paddingBottom: controlSize._2,
-		marginBottom: controlSize._2,
-	},
-	deviceList: {
-		display: "grid",
-		gridTemplateColumns: "1fr",
-		gap: "0.1875rem",
-		maxHeight: "12.5rem",
-		overflowY: "auto",
-	},
-	sidebarSwitchGroup: {
-		display: "flex",
-		flexDirection: "column",
-		gap: controlSize._1,
-		paddingTop: controlSize._1,
-	},
-	sidebarSwitchLabel: {
-		color: color.textFaint,
-		fontSize: font.size_1,
-		fontWeight: font.weight_6,
-		paddingInline: controlSize._2,
-		textTransform: "uppercase",
-	},
-	sidebarSwitchRow: {
-		display: "flex",
-		flexWrap: "wrap",
-		gap: controlSize._1,
-	},
 	sidebarSwitchCount: {
 		color: color.textFaint,
 		fontSize: font.size_1,
 		marginInlineStart: controlSize._1,
-	},
-	sidebarBulkRow: {
-		display: "grid",
-		gridTemplateColumns: "1fr 1fr",
-		gap: controlSize._1,
-		paddingTop: controlSize._1,
 	},
 	projectSection: {
 		display: "flex",
@@ -1353,13 +1311,6 @@ const styles = stylex.create({
 		color: color.textMuted,
 		paddingBlock: controlSize._1,
 		paddingInline: controlSize._2,
-	},
-	launchTargetLabel: {
-		flexShrink: 0,
-		color: color.textFaint,
-		fontSize: font.size_1,
-		fontWeight: font.weight_6,
-		textTransform: "uppercase",
 	},
 	launchTargetDropdown: {
 		minWidth: 0,
@@ -1534,63 +1485,12 @@ const styles = stylex.create({
 			opacity: 0.45,
 		},
 	},
-	deviceCard: {
-		display: "flex",
-		width: "100%",
-		minHeight: "2.375rem",
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.transparent,
-		borderRadius: radius.sm,
-		backgroundColor: {
-			default: color.transparent,
-			":hover": color.controlHover,
-		},
-		color: color.textMuted,
-		paddingBlock: "0.1875rem",
-		paddingInline: controlSize._1,
-		textAlign: "left",
-	},
-	deviceMain: {
-		display: "flex",
-		minWidth: 0,
-		flex: 1,
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 0,
-		backgroundColor: color.transparent,
-		color: "inherit",
-		paddingInline: controlSize._1,
-		textAlign: "left",
-	},
 	deviceButtonActive: {
 		borderColor: color.accentBorder,
 		backgroundColor: color.controlActive,
 		color: color.textMain,
 	},
 	deviceKillButton: {
-		height: controlSize._6,
-		flexShrink: 0,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: radius.sm,
-		backgroundColor: {
-			default: color.backgroundRaised,
-			":hover": color.controlHover,
-		},
-		color: color.textSoft,
-		fontSize: font.size_2,
-		fontWeight: font.weight_6,
-		paddingInline: controlSize._2,
-		":disabled": {
-			opacity: 0.42,
-		},
-	},
-	deviceQuietSlot: {
-		width: "2.25rem",
 		flexShrink: 0,
 	},
 	deviceIcon: {
@@ -1606,21 +1506,6 @@ const styles = stylex.create({
 		borderRadius: radius.sm,
 		backgroundColor: color.backgroundRaised,
 		color: color.textFaint,
-	},
-	deviceText: {
-		display: "flex",
-		minWidth: 0,
-		flex: 1,
-		flexDirection: "column",
-		gap: "0.0625rem",
-	},
-	deviceLiveDot: {
-		width: "0.4375rem",
-		height: "0.4375rem",
-		flexShrink: 0,
-		borderRadius: "999px",
-		backgroundColor: color.textSoft,
-		boxShadow: "0 0 0 3px color-mix(in srgb, currentColor 14%, transparent)",
 	},
 	deviceName: {
 		minWidth: 0,
@@ -1802,90 +1687,6 @@ const styles = stylex.create({
 		gridTemplateColumns: "minmax(0, 1fr) 19rem",
 		gap: controlSize._3,
 	},
-	farmFilterRail: {
-		display: "flex",
-		minHeight: 0,
-		flexDirection: "column",
-		gap: controlSize._3,
-		overflowY: "auto",
-		borderRightWidth: 1,
-		borderRightStyle: "solid",
-		borderRightColor: color.border,
-		paddingRight: controlSize._3,
-	},
-	farmRailBlock: {
-		display: "flex",
-		flexDirection: "column",
-		gap: "0.1875rem",
-	},
-	farmRailTitle: {
-		color: color.textFaint,
-		fontSize: font.size_1,
-		fontWeight: font.weight_6,
-		textTransform: "uppercase",
-		paddingBlock: controlSize._1,
-	},
-	farmFilterRow: {
-		display: "flex",
-		minHeight: controlSize._7,
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.transparent,
-		borderRadius: radius.sm,
-		backgroundColor: {
-			default: color.transparent,
-			":hover": color.controlHover,
-		},
-		color: color.textSoft,
-		fontSize: font.size_2,
-		paddingInline: controlSize._1,
-		textAlign: "left",
-	},
-	farmCheckbox: {
-		display: "inline-flex",
-		width: controlSize._4,
-		height: controlSize._4,
-		flexShrink: 0,
-		alignItems: "center",
-		justifyContent: "center",
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: radius.xs,
-		backgroundColor: color.background,
-		color: color.textSoft,
-		fontSize: font.size_2,
-		lineHeight: 1,
-	},
-	farmFilterName: {
-		minWidth: 0,
-		flex: 1,
-		overflow: "hidden",
-		textOverflow: "ellipsis",
-		whiteSpace: "nowrap",
-	},
-	farmFilterCount: {
-		color: color.textFaint,
-		fontSize: font.size_1,
-	},
-	farmBulkButton: {
-		minHeight: controlSize._7,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: radius.sm,
-		backgroundColor: {
-			default: color.backgroundRaised,
-			":hover": color.controlHover,
-		},
-		color: color.textSoft,
-		fontSize: font.size_2,
-		fontWeight: font.weight_6,
-		textAlign: "left",
-		paddingInline: controlSize._2,
-	},
 	farmFleet: {
 		display: "flex",
 		minWidth: 0,
@@ -1902,21 +1703,6 @@ const styles = stylex.create({
 		gap: controlSize._3,
 		flexWrap: "wrap",
 	},
-	farmFleetTitle: {
-		display: "flex",
-		alignItems: "baseline",
-		gap: controlSize._2,
-	},
-	farmFleetNumber: {
-		color: color.textMain,
-		fontSize: "2rem",
-		fontWeight: font.weight_6,
-		lineHeight: 1,
-	},
-	farmFleetMeta: {
-		color: color.textMuted,
-		fontSize: font.size_2,
-	},
 	farmHeaderFilters: {
 		display: "flex",
 		minWidth: 0,
@@ -1931,32 +1717,11 @@ const styles = stylex.create({
 		alignItems: "center",
 		gap: controlSize._1,
 	},
-	farmHeaderFilterLabel: {
-		color: color.textFaint,
-		fontSize: font.size_1,
-		fontWeight: font.weight_6,
-		textTransform: "uppercase",
-		marginInlineEnd: controlSize._1,
-	},
 	farmTools: {
 		display: "flex",
 		minWidth: 0,
 		alignItems: "center",
 		gap: controlSize._2,
-	},
-	farmSearch: {
-		display: "flex",
-		width: "13rem",
-		height: controlSize._7,
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: radius.sm,
-		backgroundColor: color.backgroundRaised,
-		color: color.textMuted,
-		paddingInline: controlSize._2,
 	},
 	farmWall: {
 		gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 1fr))",
@@ -2140,19 +1905,6 @@ const styles = stylex.create({
 		flexDirection: "column",
 		gap: "0.0625rem",
 	},
-	farmLauncherPanel: {
-		display: "flex",
-		minWidth: 0,
-		minHeight: 0,
-		maxHeight: "100%",
-		flexDirection: "column",
-		overflow: "hidden",
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.border,
-		borderRadius: radius.md,
-		backgroundColor: color.background,
-	},
 	farmFocusPane: {
 		display: "flex",
 		minWidth: 0,
@@ -2211,37 +1963,6 @@ const styles = stylex.create({
 	farmPanelCount: {
 		color: color.textFaint,
 		fontSize: font.size_1,
-	},
-	farmLauncherList: {
-		display: "flex",
-		minHeight: 0,
-		flex: 1,
-		flexDirection: "column",
-		gap: "0.1875rem",
-		overflowY: "auto",
-		padding: controlSize._2,
-	},
-	farmLauncherRow: {
-		display: "flex",
-		minHeight: "2.5rem",
-		alignItems: "center",
-		gap: controlSize._2,
-		borderWidth: 1,
-		borderStyle: "solid",
-		borderColor: color.transparent,
-		borderRadius: radius.sm,
-		backgroundColor: {
-			default: color.transparent,
-			":hover": color.controlHover,
-		},
-		paddingInline: controlSize._1,
-	},
-	farmLauncherText: {
-		display: "flex",
-		minWidth: 0,
-		flex: 1,
-		flexDirection: "column",
-		gap: "0.0625rem",
 	},
 	streamOverlay: {
 		position: "absolute",

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { postJson } from "../lib/fetch-json.ts";
-import { usePollingResource } from "./usePollingResource.ts";
+import { postJson } from "../../lib/fetch-json.ts";
+import { usePollingResource } from "../../hooks/usePollingResource.ts";
 
 export interface GitFileEntry {
 	status: string;
@@ -32,12 +32,13 @@ export function useGitStatus(cwds: string[]) {
 		[cwds]
 	);
 
-	const { data: projects, refetch } = usePollingResource<GitProjectStatus[]>(
-		fetcher,
-		5000,
-		[],
-		{ deferInitialFetch: true }
-	);
+	const {
+		data: projects,
+		setData,
+		refetch,
+	} = usePollingResource<GitProjectStatus[]>(fetcher, 5000, [], {
+		deferInitialFetch: true,
+	});
 
 	const projectMap = useMemo(() => {
 		const map = new Map<string, GitProjectStatus>();
@@ -45,5 +46,15 @@ export function useGitStatus(cwds: string[]) {
 		return map;
 	}, [projects]);
 
-	return { projects, projectMap, refetch };
+	// Apply an optimistic update to a single project's status. Used to make
+	// stage / unstage feel instant — the actual git command runs in the
+	// background and a subsequent refetch reconciles with server truth.
+	const applyOptimistic = useCallback(
+		(cwd: string, mutator: (project: GitProjectStatus) => GitProjectStatus) => {
+			setData((prev) => prev.map((p) => (p.cwd === cwd ? mutator(p) : p)));
+		},
+		[setData]
+	);
+
+	return { projects, projectMap, refetch, applyOptimistic };
 }

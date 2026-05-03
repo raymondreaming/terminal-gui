@@ -1,4 +1,4 @@
-import type { AgentKind } from "../../lib/terminal-utils.ts";
+import type { AgentKind } from "../../features/terminal/terminal-utils.ts";
 
 export interface AgentChatSession {
 	paneId: string;

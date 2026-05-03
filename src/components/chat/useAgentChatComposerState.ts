@@ -2,20 +2,20 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { wsClient } from "../../lib/websocket.ts";
 
-export interface QueuedMessage {
+interface QueuedMessage {
 	id: string;
 	text: string;
 	displayText: string;
 	images?: string[];
 }
 
-export interface AttachedImageState {
+interface AttachedImageState {
 	name: string;
 	path: string;
 	previewUrl: string;
 }
 
-export interface MarkdownPreviewState {
+interface MarkdownPreviewState {
 	show: boolean;
 	path: string;
 	content: string | null;

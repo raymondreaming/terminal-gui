@@ -21,7 +21,7 @@ export type TerminalMainView = "chat" | "editor" | "changes" | "graph";
 
 type NavigationIcon = ComponentType<{ size?: number; className?: string }>;
 
-export interface AppPageRoute {
+interface AppPageRoute {
 	id: AppRouteId;
 	label: string;
 	path: string;
@@ -29,7 +29,7 @@ export interface AppPageRoute {
 	icon?: NavigationIcon;
 }
 
-export interface TerminalMainViewRoute {
+interface TerminalMainViewRoute {
 	id: TerminalMainView;
 	label: string;
 	icon: NavigationIcon;
