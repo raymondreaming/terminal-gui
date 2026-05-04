@@ -7,12 +7,14 @@ import {
 	IconMessageCircle,
 	IconSimulator,
 	IconSlash,
+	IconTarget,
 } from "../components/ui/Icons.tsx";
 
 export type AppRouteId =
 	| "terminal"
 	| "git"
 	| "prompts"
+	| "goals"
 	| "images"
 	| "simulators"
 	| "profile";
@@ -38,7 +40,7 @@ interface TerminalMainViewRoute {
 export const DEFAULT_APP_ROUTE = "/terminal";
 export const DEFAULT_TERMINAL_MAIN_VIEW: TerminalMainView = "editor";
 
-export const APP_PAGE_ROUTES = [
+export const APP_PAGE_ROUTES: readonly AppPageRoute[] = [
 	{ id: "terminal", label: "Terminal", path: "/terminal" },
 	{ id: "git", label: "Git", path: "/git" },
 	{
@@ -47,6 +49,13 @@ export const APP_PAGE_ROUTES = [
 		path: "/prompts",
 		sidebar: true,
 		icon: IconSlash,
+	},
+	{
+		id: "goals",
+		label: "Goals",
+		path: "/goals",
+		sidebar: true,
+		icon: IconTarget,
 	},
 	{
 		id: "images",
@@ -63,7 +72,7 @@ export const APP_PAGE_ROUTES = [
 		icon: IconSimulator,
 	},
 	{ id: "profile", label: "Profile", path: "/profile" },
-] as const satisfies readonly AppPageRoute[];
+];
 
 export const SIDEBAR_NAV_ROUTES = APP_PAGE_ROUTES.filter(
 	(

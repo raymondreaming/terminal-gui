@@ -33,6 +33,7 @@ import {
 	IconLayoutGrid,
 	IconLayoutRows,
 	IconPlus,
+	IconTarget,
 } from "../ui/Icons.tsx";
 
 function loadShellState() {
@@ -211,6 +212,12 @@ export function TerminalShellHeader() {
 						/>
 					);
 				})}
+				<ViewTab
+					active={location.pathname === "/goals"}
+					icon={<IconTarget size={12} />}
+					label="Goals"
+					onClick={() => navigate("/goals")}
+				/>
 			</div>
 			{isTerminalRoute && (
 				<>

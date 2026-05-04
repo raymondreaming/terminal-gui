@@ -57,8 +57,10 @@ import {
 	clearPendingSend,
 	clearStoredCheckpoints,
 	clearStoredSessionId,
+	clearStoredLoadingState,
 	loadPendingSend,
 	loadPendingWorkspacePaths,
+	loadStoredLoadingState,
 	loadStoredCheckpoints,
 	loadStoredInput,
 	loadStoredMessages,
@@ -69,6 +71,7 @@ import {
 	savePendingWorkspacePaths,
 	saveStoredCheckpoints,
 	saveStoredInput,
+	saveStoredLoadingState,
 	saveStoredMessages,
 	saveStoredModel,
 	saveStoredReasoningLevel,
@@ -142,6 +145,8 @@ const LOCAL_COMMANDS: SlashCommand[] = [
 		isLocalCommand: true,
 	},
 ];
+
+const TEXTAREA_MEASURE_CHAR_LIMIT = 6000;
 
 export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 	function AgentChatView(
@@ -326,12 +331,15 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			startTime: number | null;
 			expandedTools: Set<string>;
 			liveActivities: ToolActivity[];
-		}>({
-			isLoading: false,
-			status: "idle",
-			startTime: null,
-			expandedTools: new Set(),
-			liveActivities: [],
+		}>(() => {
+			const storedLoading = loadStoredLoadingState(paneId);
+			return {
+				isLoading: storedLoading?.isLoading ?? false,
+				status: storedLoading?.status ?? "idle",
+				startTime: storedLoading?.startTime ?? null,
+				expandedTools: new Set(),
+				liveActivities: [],
+			};
 		});
 		const chatUiStateRef = useRef(chatUiState);
 		chatUiStateRef.current = chatUiState;
@@ -356,6 +364,15 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 				const next = { ...prev, ...patch };
 				chatUiStateRef.current = next;
 				setChatUiState(next);
+				if (next.isLoading && next.startTime) {
+					saveStoredLoadingState(paneId, {
+						isLoading: next.isLoading,
+						status: next.status,
+						startTime: next.startTime,
+					});
+				} else {
+					clearStoredLoadingState(paneId);
+				}
 				if (prev.status !== next.status) {
 					onStatusChange?.(paneId, next.status);
 				}
@@ -535,6 +552,10 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			}
 			return [...deduped.values()];
 		}, [agentKind, localPrompts]);
+		const slashCommandNames = useMemo(
+			() => allCommands.map((command) => command.name),
+			[allCommands]
+		);
 		const {
 			fileMenu,
 			setFileMenu,
@@ -1188,12 +1209,15 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 			if (!ta) return;
 			const width = ta.clientWidth - 32;
 			if (width > 0 && input) {
-				const measured = measureTextareaHeight(
-					input,
-					width,
-					"13px Geist, -apple-system, system-ui, sans-serif",
-					20
-				);
+				const measured =
+					input.length > TEXTAREA_MEASURE_CHAR_LIMIT
+						? 120
+						: measureTextareaHeight(
+								input,
+								width,
+								"13px Geist, -apple-system, system-ui, sans-serif",
+								20
+							);
 				const target = Math.min(Math.max(measured, 20), 120);
 				ta.style.height = `${target}px`;
 			} else {
@@ -1612,12 +1636,13 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 								startTime={startTime}
 								handleSendMessage={handleSendMessage}
 								onMdFileClick={handleMdFileClick}
+								slashCommandNames={slashCommandNames}
 							/>
 						</div>
 						{!isAtBottom && (
 							<button
 								type="button"
-								onClick={scrollToBottom}
+								onClick={() => scrollToBottom()}
 								{...stylex.props(styles.scrollButton)}
 							>
 								<IconArrowDown size={12} {...stylex.props(styles.scrollIcon)} />
@@ -1679,6 +1704,7 @@ export const AgentChatView = forwardRef<AgentChatHandle, AgentChatViewProps>(
 							setSlashMenu={setSlashMenu}
 							showCommands={showCommands}
 							filteredCommands={filteredCommands}
+							slashCommandNames={slashCommandNames}
 							selectCommand={selectCommand}
 							handleInputForFileMenu={handleInputForFileMenu}
 							handleInputForSlashMenu={handleInputForSlashMenu}

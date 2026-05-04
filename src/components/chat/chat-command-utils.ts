@@ -37,12 +37,13 @@ export function expandInlineCommandPrompts(
 		const command = commands.find(
 			(candidate) => candidate.name.toLowerCase() === commandName
 		);
-		if (!command) continue;
-		const expanded = command.promptTemplate
-			? command.promptTemplate.replace("{args}", "").trim()
-			: commandToken;
-		expandedText = expandedText.replace(commandToken, expanded);
-		if (command.id) usedCommandIds.push(command.id);
+		if (command) {
+			const expanded = command.promptTemplate
+				? command.promptTemplate.replace("{args}", "").trim()
+				: commandToken;
+			expandedText = expandedText.replace(commandToken, expanded);
+			if (command.id) usedCommandIds.push(command.id);
+		}
 		match = commandRegex.exec(text);
 	}
 

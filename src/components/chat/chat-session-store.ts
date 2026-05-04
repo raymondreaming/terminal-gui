@@ -8,6 +8,13 @@ const PENDING_SEND_KEY_PREFIX = "inferay-chat-pending-send-";
 const SUMMARY_KEY_PREFIX = "inferay-chat-summary-";
 const PENDING_WORKSPACE_KEY_PREFIX = "inferay-chat-pending-workspace-";
 const QUEUE_KEY_PREFIX = "inferay-chat-queue-";
+const LOADING_STATE_KEY_PREFIX = "inferay-chat-loading-";
+
+export interface StoredLoadingState {
+	isLoading: boolean;
+	status: string;
+	startTime: number | null;
+}
 
 export function loadStoredMessages<T>(paneId: string): T[] {
 	try {
@@ -194,6 +201,52 @@ export function saveStoredQueue<T>(paneId: string, queue: T[]) {
 	} catch {}
 }
 
+export function loadStoredLoadingState(
+	paneId: string
+): StoredLoadingState | null {
+	try {
+		const raw = localStorage.getItem(LOADING_STATE_KEY_PREFIX + paneId);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as Partial<StoredLoadingState>;
+		if (!parsed.isLoading || typeof parsed.status !== "string") return null;
+		if (
+			typeof parsed.startTime !== "number" ||
+			Date.now() - parsed.startTime > 6 * 60 * 60 * 1000
+		) {
+			return null;
+		}
+		return {
+			isLoading: true,
+			status: parsed.status,
+			startTime: parsed.startTime,
+		};
+	} catch {
+		return null;
+	}
+}
+
+export function saveStoredLoadingState(
+	paneId: string,
+	state: StoredLoadingState
+) {
+	try {
+		if (!state.isLoading || !state.startTime) {
+			localStorage.removeItem(LOADING_STATE_KEY_PREFIX + paneId);
+			return;
+		}
+		localStorage.setItem(
+			LOADING_STATE_KEY_PREFIX + paneId,
+			JSON.stringify(state)
+		);
+	} catch {}
+}
+
+export function clearStoredLoadingState(paneId: string) {
+	try {
+		localStorage.removeItem(LOADING_STATE_KEY_PREFIX + paneId);
+	} catch {}
+}
+
 export function clearAgentChatMessages(paneId: string) {
 	try {
 		localStorage.removeItem(STORAGE_KEY_PREFIX + paneId);
@@ -202,5 +255,6 @@ export function clearAgentChatMessages(paneId: string) {
 		localStorage.removeItem(SUMMARY_KEY_PREFIX + paneId);
 		localStorage.removeItem(PENDING_WORKSPACE_KEY_PREFIX + paneId);
 		localStorage.removeItem(QUEUE_KEY_PREFIX + paneId);
+		localStorage.removeItem(LOADING_STATE_KEY_PREFIX + paneId);
 	} catch {}
 }

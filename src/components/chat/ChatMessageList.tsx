@@ -275,15 +275,25 @@ const Bubble = React.memo(function Bubble({
 	onToggle,
 	onSendMessage,
 	onMdFileClick,
+	slashCommandNames,
 }: {
 	msg: ChatMessage;
 	collapsed: boolean;
 	onToggle: (id: string) => void;
 	onSendMessage?: (text: string) => void;
 	onMdFileClick?: (path: string) => void;
+	slashCommandNames: readonly string[];
 }) {
 	if (msg.role === "user") {
-		if (msg.content.match(/^\/([a-zA-Z0-9_-]+)(\s|$)/)) return null;
+		const commandMatch = msg.content.match(/^\/([a-zA-Z0-9_-]+)(\s|$)/);
+		if (
+			commandMatch?.[1] &&
+			slashCommandNames.some(
+				(command) => command.toLowerCase() === commandMatch[1]!.toLowerCase()
+			)
+		) {
+			return null;
+		}
 		let imagePaths = msg.images ?? [];
 		let displayContent = msg.content;
 		if (
@@ -312,7 +322,7 @@ const Bubble = React.memo(function Bubble({
 					)}
 					{displayContent && (
 						<p {...stylex.props(styles.userText)}>
-							{renderTextPills(displayContent)}
+							{renderTextPills(displayContent, slashCommandNames)}
 						</p>
 					)}
 				</div>
@@ -429,6 +439,7 @@ export function ChatMessageList({
 	startTime,
 	handleSendMessage,
 	onMdFileClick,
+	slashCommandNames,
 }: {
 	messages: ChatMessage[];
 	expandedTools: Set<string>;
@@ -439,6 +450,7 @@ export function ChatMessageList({
 	startTime?: number | null;
 	handleSendMessage?: (text: string) => void;
 	onMdFileClick?: (path: string) => void;
+	slashCommandNames: readonly string[];
 }) {
 	const renderItems = useMemo(() => buildRenderItems(messages), [messages]);
 	return (
@@ -462,6 +474,7 @@ export function ChatMessageList({
 							onToggle={toggleTool}
 							onSendMessage={handleSendMessage}
 							onMdFileClick={onMdFileClick}
+							slashCommandNames={slashCommandNames}
 						/>
 						{msg.role === "assistant" &&
 							!msg.isStreaming &&

@@ -89,7 +89,7 @@ const CODEX_MODELS: readonly ModelOption[] = [
 const CODEX_NATIVE_COMMANDS = [
 	{
 		name: "goal",
-		description: "Keep Codex working toward an objective until done or paused",
+		description: "Start, pause, resume, clear, or inspect a Codex objective",
 	},
 ] as const satisfies readonly NativeSlashCommand[];
 

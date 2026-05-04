@@ -4,6 +4,7 @@ import type { GitFileEntry } from "../../features/git/useGitStatus.ts";
 import { postJson } from "../../lib/fetch-json.ts";
 import { color, controlSize, font, radius } from "../../tokens.stylex.ts";
 import { Button } from "../ui/Button.tsx";
+import { DotMatrixWeave } from "../ui/DotMatrixLoader.tsx";
 import {
 	IconChevronRight,
 	IconFolderFill,
@@ -11,7 +12,6 @@ import {
 	IconPanelLeft,
 	IconPencil,
 	IconPlus,
-	IconSparkles,
 } from "../ui/Icons.tsx";
 
 export interface SelectedFile {
@@ -394,10 +394,15 @@ const styles = stylex.create({
 	},
 	generateButton: {
 		height: controlSize._6,
-		gap: controlSize._1,
-		paddingInline: controlSize._2,
+		justifyContent: "center",
+		paddingInline: 0,
 		fontSize: font.size_2,
 		fontWeight: font.weight_6,
+		width: controlSize._7,
+	},
+	generateMark: {
+		color: color.textSoft,
+		display: "flex",
 	},
 	checkRow: {
 		display: "flex",
@@ -455,6 +460,17 @@ const styles = stylex.create({
 			color: color.textFaint,
 		},
 	},
+	summaryInputGenerating: {
+		paddingRight: controlSize._2,
+	},
+	fieldThinking: {
+		alignItems: "center",
+		color: color.accent,
+		display: "flex",
+		flexShrink: 0,
+		justifyContent: "center",
+		marginRight: controlSize._2,
+	},
 	summaryCount: {
 		flexShrink: 0,
 		paddingRight: controlSize._3,
@@ -477,6 +493,18 @@ const styles = stylex.create({
 		"::placeholder": {
 			color: color.textFaint,
 		},
+	},
+	descriptionWrap: {
+		position: "relative",
+	},
+	descriptionInputGenerating: {
+		paddingRight: controlSize._8,
+	},
+	descriptionThinking: {
+		color: color.accent,
+		position: "absolute",
+		right: controlSize._3,
+		top: controlSize._2_5,
 	},
 	commitButton: {
 		width: "100%",
@@ -950,16 +978,24 @@ function CommitSection({
 					type="button"
 					onClick={generateMessage}
 					disabled={!stagedCount || generating || !cwd}
+					aria-label={
+						generating
+							? "Generating commit message"
+							: "Generate commit message from staged changes"
+					}
 					title="Generate commit message from staged changes"
 					variant="secondary"
 					size="sm"
 					className={stylex.props(styles.generateButton).className}
 				>
-					<IconSparkles
-						size={11}
-						className={generating ? "animate-pulse" : ""}
-					/>
-					<span>{generating ? "Generating..." : "Generate"}</span>
+					<span {...stylex.props(styles.generateMark)}>
+						<DotMatrixWeave
+							size={15}
+							dotSize={2}
+							gap={1}
+							speed={generating ? 1.35 : 0.35}
+						/>
+					</span>
 				</Button>
 			</div>
 
@@ -987,7 +1023,10 @@ function CommitSection({
 								onCommitMessageChange(lines.join("\n"));
 							}}
 							placeholder="Commit summary"
-							{...stylex.props(styles.summaryInput)}
+							{...stylex.props(
+								styles.summaryInput,
+								generating && styles.summaryInputGenerating
+							)}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
 									e.preventDefault();
@@ -995,6 +1034,17 @@ function CommitSection({
 								}
 							}}
 						/>
+						{generating && (
+							<span {...stylex.props(styles.fieldThinking)}>
+								<DotMatrixWeave
+									size={13}
+									dotSize={1.5}
+									gap={1}
+									speed={1.2}
+									ariaLabel="Generating commit summary"
+								/>
+							</span>
+						)}
 						{summary.length > 0 && (
 							<span
 								{...stylex.props(
@@ -1006,18 +1056,34 @@ function CommitSection({
 							</span>
 						)}
 					</div>
-					<textarea
-						value={description}
-						onChange={(e) => {
-							const sum = commitMessage.split("\n")[0] || "";
-							onCommitMessageChange(
-								sum + (e.target.value ? `\n${e.target.value}` : "")
-							);
-						}}
-						placeholder="Description"
-						{...stylex.props(styles.descriptionInput)}
-						rows={4}
-					/>
+					<div {...stylex.props(styles.descriptionWrap)}>
+						<textarea
+							value={description}
+							onChange={(e) => {
+								const sum = commitMessage.split("\n")[0] || "";
+								onCommitMessageChange(
+									sum + (e.target.value ? `\n${e.target.value}` : "")
+								);
+							}}
+							placeholder="Description"
+							{...stylex.props(
+								styles.descriptionInput,
+								generating && styles.descriptionInputGenerating
+							)}
+							rows={4}
+						/>
+						{generating && (
+							<span {...stylex.props(styles.descriptionThinking)}>
+								<DotMatrixWeave
+									size={13}
+									dotSize={1.5}
+									gap={1}
+									speed={1.2}
+									ariaLabel="Generating commit description"
+								/>
+							</span>
+						)}
+					</div>
 				</div>
 
 				<Button

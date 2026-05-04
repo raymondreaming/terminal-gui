@@ -863,16 +863,20 @@ const styles = stylex.create({
 		width: 14,
 	},
 	workspaceWrap: {
+		borderColor: "transparent",
+		borderRadius: 10,
+		borderStyle: "solid",
+		borderWidth: 1,
 		marginBottom: controlSize._1,
+		marginInline: "0.375rem",
+		paddingBlock: controlSize._0_5,
+		transitionDuration: "150ms",
+		transitionProperty: "background-color, border-color",
+		transitionTimingFunction: "ease",
 	},
 	workspaceWrapActive: {
 		backgroundColor: color.accentWash,
 		borderColor: color.border,
-		borderRadius: 10,
-		borderStyle: "solid",
-		borderWidth: 1,
-		marginInline: "0.375rem",
-		paddingBlock: controlSize._0_5,
 	},
 	workspaceHeader: {
 		alignItems: "center",
@@ -885,7 +889,6 @@ const styles = stylex.create({
 		fontWeight: font.weight_5,
 		gap: controlSize._2,
 		height: controlSize._8,
-		marginInline: "0.375rem",
 		paddingInline: controlSize._2,
 		transitionDuration: "150ms",
 		transitionProperty: "background-color, border-color, color",
@@ -913,7 +916,6 @@ const styles = stylex.create({
 	workspaceHeaderInActiveWrap: {
 		backgroundColor: "transparent",
 		borderColor: "transparent",
-		marginInline: 0,
 	},
 	workspaceNameWrap: {
 		flex: 1,

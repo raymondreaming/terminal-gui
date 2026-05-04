@@ -6,12 +6,18 @@ type TokenRange = {
 	end: number;
 };
 
-function findDecoratedTokenRanges(text: string): TokenRange[] {
+function findDecoratedTokenRanges(
+	text: string,
+	slashCommandNames?: readonly string[]
+): TokenRange[] {
 	if (!text) return [];
 
 	const ranges: TokenRange[] = [];
 	const slashRegex = /(^|\s)(\/[a-zA-Z][\w-]*)/g;
 	const fileRegex = /(^|\s)(@[^\s]+)/g;
+	const knownSlashCommands = slashCommandNames
+		? new Set(slashCommandNames.map((name) => name.toLowerCase()))
+		: null;
 
 	for (
 		let match = slashRegex.exec(text);
@@ -20,6 +26,7 @@ function findDecoratedTokenRanges(text: string): TokenRange[] {
 	) {
 		const prefix = match[1]!;
 		const token = match[2]!;
+		if (!knownSlashCommands?.has(token.slice(1).toLowerCase())) continue;
 		const start = match.index + prefix.length;
 		ranges.push({ start, end: start + token.length });
 	}
@@ -35,10 +42,13 @@ function findDecoratedTokenRanges(text: string): TokenRange[] {
 	return ranges;
 }
 
-export function renderInputHighlights(text: string): React.ReactNode {
+export function renderInputHighlights(
+	text: string,
+	slashCommandNames?: readonly string[]
+): React.ReactNode {
 	if (!text) return <span style={{ color: "transparent" }}>{"\u00A0"}</span>;
 
-	const tokens = findDecoratedTokenRanges(text);
+	const tokens = findDecoratedTokenRanges(text, slashCommandNames);
 	if (tokens.length === 0) {
 		return <span style={{ color: colorValues.textMain }}>{text}</span>;
 	}
@@ -84,10 +94,13 @@ export function renderInputHighlights(text: string): React.ReactNode {
 	return <>{segments}</>;
 }
 
-export function renderTextPills(text: string): React.ReactNode[] {
+export function renderTextPills(
+	text: string,
+	slashCommandNames?: readonly string[]
+): React.ReactNode[] {
 	if (!text) return [];
 
-	const matches = findDecoratedTokenRanges(text);
+	const matches = findDecoratedTokenRanges(text, slashCommandNames);
 	if (matches.length === 0) return [text];
 
 	const parts: React.ReactNode[] = [];

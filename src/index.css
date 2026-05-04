@@ -152,6 +152,41 @@
 	);
 }
 
+@keyframes dmx-weave-strand {
+	0%,
+	100% {
+		opacity: 0.08;
+		transform: scale(0.72);
+	}
+	45% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	76% {
+		opacity: 0.34;
+		transform: scale(0.88);
+	}
+}
+
+.dmx-weave-dot {
+	display: block;
+	border-radius: 999px;
+	background-color: currentColor;
+	will-change: opacity, transform;
+	animation-name: dmx-weave-strand;
+	animation-duration: var(--dmx-weave-cycle, 1600ms);
+	animation-timing-function: ease;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-delay: calc(
+		(
+				var(--dmx-weave-row, 0) * 0.13 + var(--dmx-weave-center-distance, 0) *
+					0.08
+			) *
+			-1 * var(--dmx-weave-cycle, 1600ms)
+	);
+}
+
 html,
 body,
 #root {

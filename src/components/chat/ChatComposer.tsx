@@ -7,7 +7,15 @@ import {
 	getAgentDefinition,
 } from "../../features/agents/agents.ts";
 import type { AgentKind } from "../../features/terminal/terminal-utils.ts";
-import { color, colorValues, controlSize, font } from "../../tokens.stylex.ts";
+import {
+	color,
+	colorValues,
+	controlSize,
+	font,
+	motion,
+	radius,
+	shadow,
+} from "../../tokens.stylex.ts";
 import { DropdownButton } from "../ui/DropdownButton.tsx";
 import { IconButton } from "../ui/IconButton.tsx";
 import {
@@ -30,6 +38,8 @@ type AgentOption = {
 	label: string;
 	icon: React.ReactNode;
 };
+
+const HIGHLIGHT_CHAR_LIMIT = 6000;
 
 export function ChatComposer({
 	showInput,
@@ -61,6 +71,7 @@ export function ChatComposer({
 	setSlashMenu,
 	showCommands,
 	filteredCommands,
+	slashCommandNames,
 	selectCommand,
 	handleInputForFileMenu,
 	handleInputForSlashMenu,
@@ -123,6 +134,7 @@ export function ChatComposer({
 	>;
 	showCommands: boolean;
 	filteredCommands: SlashCommand[];
+	slashCommandNames: readonly string[];
 	selectCommand: (idx: number) => void;
 	handleInputForFileMenu: (value: string, cursorPos: number) => void;
 	handleInputForSlashMenu: (value: string, cursorPos: number) => void;
@@ -151,7 +163,12 @@ export function ChatComposer({
 	statusBar?: React.ReactNode;
 }) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const inputHighlights = useMemo(() => renderInputHighlights(input), [input]);
+	const usePlainTextarea = input.length > HIGHLIGHT_CHAR_LIMIT;
+	const inputHighlights = useMemo(
+		() =>
+			usePlainTextarea ? null : renderInputHighlights(input, slashCommandNames),
+		[input, slashCommandNames, usePlainTextarea]
+	);
 	const agentDefinition = getAgentDefinition(agentKind);
 	const modelOptions = useMemo(
 		() =>
@@ -258,7 +275,7 @@ export function ChatComposer({
 						)}
 						{showCommands && filteredCommands.length > 0 && (
 							<div {...stylex.props(styles.commandMenu)}>
-								<div {...stylex.props(styles.commandHeader)}>Skills</div>
+								<div {...stylex.props(styles.commandHeader)}>Commands</div>
 								<div {...stylex.props(styles.commandList)}>
 									{filteredCommands.map((cmd, idx) => {
 										const isSelected = idx === slashMenu.selectedIdx;
@@ -278,13 +295,20 @@ export function ChatComposer({
 													isSelected && styles.commandRowActive
 												)}
 											>
-												<span
-													{...stylex.props(
-														styles.commandName,
-														isSelected && styles.commandNameActive
+												<span {...stylex.props(styles.commandTitleLine)}>
+													<span
+														{...stylex.props(
+															styles.commandName,
+															isSelected && styles.commandNameActive
+														)}
+													>
+														/{cmd.name}
+													</span>
+													{cmd.isLocalCommand && (
+														<span {...stylex.props(styles.commandBadge)}>
+															Native
+														</span>
 													)}
-												>
-													/{cmd.name}
 												</span>
 												<span {...stylex.props(styles.commandDescription)}>
 													{cmd.description}
@@ -403,18 +427,20 @@ export function ChatComposer({
 								{...stylex.props(styles.textAreaWrap)}
 								style={{ maxHeight: "120px" }}
 							>
-								<div
-									ref={highlightOverlayRef}
-									{...stylex.props(styles.highlightOverlay)}
-									style={{
-										lineHeight: "20px",
-										wordBreak: "break-word",
-										overflowWrap: "break-word",
-									}}
-									aria-hidden="true"
-								>
-									{inputHighlights}
-								</div>
+								{!usePlainTextarea && (
+									<div
+										ref={highlightOverlayRef}
+										{...stylex.props(styles.highlightOverlay)}
+										style={{
+											lineHeight: "20px",
+											wordBreak: "break-word",
+											overflowWrap: "break-word",
+										}}
+										aria-hidden="true"
+									>
+										{inputHighlights}
+									</div>
+								)}
 								<textarea
 									ref={textareaRef}
 									value={input}
@@ -448,9 +474,13 @@ export function ChatComposer({
 									{...stylex.props(styles.textarea)}
 									style={{
 										minHeight: "20px",
-										color: "transparent",
+										color: usePlainTextarea
+											? colorValues.textMain
+											: "transparent",
 										caretColor: colorValues.textMain,
-										WebkitTextFillColor: "transparent",
+										WebkitTextFillColor: usePlainTextarea
+											? colorValues.textMain
+											: "transparent",
 										lineHeight: "20px",
 										wordBreak: "break-word",
 										overflowWrap: "break-word",
@@ -795,9 +825,9 @@ const styles = stylex.create({
 		borderWidth: 1,
 		borderStyle: "solid",
 		borderColor: color.border,
-		borderRadius: controlSize._3,
+		borderRadius: radius.lg,
 		backgroundColor: color.backgroundRaised,
-		boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
+		boxShadow: shadow.modal,
 	},
 	commandHeader: {
 		color: color.textMuted,
@@ -821,7 +851,8 @@ const styles = stylex.create({
 		paddingInline: controlSize._3,
 		textAlign: "left",
 		transitionProperty: "background-color",
-		transitionDuration: "120ms",
+		transitionDuration: motion.durationFast,
+		transitionTimingFunction: motion.ease,
 		backgroundColor: {
 			default: "transparent",
 			":hover": color.controlHover,
@@ -835,6 +866,25 @@ const styles = stylex.create({
 		fontFamily: "var(--font-diff)",
 		fontSize: font.size_3,
 		fontWeight: font.weight_5,
+	},
+	commandTitleLine: {
+		alignItems: "center",
+		display: "flex",
+		gap: controlSize._2,
+		minWidth: 0,
+	},
+	commandBadge: {
+		backgroundColor: color.accentWash,
+		borderColor: color.accentBorder,
+		borderRadius: radius.pill,
+		borderStyle: "solid",
+		borderWidth: 1,
+		color: color.accent,
+		fontSize: font.size_0_5,
+		fontWeight: font.weight_5,
+		paddingBlock: 1,
+		paddingInline: controlSize._1,
+		textTransform: "uppercase",
 	},
 	commandNameActive: {
 		color: color.accent,

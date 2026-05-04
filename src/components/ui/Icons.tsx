@@ -607,6 +607,11 @@ export const IconCollapse = iconMulti([
 export const IconCircle = icon(
 	"M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z"
 );
+export const IconTarget = iconMulti([
+	"M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 6.48 2 12s4.48 10 10 10z",
+	"M12 18c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6z",
+	"M12 14c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z",
+]);
 export const IconLoader = iconMulti([
 	"M12 2v4",
 	"M12 18v4",

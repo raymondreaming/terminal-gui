@@ -15,6 +15,7 @@ import { applyAppTheme, loadAppThemeId } from "./lib/app-theme.ts";
 import { getServerOrigin, resolveServerUrl } from "./lib/server-origin.ts";
 import { readStoredBoolean } from "./lib/stored-json.ts";
 import { GitPage } from "./pages/GitPage";
+import { GoalsPage } from "./pages/GoalsPage";
 import { ImagesPage } from "./pages/ImagesPage";
 import { ONBOARDING_DONE_KEY, OnboardingPage } from "./pages/OnboardingPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -85,6 +86,7 @@ function AppShell() {
 		terminal: <TerminalPage />,
 		git: <GitPage />,
 		prompts: <PromptsPage />,
+		goals: <GoalsPage />,
 		images: <ImagesPage />,
 		simulators: <SimulatorsPage />,
 		profile: <ProfilePage />,

@@ -171,7 +171,7 @@ class ChatMessageBuffer {
 			0
 		);
 		while (totalChars > MAX_BUFFER_CHARS && this.messages.length > 1) {
-			totalChars -= this.messages[0]?.content.length;
+			totalChars -= this.messages[0]?.content.length ?? 0;
 			this.messages.shift();
 			this.currentAssistantIdx =
 				this.currentAssistantIdx >= 1 ? this.currentAssistantIdx - 1 : -1;
@@ -202,6 +202,42 @@ interface GoalState {
 	status: "active" | "paused";
 	turns: number;
 	startedAt: number;
+}
+
+interface GoalActivityInfo {
+	id: string;
+	type: "status" | "tool" | "result" | "system" | "error";
+	label: string;
+	detail: string | null;
+	state: "running" | "complete" | "paused" | "error";
+}
+
+export interface AgentGoalInfo {
+	paneId: string;
+	agentKind: ChatAgentKind;
+	cwd: string;
+	sessionId: string | null;
+	isRunning: boolean;
+	clientCount: number;
+	objective: string;
+	status: "active" | "paused";
+	turns: number;
+	startedAt: number;
+	elapsedMs: number;
+	recentMessages: Array<{
+		role: "assistant" | "system";
+		content: string;
+	}>;
+	brief: {
+		phase: string;
+		currentStep: string;
+		nextAction: string;
+		blocker: string | null;
+		lastResult: string | null;
+	};
+	activity: GoalActivityInfo[];
+	files: string[];
+	checks: string[];
 }
 
 interface AgentSessionInfo {
@@ -423,6 +459,169 @@ function getLastAssistantMessage(result: Awaited<ReturnType<typeof runAgent>>) {
 	return result && typeof result === "object"
 		? result.lastAssistantMessage
 		: undefined;
+}
+
+function firstUsefulLine(text: string, max = 140): string {
+	const line =
+		text
+			.split("\n")
+			.map((item) => item.trim())
+			.find(Boolean) ?? "";
+	return line.length > max ? `${line.slice(0, max - 3)}...` : line;
+}
+
+function collectStrings(value: unknown, keys: string[], output: Set<string>) {
+	if (!value || typeof value !== "object") return;
+	const payload = value as Record<string, unknown>;
+	for (const key of keys) {
+		const item = payload[key];
+		if (typeof item === "string" && item.trim()) output.add(item.trim());
+	}
+	const changes = payload.changes ?? payload.files;
+	if (Array.isArray(changes)) {
+		for (const change of changes) {
+			if (typeof change === "string" && change.trim()) {
+				output.add(change.trim());
+			} else if (change && typeof change === "object") {
+				collectStrings(change, keys, output);
+			}
+		}
+	}
+}
+
+function deriveGoalView(session: ChatSession) {
+	const messages = session.messageBuffer.getMessages();
+	const recentMessages = messages
+		.filter(
+			(message) =>
+				(message.role === "assistant" || message.role === "system") &&
+				message.content.trim()
+		)
+		.slice(-8)
+		.map((message) => ({
+			role: message.role as "assistant" | "system",
+			content: message.content,
+		}));
+	const latestAssistant = [...messages]
+		.reverse()
+		.find((message) => message.role === "assistant" && message.content.trim());
+	const latestSystem = [...messages]
+		.reverse()
+		.find((message) => message.role === "system" && message.content.trim());
+	const latestEvent = [...session.agentEvents]
+		.reverse()
+		.find((event) => event.type !== "text-delta" && event.type !== "raw");
+	const files = new Set<string>();
+	const checks = new Set<string>();
+	const activity: GoalActivityInfo[] = session.agentEvents
+		.map((event, index) => {
+			if (event.type === "status") {
+				return {
+					id: `status-${index}`,
+					type: "status" as const,
+					label: event.label ?? event.status,
+					detail: null,
+					state:
+						event.status === "error"
+							? ("error" as const)
+							: event.status === "idle"
+								? ("complete" as const)
+								: ("running" as const),
+				};
+			}
+			if (event.type === "tool-call-start") {
+				collectStrings(event.input, ["path", "file", "file_path"], files);
+				if (event.toolName === "exec" || event.toolName === "bash") {
+					if (event.summary) checks.add(event.summary);
+				}
+				return {
+					id: event.toolCallId,
+					type: "tool" as const,
+					label: event.toolName,
+					detail: event.summary ?? null,
+					state: "running" as const,
+				};
+			}
+			if (event.type === "tool-call-end") {
+				return {
+					id: `${event.toolCallId}-end`,
+					type: "tool" as const,
+					label: event.error ? "Tool failed" : "Tool finished",
+					detail: event.error ?? null,
+					state: event.error ? ("error" as const) : ("complete" as const),
+				};
+			}
+			if (event.type === "result") {
+				return {
+					id: `result-${index}`,
+					type: "result" as const,
+					label: "Result",
+					detail: firstUsefulLine(event.text),
+					state: "complete" as const,
+				};
+			}
+			if (event.type === "error") {
+				return {
+					id: `error-${index}`,
+					type: "error" as const,
+					label: "Error",
+					detail: event.message,
+					state: "error" as const,
+				};
+			}
+			return null;
+		})
+		.filter((event): event is NonNullable<typeof event> => !!event)
+		.slice(-30);
+	if (latestSystem?.content) {
+		activity.push({
+			id: `system-${activity.length}`,
+			type: "system",
+			label: "System",
+			detail: firstUsefulLine(latestSystem.content),
+			state: session.goal?.status === "paused" ? "paused" : "complete",
+		});
+	}
+	const currentStep =
+		latestEvent?.type === "tool-call-start"
+			? `${latestEvent.toolName}${latestEvent.summary ? `: ${latestEvent.summary}` : ""}`
+			: latestEvent?.type === "status"
+				? (latestEvent.label ?? latestEvent.status)
+				: session.currentHandle
+					? "Working"
+					: session.goal?.status === "paused"
+						? "Paused"
+						: "Waiting";
+	const blocker =
+		session.goal?.status === "paused"
+			? latestSystem
+				? firstUsefulLine(latestSystem.content)
+				: "Paused"
+			: null;
+	return {
+		recentMessages,
+		brief: {
+			phase: session.currentHandle
+				? "Running"
+				: session.goal?.status === "paused"
+					? "Paused"
+					: "Active",
+			currentStep,
+			nextAction:
+				session.goal?.status === "paused"
+					? "Resume when ready"
+					: session.currentHandle
+						? "Continue current turn"
+						: "Continue goal loop",
+			blocker,
+			lastResult: latestAssistant
+				? firstUsefulLine(latestAssistant.content)
+				: null,
+		},
+		activity,
+		files: [...files].slice(-12),
+		checks: [...checks].slice(-8),
+	};
 }
 
 async function handleGoalCommand(
@@ -772,6 +971,29 @@ export const ChatService = {
 				clientCount: s.clients.size,
 				messageCount: s.messageBuffer.getMessages().length,
 			}));
+	},
+
+	listGoals(): AgentGoalInfo[] {
+		const now = Date.now();
+		return Array.from(sessions.values())
+			.filter((session) => !!session.goal)
+			.map((session) => {
+				const view = deriveGoalView(session);
+				return {
+					paneId: session.paneId,
+					agentKind: session.agentKind,
+					cwd: session.cwd,
+					sessionId: session.sessionId,
+					isRunning: !!session.currentHandle,
+					clientCount: session.clients.size,
+					objective: session.goal!.objective,
+					status: session.goal!.status,
+					turns: session.goal!.turns,
+					startedAt: session.goal!.startedAt,
+					elapsedMs: now - session.goal!.startedAt,
+					...view,
+				};
+			});
 	},
 
 	destroyAll() {
